@@ -1,0 +1,19 @@
+# See http://docs.travis-ci.com/user/languages/csharp/ for details
+sudo: false
+language: csharp
+mono: none
+dotnet: 3.0
+
+matrix:
+  fast_finish: true
+  include:
+    - os: linux
+      dist: bionic
+ #   - os: osx
+ #   - os: osx
+ #     osx_image: xcode9
+
+script:
+  - dotnet restore src/Imageflow.dnfull.sln
+  - dotnet test ./tests/Imageflow.Test/
+
