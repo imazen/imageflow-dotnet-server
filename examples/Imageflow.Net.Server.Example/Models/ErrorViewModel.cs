@@ -1,5 +1,3 @@
-using System;
-
 namespace Imageflow.Net.Server.Example.Models
 {
     public class ErrorViewModel
