@@ -1,13 +1,13 @@
 ﻿using Imageflow.Fluent;
+using Imageflow.Server.Structs;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Imageflow.Server
@@ -19,6 +19,8 @@ namespace Imageflow.Server
         private readonly IHostingEnvironment _env;
         private readonly IMemoryCache _memoryCache;
 
+        private const int DefaultWebPLossyEncoderQuality = 90;
+
         private static readonly string[] suffixes = new string[] {
             ".png",
             ".jpg",
@@ -27,13 +29,6 @@ namespace Imageflow.Server
             ".webp"
         };
 
-        private bool IsImagePath(PathString path)
-        {
-            if (path == null || !path.HasValue)
-                return false;
-
-            return suffixes.Any(x => path.Value.EndsWith(x, StringComparison.OrdinalIgnoreCase));
-        }
 
         private static readonly string[] querystringKeys = new string[]
         {
@@ -48,35 +43,6 @@ namespace Imageflow.Server
             "trim.percentpadding", "a.blur", "a.sharpen", "a.removenoise", "a.balancewhite", "dither", "jpeg.progressive",
             "encoder", "decoder", "builder", "s.roundcorners.", "paddingwidth", "paddingheight", "margin", "borderwidth", "decoder.min_precise_scaling_ratio"
         };
-
-        struct ResizeParams
-        {
-            public bool hasParams;
-            public string commandString;
-
-            public override string ToString()
-            {
-                return commandString;
-            }
-        }
-
-        private ResizeParams GetResizeParams(IQueryCollection query)
-        {
-            var resizeParams = new ResizeParams
-            {
-                hasParams = querystringKeys.Any(f => query.ContainsKey(f))
-            };
-
-            // if no params present, quit early
-            if (!resizeParams.hasParams)
-                return resizeParams;
-
-            // extract resize params
-            resizeParams.commandString = string.Join("&", querystringKeys.Where(f => query.ContainsKey(f)).Select(f => query.ContainsKey(f) ? f + "=" + query[f] : ""));
-
-            return resizeParams;
-        }
-
 
         public ImageflowMiddleware(RequestDelegate next, IHostingEnvironment env, ILogger<ImageflowMiddleware> logger, IMemoryCache memoryCache)
         {
@@ -121,7 +87,6 @@ namespace Imageflow.Server
             // if we got this far, resize it
             _logger.LogInformation($"Processing image {path.Value} with params {resizeParams}");
 
-            
             string cacheKey = GetCacheKey(imagePath, resizeParams, lastWriteTimeUtc);
 
             bool isCached = _memoryCache.TryGetValue(cacheKey, out ArraySegment<byte> imageBytes);
@@ -129,7 +94,6 @@ namespace Imageflow.Server
             if (isCached && isContentTypeCached)
             {
                 _logger.LogInformation("Serving from cache");
-
             }
             else
             {
@@ -144,37 +108,62 @@ namespace Imageflow.Server
             // write to stream
             context.Response.ContentType = contentType;
             context.Response.ContentLength = imageBytes.Count;
-            await context.Response.Body.WriteAsync(imageBytes.Array, imageBytes.Offset, (int)imageBytes.Count);
 
+            await context.Response.Body.WriteAsync(imageBytes.Array, imageBytes.Offset, imageBytes.Count);
+        }
+
+        private bool IsImagePath(PathString path)
+        {
+            if (path == null || !path.HasValue)
+                return false;
+
+            return suffixes.Any(suffix => path.Value.EndsWith(suffix, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private ResizeParams GetResizeParams(IQueryCollection query)
+        {
+            var resizeParams = new ResizeParams
+            {
+                hasParams = querystringKeys.Any(f => query.ContainsKey(f))
+            };
+
+            // if no params present, quit early
+            if (!resizeParams.hasParams)
+                return resizeParams;
+
+            // extract resize params
+            resizeParams.commandString = string.Join("&", MatchingResizeQueryStringParameters(query));
+
+            return resizeParams;
+        }
+
+        private IEnumerable<string> MatchingResizeQueryStringParameters(IQueryCollection queryCollection)
+        {
+            return querystringKeys
+                .Where(qsKey => queryCollection.ContainsKey(qsKey))
+                .Select(qsKey => qsKey + "=" + queryCollection[qsKey]);
         }
 
         private string GetCacheKey(string imagePath, ResizeParams resizeParams, DateTime lastWriteTimeUtc)
         {
             // check cache and return if cached
             return string.Format("{0}?{1}|{2}", imagePath, resizeParams.ToString(), lastWriteTimeUtc);
-
         }
-
-        struct ImageData
-        {
-            public ArraySegment<byte> resultBytes;
-            public string contentType;
-        }
-
 
         private async Task<ImageData> GetImageData(string imagePath, ResizeParams resizeParams)
         {
-            using (var b = new FluentBuildJob())
+            using (var buildJob = new FluentBuildJob())
             {
-                var r = await b.Decode(new StreamSource(File.OpenRead(imagePath), true)).ResizerCommands(resizeParams.commandString)
-                    .EncodeToBytes(new WebPLossyEncoder(90)).Finish().InProcessAsync();
+                var jobResult = await buildJob.Decode(new StreamSource(File.OpenRead(imagePath), true))
+                    .ResizerCommands(resizeParams.commandString)
+                    .EncodeToBytes(new WebPLossyEncoder(DefaultWebPLossyEncoderQuality))
+                    .Finish()
+                    .InProcessAsync();
 
-                var bytes = r.First.TryGetBytes().Value;
+                var bytes = jobResult.First.TryGetBytes().Value;
 
-                return new ImageData { contentType = r.First.PreferredMimeType, resultBytes = bytes };
+                return new ImageData { contentType = jobResult.First.PreferredMimeType, resultBytes = bytes };
             }
-           
-
         }
 
         // For when we generate etags
