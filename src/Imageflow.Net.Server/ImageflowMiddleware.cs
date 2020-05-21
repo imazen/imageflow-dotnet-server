@@ -154,11 +154,12 @@ namespace Imageflow.Server
         {
             using (var buildJob = new FluentBuildJob())
             {
-                var jobResult = await buildJob.Decode(new StreamSource(File.OpenRead(imagePath), true))
-                    .ResizerCommands(resizeParams.commandString)
-                    .EncodeToBytes(new WebPLossyEncoder(DefaultWebPLossyEncoderQuality))
-                    .Finish()
-                    .InProcessAsync();
+                
+                var jobResult = await buildJob.BuildCommandString(
+                    new StreamSource(File.OpenRead(imagePath), true),
+                    new BytesDestination(), resizeParams.commandString)
+                        .Finish()
+                        .InProcessAsync();
 
                 var bytes = jobResult.First.TryGetBytes().Value;
 
