@@ -124,7 +124,7 @@ namespace Imageflow.Server
         {
             var resizeParams = new ResizeParams
             {
-                hasParams = querystringKeys.Any(f => query.ContainsKey(f))
+                hasParams = querystringKeys.Any(query.ContainsKey)
             };
 
             // if no params present, quit early
@@ -140,14 +140,14 @@ namespace Imageflow.Server
         private IEnumerable<string> MatchingResizeQueryStringParameters(IQueryCollection queryCollection)
         {
             return querystringKeys
-                .Where(qsKey => queryCollection.ContainsKey(qsKey))
+                .Where(queryCollection.ContainsKey)
                 .Select(qsKey => qsKey + "=" + queryCollection[qsKey]);
         }
 
         private string GetCacheKey(string imagePath, ResizeParams resizeParams, DateTime lastWriteTimeUtc)
         {
             // check cache and return if cached
-            return string.Format("{0}?{1}|{2}", imagePath, resizeParams.ToString(), lastWriteTimeUtc);
+            return $"{imagePath}?{resizeParams.ToString()}|{lastWriteTimeUtc}";
         }
 
         private async Task<ImageData> GetImageData(string imagePath, ResizeParams resizeParams)
