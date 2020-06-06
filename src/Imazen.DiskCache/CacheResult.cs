@@ -3,23 +3,15 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading.Tasks;
+using Imazen.Common.Extensibility.ClassicDiskCache;
 
 namespace Imazen.DiskCache {
-    public enum CacheQueryResult {
-        /// <summary>
-        /// Failed to acquire a lock on the cached item within the timeout period
-        /// </summary>
-        Failed,
-        /// <summary>
-        /// The item wasn't cached, but was successfully added to the cache (or queued, in which case you should read .Data instead of .PhysicalPath)
-        /// </summary>
-        Miss,
-        /// <summary>
-        /// The item was already in the cache.
-        /// </summary>
-        Hit
-    }
-    public class CacheResult {
+    
+  
+
+    public class CacheResult : ICacheResult
+    {
         public CacheResult(CacheQueryResult result, string physicalPath, string relativePath) {
             this.Result = result;
             this.PhysicalPath = physicalPath;

@@ -2,12 +2,13 @@
 {
     public struct ResizeParams
     {
-        public bool hasParams;
-        public string commandString;
+        public bool HasParams;
+        public string CommandString;
+        public string EstimatedFileExtension;
 
         public override string ToString()
         {
-            return commandString;
+            return CommandString;
         }
     }
 }

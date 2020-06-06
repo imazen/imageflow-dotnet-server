@@ -6,7 +6,7 @@ namespace Imageflow.Server
     public static class ImageflowMiddlewareExtensions
     {
 
-        public static IServiceCollection AddImageflow(this IServiceCollection services)
+        public static IServiceCollection AddImageflowMemoryCache(this IServiceCollection services)
         {
             return services.AddMemoryCache();
         }

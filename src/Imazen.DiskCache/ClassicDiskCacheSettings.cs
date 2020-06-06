@@ -4,7 +4,10 @@ namespace Imazen.DiskCache
 {
     public class ClassicDiskCacheSettings
     {
-        public ClassicDiskCacheSettings(){}
+        public ClassicDiskCacheSettings(string physicalCacheDir)
+        {
+            this.PhysicalCacheDir = physicalCacheDir;
+        }
 
 
         private bool immutable = false;

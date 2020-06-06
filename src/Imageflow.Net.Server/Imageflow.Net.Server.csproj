@@ -3,6 +3,8 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <RootNamespace>Imageflow.Server</RootNamespace>
+    <PackageVersion>0.1</PackageVersion>
+    <Authors>Imazen</Authors>
   </PropertyGroup>
 
   <ItemGroup>
@@ -13,6 +15,10 @@
     <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="3.1.3" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="3.1.3" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.1.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Imazen.Common\Imazen.Common.csproj" />
   </ItemGroup>
 
 </Project>

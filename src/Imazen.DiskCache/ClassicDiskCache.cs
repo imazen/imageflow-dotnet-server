@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Imazen.Common.Extensibility.ClassicDiskCache;
 using Imazen.Common.Issues;
-using Imazen.Common.Logging;
+using Microsoft.Extensions.Logging;
 
 namespace Imazen.DiskCache
 {
-    public class ClassicDiskCache: ILoggerProvider
+    public class ClassicDiskCache
     {
         private readonly ClassicDiskCacheSettings settings;
         public ClassicDiskCache(ClassicDiskCacheSettings settings, ILogger log)
@@ -18,7 +19,7 @@ namespace Imazen.DiskCache
             this.settings.MakeImmutable();
         }
 
-        public ILogger Logger { get; } = null;
+        private ILogger Logger { get; } = null;
         private AsyncCustomDiskCache cache = null;
         private CleanupManager cleaner = null;
 
@@ -49,14 +50,14 @@ namespace Imazen.DiskCache
                 if (started) return true;
                 if (!IsConfigurationValid()) return false;
 
-                cache = new AsyncCustomDiskCache(this, settings.PhysicalCacheDir, settings.Subfolders, settings.AsyncBufferSize);
+                cache = new AsyncCustomDiskCache(Logger, settings.PhysicalCacheDir, settings.Subfolders, settings.AsyncBufferSize);
                 //Init the cleanup worker
-                if (settings.AutoClean) cleaner = new CleanupManager(this, (ICleanableCache)cache, settings.CleanupStrategy);
+                if (settings.AutoClean) cleaner = new CleanupManager(Logger, (ICleanableCache)cache, settings.CleanupStrategy);
                 //If we're running with subfolders, enqueue the cache root for cleanup (after the 5 minute delay)
                 //so we don't eternally 'skip' files in the root or in other unused subfolders (since only 'accessed' subfolders are ever cleaned ). 
                 cleaner?.CleanAll();
 
-                Logger?.Info("DiskCache started successfully.");
+                Logger?.LogInformation("DiskCache started successfully.");
                 //Started successfully
                 started = true;
                 return true;
@@ -72,7 +73,7 @@ namespace Imazen.DiskCache
             return true;
         }
         
-        private async Task<CacheResult> GetOrCreate(string key, string fileExtension, AsyncCustomDiskCache.AsyncWriteResult writeCallback)
+        public async Task<ICacheResult> GetOrCreate(string key, string fileExtension, AsyncWriteResult writeCallback)
         {
             //Cache the data to disk and return a path.
             var r = await cache.GetCachedFile(key, fileExtension, writeCallback, settings.CacheAccessTimeout, settings.AsyncWrites);

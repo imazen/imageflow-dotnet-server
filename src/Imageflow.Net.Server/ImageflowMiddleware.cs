@@ -8,7 +8,13 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using Imageflow.Server.Extensibility.ClassicDiskCache;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Net.Http.Headers;
 
 namespace Imageflow.Server
 {
@@ -18,7 +24,7 @@ namespace Imageflow.Server
         private readonly ILogger<ImageflowMiddleware> _logger;
         private readonly IHostingEnvironment _env;
         private readonly IMemoryCache _memoryCache;
-
+        private readonly IClassicDiskCache diskCache;
         private const int DefaultWebPLossyEncoderQuality = 90;
 
         private static readonly string[] suffixes = new string[] {
@@ -44,12 +50,13 @@ namespace Imageflow.Server
             "encoder", "decoder", "builder", "s.roundcorners.", "paddingwidth", "paddingheight", "margin", "borderwidth", "decoder.min_precise_scaling_ratio"
         };
 
-        public ImageflowMiddleware(RequestDelegate next, IHostingEnvironment env, ILogger<ImageflowMiddleware> logger, IMemoryCache memoryCache)
+        public ImageflowMiddleware(RequestDelegate next, IHostingEnvironment env, ILogger<ImageflowMiddleware> logger, IMemoryCache memoryCache, IClassicDiskCache diskCache)
         {
             _next = next;
             _env = env;
             _logger = logger;
             _memoryCache = memoryCache;
+            this.diskCache = diskCache;
         }
 
         public async Task Invoke(HttpContext context)
@@ -64,8 +71,8 @@ namespace Imageflow.Server
             }
 
             // hand to next middleware if we are dealing with an image but it doesn't have any usable resize querystring params
-            var resizeParams = GetResizeParams(context.Request.Query);
-            if (!resizeParams.hasParams)
+            var resizeParams = GetResizeParams(Path.GetExtension(path.Value), context.Request.Query);
+            if (!resizeParams.HasParams)
             {
                 await _next.Invoke(context);
                 return;
@@ -76,7 +83,7 @@ namespace Imageflow.Server
                 _env.WebRootPath,
                 path.Value.Replace('/', Path.DirectorySeparatorChar).TrimStart(Path.DirectorySeparatorChar));
 
-            // check file lastwrite
+            // check file last write
             var lastWriteTimeUtc = File.GetLastWriteTimeUtc(imagePath);
             if (lastWriteTimeUtc.Year == 1601) // file doesn't exist, pass to next middleware
             {
@@ -88,22 +95,103 @@ namespace Imageflow.Server
             _logger.LogInformation($"Processing image {path.Value} with params {resizeParams}");
 
             string cacheKey = GetCacheKey(imagePath, resizeParams, lastWriteTimeUtc);
+            
+            if (context.Request.Headers.TryGetValue(HeaderNames.IfNoneMatch, out var etag) && cacheKey == etag) {
+                context.Response.StatusCode = StatusCodes.Status304NotModified;
+                context.Response.ContentLength = 0;
+                context.Response.ContentType = null;
+                return;
+            }
+            
 
-            bool isCached = _memoryCache.TryGetValue(cacheKey, out ArraySegment<byte> imageBytes);
-            bool isContentTypeCached = _memoryCache.TryGetValue(cacheKey + ".contentType", out string contentType);
-            if (isCached && isContentTypeCached)
+            if (diskCache != null)
             {
-                _logger.LogInformation("Serving from cache");
+                await ProcessWithDiskCache(context, cacheKey, imagePath, resizeParams);
+            }
+            else if (_memoryCache != null)
+            {
+                await ProcessWithMemoryCache(context, cacheKey, imagePath, resizeParams);
             }
             else
             {
-                var imageData = await GetImageData(imagePath, resizeParams);
+                await ProcessWithNoCache(context, cacheKey, imagePath, resizeParams);
+            }
+
+
+        }
+
+        private async Task ProcessWithDiskCache(HttpContext context, string cacheKey, string sourceFilePath,
+            ResizeParams commands)
+        {
+            var cacheResult = await diskCache.GetOrCreate(cacheKey, commands.EstimatedFileExtension, async (stream) =>
+            {
+                var result = await GetImageData(sourceFilePath, commands.CommandString);
+                await stream.WriteAsync(result.resultBytes.Array, result.resultBytes.Offset, result.resultBytes.Count,
+                    CancellationToken.None);
+            });
+
+            // Note that using estimated file extension instead of parsing magic bytes will lead to incorrect content-type
+            // values when the source file has a mismatched extension.
+
+            if (cacheResult.Data != null)
+            {
+                context.Response.ContentType = ContentTypeFor(commands.EstimatedFileExtension);
+                context.Response.ContentLength = cacheResult.Data.Length;
+                context.Response.Headers[HeaderNames.ETag] = cacheKey;
+                await cacheResult.Data.CopyToAsync(context.Response.Body);
+            }
+            else
+            {
+                await ServeFileFromDisk(context, cacheResult.PhysicalPath, cacheKey,
+                    ContentTypeFor(commands.EstimatedFileExtension));
+            }
+        }
+
+        private async Task ServeFileFromDisk(HttpContext context, string path, string etag, string contentType)
+        {
+            using (var readStream = File.OpenRead(path))
+            {
+                context.Response.ContentLength = readStream.Length;
+                context.Response.ContentType = contentType;
+                context.Response.Headers[HeaderNames.ETag] = etag;
+                await readStream.CopyToAsync(context.Response.Body);
+            }
+        }
+
+        private async Task ProcessWithMemoryCache(HttpContext context, string cacheKey, string sourceFilePath, ResizeParams commands)
+        {
+            var isCached = _memoryCache.TryGetValue(cacheKey, out ArraySegment<byte> imageBytes);
+            var isContentTypeCached = _memoryCache.TryGetValue(cacheKey + ".contentType", out string contentType);
+            if (isCached && isContentTypeCached)
+            {
+                _logger.LogInformation("Serving from memory cache");
+            }
+            else
+            {
+                var imageData = await GetImageData(sourceFilePath, commands.CommandString);
                 imageBytes = imageData.resultBytes;
                 contentType = imageData.contentType;
 
                 _memoryCache.Set(cacheKey, imageBytes);
                 _memoryCache.Set(cacheKey + ".contentType", contentType);
             }
+
+            // write to stream
+            context.Response.ContentType = contentType;
+            context.Response.Headers[HeaderNames.ETag] = cacheKey;
+            context.Response.ContentLength = imageBytes.Count;
+            
+
+            await context.Response.Body.WriteAsync(imageBytes.Array, imageBytes.Offset, imageBytes.Count);
+        }
+
+        private async Task ProcessWithNoCache(HttpContext context, string cacheKey, string sourceFilePath,
+            ResizeParams commands)
+        {
+
+            var imageData = await GetImageData(sourceFilePath, commands.CommandString);
+            var imageBytes = imageData.resultBytes;
+            var contentType = imageData.contentType;
 
             // write to stream
             context.Response.ContentType = contentType;
@@ -120,19 +208,56 @@ namespace Imageflow.Server
             return suffixes.Any(suffix => path.Value.EndsWith(suffix, StringComparison.OrdinalIgnoreCase));
         }
 
-        private ResizeParams GetResizeParams(IQueryCollection query)
+        private string SanitizeExtension(string extension)
+        {
+            extension = extension.ToLowerInvariant().TrimStart('.');
+            switch (extension)
+            {
+                case "png":
+                    return "png";
+                case "gif":
+                    return "gif";
+                case "webp":
+                    return "webp";
+                default:
+                    return "jpg"; // For jpg, jpe, jif, jfif, jfi, exif, jpeg extensions
+            }
+        }
+
+        private string ContentTypeFor(string extension)
+        {
+            switch (extension)
+            {
+                case "png": return "image/png";
+                case "gif": return "image/gif";
+                case "jpg": return "image/jpeg";
+                case "webp": return "image/webp";
+                default:
+                    return "application/octet-stream";
+            }
+        }
+        private ResizeParams GetResizeParams(string sourceFileExtension, IQueryCollection query)
         {
             var resizeParams = new ResizeParams
             {
-                hasParams = querystringKeys.Any(f => query.ContainsKey(f))
+                HasParams = querystringKeys.Any(query.ContainsKey)
             };
 
+            var extension = sourceFileExtension;
+            if (query.TryGetValue("format", out var newExtension))
+            {
+                extension = newExtension;
+            }
+
+            resizeParams.EstimatedFileExtension = SanitizeExtension(extension);
+                
+
             // if no params present, quit early
-            if (!resizeParams.hasParams)
+            if (!resizeParams.HasParams)
                 return resizeParams;
 
             // extract resize params
-            resizeParams.commandString = string.Join("&", MatchingResizeQueryStringParameters(query));
+            resizeParams.CommandString = string.Join("&", MatchingResizeQueryStringParameters(query));
 
             return resizeParams;
         }
@@ -146,23 +271,33 @@ namespace Imageflow.Server
 
         private string GetCacheKey(string imagePath, ResizeParams resizeParams, DateTime lastWriteTimeUtc)
         {
-            // check cache and return if cached
-            return string.Format("{0}?{1}|{2}", imagePath, resizeParams.ToString(), lastWriteTimeUtc);
+            using (var sha2 = SHA256.Create())
+            {
+                var stringBytes = Encoding.UTF8.GetBytes($"{imagePath}?{resizeParams.ToString()}|{lastWriteTimeUtc}");
+                // check cache and return if cached
+                var hashBytes =
+                    sha2.ComputeHash(stringBytes);
+                return  Convert.ToBase64String(hashBytes)
+                    .Replace("=", string.Empty)
+                    .Replace('+', '-')
+                    .Replace('/', '_');
+            }
         }
 
-        private async Task<ImageData> GetImageData(string imagePath, ResizeParams resizeParams)
+     
+        private async Task<ImageData> GetImageData(string imagePath, string querystringCommands)
         {
             using (var buildJob = new FluentBuildJob())
             {
                 var jobResult = await buildJob.Decode(new StreamSource(File.OpenRead(imagePath), true))
-                    .ResizerCommands(resizeParams.commandString)
+                    .ResizerCommands(querystringCommands)
                     .EncodeToBytes(new WebPLossyEncoder(DefaultWebPLossyEncoderQuality))
                     .Finish()
                     .InProcessAsync();
 
                 var bytes = jobResult.First.TryGetBytes().Value;
 
-                return new ImageData { contentType = jobResult.First.PreferredMimeType, resultBytes = bytes };
+                return new ImageData { contentType = jobResult.First.PreferredMimeType, fileExtension = jobResult.First.PreferredExtension, resultBytes = bytes };
             }
         }
 

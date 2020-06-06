@@ -17,7 +17,7 @@ namespace Imazen.PersistentCache
         }
         internal string GetPath(uint shardId, string key)
         {
-            return Path.Combine(cacheFolder, shardId.ToString(), key.Replace('/', Path.DirectorySeparatorChar));
+            return Path.Combine(cacheFolder, shardId.ToString("D4"), key.Replace('/', Path.DirectorySeparatorChar));
         }
         public Task Delete(uint shard, string key, CancellationToken cancellationToken)
         {
@@ -51,7 +51,7 @@ namespace Imazen.PersistentCache
                 var infos = new List<IBlobInfo>(files.Length);
                 foreach (var f in files)
                 {
-                    infos.Add(new BlobFileInfo { KeyName = $"{shard}/{parentKey.TrimEnd('/')}/{f.Name}", SizeInBytes = (ulong)f.Length });
+                    infos.Add(new BlobFileInfo { KeyName = $"{shard:D4}/{parentKey.TrimEnd('/')}/{f.Name}", SizeInBytes = (ulong)f.Length });
                 }
                 return Task.FromResult<IEnumerable<IBlobInfo>>(infos);
             }

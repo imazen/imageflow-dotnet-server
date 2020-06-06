@@ -8,7 +8,7 @@ using System.Diagnostics;
 
 using System.Globalization;
 using Imazen.Common.Issues;
-using Imazen.Common.Logging;
+using Microsoft.Extensions.Logging;
 
 namespace Imazen.DiskCache {
     internal class CleanupWorker : IssueSink, IDisposable {
@@ -18,19 +18,19 @@ namespace Imazen.DiskCache {
         private readonly CleanupStrategy cs = null;
         private readonly CleanupQueue queue = null;
         private readonly ICleanableCache cache = null;
-        private readonly ILoggerProvider lp = null;
+        private readonly ILogger logger = null;
         /// <summary>
         /// Creates and starts a thread that consumes the queue, pausing until notified when 'queue' empties.
         /// </summary>
-        /// <param name="lp"></param>
+        /// <param name="logger"></param>
         /// <param name="cs"></param>
         /// <param name="queue"></param>
         /// <param name="cache"></param>
-        public CleanupWorker(ILoggerProvider lp, CleanupStrategy cs, CleanupQueue queue, ICleanableCache cache):base("DiskCache-CleanupWorker") {
+        public CleanupWorker(ILogger logger, CleanupStrategy cs, CleanupQueue queue, ICleanableCache cache):base("DiskCache-CleanupWorker") {
             this.cs = cs;
             this.queue = queue;
             this.cache = cache;
-            this.lp = lp;
+            this.logger = logger;
             t = new Thread(main) {IsBackground = true};
             t.Start();
         }
@@ -81,7 +81,7 @@ namespace Imazen.DiskCache {
                 mainInner();
             } catch (Exception ex) {
                 if (Debugger.IsAttached) throw;
-                lp.Logger?.Error("Contact support! A critical (and unexpected) exception occurred in the disk cache cleanup worker thread. This needs to be investigated. {0}", ex.Message + ex.StackTrace);
+                logger?.LogError("Contact support! A critical (and unexpected) exception occurred in the disk cache cleanup worker thread. This needs to be investigated. {0}", ex.Message + ex.StackTrace);
                 this.AcceptIssue(new Issue("Contact support! A critical (and unexpected) exception occurred in the disk cache cleanup worker thread. This needs to be investigated. ", ex.Message + ex.StackTrace, IssueSeverity.Critical));
             }
         }
@@ -219,7 +219,7 @@ namespace Imazen.DiskCache {
                     DoTask(queue.Pop());
                 } catch (Exception e) {
                     if (Debugger.IsAttached) throw;
-                    if (lp.Logger != null) lp.Logger.Error("Failed executing task {0}", e.Message + e.StackTrace);
+                    logger?.LogError("Failed executing task {0}", e.Message + e.StackTrace);
                     this.AcceptIssue(new Issue("Failed executing task", e.Message + e.StackTrace, IssueSeverity.Critical));
                 }
             }
@@ -241,7 +241,7 @@ namespace Imazen.DiskCache {
 
 
             Stopwatch sw = null;
-            if (lp.Logger != null) { sw = new Stopwatch(); sw.Start(); }
+            if (logger != null) { sw = new Stopwatch(); sw.Start(); }
 
             if (item.Task == CleanupWorkItem.Kind.RemoveFile)
                 RemoveFile(item);
@@ -252,8 +252,8 @@ namespace Imazen.DiskCache {
             else if (item.Task == CleanupWorkItem.Kind.FlushAccessedDate) 
                 FlushAccessedDate(item);
 
-            if (lp.Logger != null) sw.Stop();
-            lp.Logger?.Trace("{2}ms: Executing task {0} {1} ({3} tasks remaining)", item.Task.ToString(), item.RelativePath, sw.ElapsedMilliseconds.ToString(NumberFormatInfo.InvariantInfo).PadLeft(4), queue.Count.ToString(NumberFormatInfo.InvariantInfo));
+            if (logger != null) sw.Stop();
+            logger?.LogTrace("{2}ms: Executing task {0} {1} ({3} tasks remaining)", item.Task.ToString(), item.RelativePath, sw.ElapsedMilliseconds.ToString(NumberFormatInfo.InvariantInfo).PadLeft(4), queue.Count.ToString(NumberFormatInfo.InvariantInfo));
 
 
         }
@@ -267,12 +267,12 @@ namespace Imazen.DiskCache {
         private void PopulateFolder(CleanupWorkItem item, bool recursive) {
             //Do the local work.
             if (!cache.Index.GetIsValid(item.RelativePath)) {
-                if (lp.Logger != null) {
+                if (logger != null) {
                     Stopwatch sw = new Stopwatch();
                     sw.Start();
                     cache.Index.populate(item.RelativePath, item.PhysicalPath);
                     sw.Stop();
-                    lp.Logger.Trace("{0}ms: Querying file system about {1}", sw.ElapsedMilliseconds.ToString(NumberFormatInfo.InvariantInfo).PadLeft(4), item.RelativePath);
+                    logger.LogTrace("{0}ms: Querying file system about {1}", sw.ElapsedMilliseconds.ToString(NumberFormatInfo.InvariantInfo).PadLeft(4), item.RelativePath);
                 } else 
                     cache.Index.populate(item.RelativePath, item.PhysicalPath);
             }

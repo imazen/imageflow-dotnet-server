@@ -3,8 +3,9 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
+using Imazen.Common.Extensibility.ClassicDiskCache;
 using Imazen.Common.Issues;
-using Imazen.Common.Logging;
+using Microsoft.Extensions.Logging;
 
 namespace Imazen.DiskCache {
 
@@ -15,11 +16,11 @@ namespace Imazen.DiskCache {
         private readonly CleanupQueue queue = null;
         private readonly CleanupWorker worker = null;
 
-        private readonly ILoggerProvider lp = null;
-        public CleanupManager(ILoggerProvider lp, ICleanableCache cache, CleanupStrategy cs) {
+        private readonly ILogger logger = null;
+        public CleanupManager(ILogger logger, ICleanableCache cache, CleanupStrategy cs) {
             this.cache = cache;
             this.cs = cs;
-            this.lp = lp;
+            this.logger = this.logger;
             queue = new CleanupQueue();
             //Called each request
             cache.CacheResultReturned += delegate(ICleanableCache sender, CacheResult r) {
@@ -30,13 +31,13 @@ namespace Imazen.DiskCache {
             };
             //Called when the file system changes unexpectedly.
             cache.Index.FileDisappeared += delegate(string relativePath, string physicalPath) {
-                if (lp.Logger != null) lp.Logger.Warn("File disappeared from the cache unexpectedly - reindexing entire cache. File name: {0}", relativePath);
+                logger?.LogWarning("File disappeared from the cache unexpectedly - reindexing entire cache. File name: {0}", relativePath);
                 //Stop everything ASAP and start a brand new cleaning run.
                 queue.ReplaceWith(new CleanupWorkItem(CleanupWorkItem.Kind.CleanFolderRecursive, "", cache.PhysicalCachePath));
                 worker.MayHaveWork();
             };
 
-            worker = new CleanupWorker(lp, cs,queue,cache);
+            worker = new CleanupWorker(this.logger, cs,queue,cache);
         }
 
 
@@ -71,7 +72,7 @@ namespace Imazen.DiskCache {
         }
 
         public void CleanAll() {
-            if (lp.Logger != null) lp.Logger.Debug("Queuing CleanAll() task");
+            logger?.LogDebug("Queuing CleanAll() task");
             //Only queue the item if it doesn't already exist.
             if (queue.QueueIfUnique(new CleanupWorkItem(CleanupWorkItem.Kind.CleanFolderRecursive, "", cache.PhysicalCachePath)))
                 worker.MayHaveWork();

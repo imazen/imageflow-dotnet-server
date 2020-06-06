@@ -7,7 +7,8 @@ using System.Diagnostics;
 using System.Threading;
 using System.Globalization;
 using System.Threading.Tasks;
-using Imazen.Common.Logging;
+using Imazen.Common.Extensibility.ClassicDiskCache;
+using Microsoft.Extensions.Logging;
 
 namespace Imazen.DiskCache {
 
@@ -18,21 +19,18 @@ namespace Imazen.DiskCache {
     /// </summary>
     internal class AsyncCustomDiskCache:ICleanableCache {
 
-        public delegate Task AsyncWriteResult(Stream output);
-
+        
         public string PhysicalCachePath { get; private set; }
         private readonly int subfolders;
-        private readonly ILoggerProvider lp;
-        public AsyncCustomDiskCache(ILoggerProvider lp, string physicalCachePath, int subfolders):this(lp,physicalCachePath,subfolders, 1024*1024*10) {
+        private readonly ILogger logger;
 
-        }
-        public AsyncCustomDiskCache(ILoggerProvider lp, string physicalCachePath, int subfolders, long asyncMaxQueuedBytes)
+        public AsyncCustomDiskCache(ILogger logger, string physicalCachePath, int subfolders, long asyncMaxQueuedBytes = 1024*1024*10)
         {
             Locks = new AsyncLockProvider();
             QueueLocks = new AsyncLockProvider();
             Index = new CacheIndex();
             CurrentWrites = new AsyncWriteCollection();
-            this.lp = lp;
+            this.logger = logger;
             this.PhysicalCachePath = physicalCachePath;
             this.subfolders = subfolders;
             this.CurrentWrites.MaxQueueBytes = asyncMaxQueuedBytes;
@@ -46,17 +44,17 @@ namespace Imazen.DiskCache {
         /// <summary>
         /// Provides string-based locking for file write access.
         /// </summary>
-        public ILockProvider Locks {get;protected set;}
+        public ILockProvider Locks {get; private set;}
 
         /// <summary>
         /// Provides string-based locking for image resizing (not writing, just processing). Prevents duplication of efforts in asynchronous mode, where 'Locks' is not being used.
         /// </summary>
-        public ILockProvider QueueLocks { get; protected set; }
+        private ILockProvider QueueLocks { get; set; }
 
         /// <summary>
         /// Contains all the queued and in-progress writes to the cache. 
         /// </summary>
-        public AsyncWriteCollection CurrentWrites {get; private set;}
+        private AsyncWriteCollection CurrentWrites {get; set;}
 
         /// <summary>
         /// Provides an in-memory index of the cache.
@@ -90,7 +88,7 @@ namespace Imazen.DiskCache {
         public async Task<CacheResult> GetCachedFile(string keyBasis, string extension, AsyncWriteResult writeCallback, int timeoutMs, bool asynchronous)
         {
             Stopwatch sw = null;
-            if (lp.Logger != null) { sw = new Stopwatch(); sw.Start(); }
+            if (logger != null) { sw = new Stopwatch(); sw.Start(); }
 
             //Relative to the cache directory. Not relative to the app or domain root
             string relativePath = new UrlHasher().hash(keyBasis, subfolders, "/") + '.' + extension;
@@ -161,16 +159,16 @@ namespace Imazen.DiskCache {
                                     {
                                         swio.Stop();
                                         //We failed to lock the file.
-                                        lp.Logger?.Warn("Failed to flush async write, timeout exceeded after {1}ms - {0}",  result.RelativePath, swio.ElapsedMilliseconds);
+                                        logger?.LogWarning("Failed to flush async write, timeout exceeded after {1}ms - {0}",  result.RelativePath, swio.ElapsedMilliseconds);
 
                                     } else {
                                         swio.Stop();
-                                        lp.Logger?.Trace("{0}ms: Async write started {1}ms after enqueue for {2}", swio.ElapsedMilliseconds.ToString().PadLeft(4), DateTime.UtcNow.Subtract(w.JobCreatedAt).Subtract(swio.Elapsed).TotalMilliseconds, result.RelativePath);
+                                        logger?.LogTrace("{0}ms: Async write started {1}ms after enqueue for {2}", swio.ElapsedMilliseconds.ToString().PadLeft(4), DateTime.UtcNow.Subtract(w.JobCreatedAt).Subtract(swio.Elapsed).TotalMilliseconds, result.RelativePath);
                                     }
 
                                 } catch (Exception ex)
                                 {
-                                    lp.Logger?.Error("Failed to flush async write, {0} {1}\n{2}",ex.ToString(), result.RelativePath,ex.StackTrace);
+                                    logger?.LogError("Failed to flush async write, {0} {1}\n{2}",ex.ToString(), result.RelativePath,ex.StackTrace);
                                 } finally {
                                     CurrentWrites.Remove(job); //Remove from the queue, it's done or failed. 
                                 }
@@ -185,7 +183,7 @@ namespace Imazen.DiskCache {
                                 //This is nested inside a queuelock because if we failed here, the next one will also. Better to force it to wait until the file is written to disk.
                                 if (!await TryWriteFile(result, physicalPath, relativePath, async delegate(Stream s) { await ms.CopyToAsync(s); }, timeoutMs, false))
                                 {
-                                    lp.Logger?.Warn("Failed to queue async write, also failed to lock for sync writing: {0}", result.RelativePath);
+                                    logger?.LogWarning("Failed to queue async write, also failed to lock for sync writing: {0}", result.RelativePath);
 
                                 }
                             }
@@ -198,9 +196,9 @@ namespace Imazen.DiskCache {
                 }
 
             }
-            if (lp.Logger != null) {
+            if (logger != null) {
                 sw.Stop();
-                lp.Logger.Trace("{0}ms: {3}{1} for {2}, Key: {4}", sw.ElapsedMilliseconds.ToString(NumberFormatInfo.InvariantInfo).PadLeft(4), result.Result.ToString(), result.RelativePath, asynchronous ? (asyncFailed ? "AsyncHttpMode, fell back to sync write  " : "AsyncHttpMode+AsyncWrites ") : "AsyncHttpMode", keyBasis);
+                logger.LogTrace("{0}ms: {3}{1} for {2}, Key: {4}", sw.ElapsedMilliseconds.ToString(NumberFormatInfo.InvariantInfo).PadLeft(4), result.Result.ToString(), result.RelativePath, asynchronous ? (asyncFailed ? "AsyncHttpMode, fell back to sync write  " : "AsyncHttpMode+AsyncWrites ") : "AsyncHttpMode", keyBasis);
             }
             //Fire event
             if (CacheResultReturned != null) CacheResultReturned(this, result);
@@ -240,7 +238,7 @@ namespace Imazen.DiskCache {
                         //Create subdirectory if needed.
                         if (!Directory.Exists(Path.GetDirectoryName(physicalPath))) {
                             Directory.CreateDirectory(Path.GetDirectoryName(physicalPath));
-                            lp.Logger?.Debug("Creating missing parent directory {0}", Path.GetDirectoryName(physicalPath));
+                            logger?.LogDebug("Creating missing parent directory {0}", Path.GetDirectoryName(physicalPath));
                         }
 
                         //Open stream 

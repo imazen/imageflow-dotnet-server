@@ -26,6 +26,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imazen.Common", "src\Imazen
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imazen.DiskCache", "src\Imazen.DiskCache\Imazen.DiskCache.csproj", "{EF8E2C18-430F-4EFB-940C-D6CCB6EBF5E8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imageflow.Net.Server.DiskCache", "src\Imageflow.Net.Server.DiskCache\Imageflow.Net.Server.DiskCache.csproj", "{830818C1-8915-4449-8107-E3DBDE546C8C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -60,6 +62,10 @@ Global
 		{EF8E2C18-430F-4EFB-940C-D6CCB6EBF5E8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EF8E2C18-430F-4EFB-940C-D6CCB6EBF5E8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EF8E2C18-430F-4EFB-940C-D6CCB6EBF5E8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{830818C1-8915-4449-8107-E3DBDE546C8C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{830818C1-8915-4449-8107-E3DBDE546C8C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{830818C1-8915-4449-8107-E3DBDE546C8C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{830818C1-8915-4449-8107-E3DBDE546C8C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
