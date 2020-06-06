@@ -92,8 +92,7 @@ namespace Imageflow.Server
             }
 
             // if we got this far, resize it
-            _logger.LogInformation($"Processing image {path.Value} with params {resizeParams}");
-
+            
             string cacheKey = GetCacheKey(imagePath, resizeParams, lastWriteTimeUtc);
             
             if (context.Request.Headers.TryGetValue(HeaderNames.IfNoneMatch, out var etag) && cacheKey == etag) {
@@ -125,6 +124,8 @@ namespace Imageflow.Server
         {
             var cacheResult = await diskCache.GetOrCreate(cacheKey, commands.EstimatedFileExtension, async (stream) =>
             {
+                _logger.LogInformation($"Processing image {sourceFilePath} with params {commands}");
+
                 var result = await GetImageData(sourceFilePath, commands.CommandString);
                 await stream.WriteAsync(result.resultBytes.Array, result.resultBytes.Offset, result.resultBytes.Count,
                     CancellationToken.None);
@@ -142,6 +143,7 @@ namespace Imageflow.Server
             }
             else
             {
+                _logger.LogInformation("Serving from disk cache {0}", cacheResult.RelativePath);
                 await ServeFileFromDisk(context, cacheResult.PhysicalPath, cacheKey,
                     ContentTypeFor(commands.EstimatedFileExtension));
             }
@@ -168,6 +170,8 @@ namespace Imageflow.Server
             }
             else
             {
+                _logger.LogInformation($"Processing image {sourceFilePath} with params {commands}");
+
                 var imageData = await GetImageData(sourceFilePath, commands.CommandString);
                 imageBytes = imageData.resultBytes;
                 contentType = imageData.contentType;
@@ -189,6 +193,9 @@ namespace Imageflow.Server
             ResizeParams commands)
         {
 
+            _logger.LogInformation($"Processing image {sourceFilePath} with params {commands}");
+
+            
             var imageData = await GetImageData(sourceFilePath, commands.CommandString);
             var imageBytes = imageData.resultBytes;
             var contentType = imageData.contentType;
@@ -300,30 +307,6 @@ namespace Imageflow.Server
                 return new ImageData { contentType = jobResult.First.PreferredMimeType, fileExtension = jobResult.First.PreferredExtension, resultBytes = bytes };
             }
         }
-
-        // For when we generate etags
-        //static string Sha256hex(string input)
-        //{
-        //    var hash = System.Security.Cryptography.SHA256.Create().ComputeHash(System.Text.Encoding.UTF8.GetBytes(input));
-        //    return BitConverter.ToString(hash, 0, 4).Replace("-", "").ToLowerInvariant();
-        //}
-
-        //static string Sha256Base64(string input)
-        //{
-        //    var hash = System.Security.Cryptography.SHA256.Create().ComputeHash(System.Text.Encoding.UTF8.GetBytes(input));
-        //    return ToBase64U(hash);
-        //}
-
-        //static string Sha256TruncatedBase64(string input, int bytes)
-        //{
-        //    var hash = System.Security.Cryptography.SHA256.Create().ComputeHash(System.Text.Encoding.UTF8.GetBytes(input));
-        //    return ToBase64U(hash.Take(bytes).ToArray());
-        //}
-
-        //static string ToBase64U(byte[] data)
-        //{
-        //    return Convert.ToBase64String(data).Replace("=", String.Empty).Replace('+', '-').Replace('/', '_');
-        //}
-
+        
     }
 }

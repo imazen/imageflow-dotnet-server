@@ -91,7 +91,7 @@ namespace Imazen.DiskCache {
             if (logger != null) { sw = new Stopwatch(); sw.Start(); }
 
             //Relative to the cache directory. Not relative to the app or domain root
-            string relativePath = new UrlHasher().hash(keyBasis, subfolders, "/") + '.' + extension;
+            string relativePath = new UrlHasher().Hash(keyBasis, subfolders, "/") + '.' + extension;
 
             //Physical path
             string physicalPath = PhysicalCachePath.TrimEnd('\\', '/') + System.IO.Path.DirectorySeparatorChar +

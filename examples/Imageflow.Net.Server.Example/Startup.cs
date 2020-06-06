@@ -18,9 +18,9 @@ namespace Imageflow.Net.Server.Example
             Env = env;
         }
 
-        public IConfiguration Configuration { get; }
-        
-        public IWebHostEnvironment Env { get; }
+        private IConfiguration Configuration { get; }
+
+        private IWebHostEnvironment Env { get; }
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
