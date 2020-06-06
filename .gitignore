@@ -293,3 +293,5 @@ __pycache__/
 *.xsd.cs
 
 tempfile.txt
+
+imageflow_cache/
