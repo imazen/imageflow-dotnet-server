@@ -272,7 +272,7 @@ namespace Imageflow.Server
         private IEnumerable<string> MatchingResizeQueryStringParameters(IQueryCollection queryCollection)
         {
             return querystringKeys
-                .Where(qsKey => queryCollection.ContainsKey(qsKey))
+                .Where(queryCollection.ContainsKey)
                 .Select(qsKey => qsKey + "=" + queryCollection[qsKey]);
         }
 
@@ -296,11 +296,11 @@ namespace Imageflow.Server
         {
             using (var buildJob = new FluentBuildJob())
             {
-                var jobResult = await buildJob.Decode(new StreamSource(File.OpenRead(imagePath), true))
-                    .ResizerCommands(querystringCommands)
-                    .EncodeToBytes(new WebPLossyEncoder(DefaultWebPLossyEncoderQuality))
-                    .Finish()
-                    .InProcessAsync();
+                var jobResult = await buildJob.BuildCommandString(
+                    new StreamSource(File.OpenRead(imagePath), true),
+                    new BytesDestination(), querystringCommands)
+                        .Finish()
+                        .InProcessAsync();
 
                 var bytes = jobResult.First.TryGetBytes().Value;
 
