@@ -11,28 +11,27 @@ using System.Collections;
 
 namespace Imazen.Common.Collections {
     public class ReverseEnumerable<T>:IEnumerable<T> {
-        private ReadOnlyCollection<T> _collection;
+        private readonly ReadOnlyCollection<T> collection;
         public ReverseEnumerable(ReadOnlyCollection<T> collection){
-            _collection = collection;
+            this.collection = collection;
         }
         public IEnumerator<T> GetEnumerator() {
-            return new ReverseEnumerator<T>(_collection);
+            return new ReverseEnumerator<T>(collection);
         }
 
         IEnumerator IEnumerable.GetEnumerator() {
-            return new ReverseEnumerator<T>(_collection);
+            return new ReverseEnumerator<T>(collection);
         }
     }
     public class ReverseEnumerator<T> : IEnumerator<T> {
-        private ReadOnlyCollection<T> _collection;
+        private readonly ReadOnlyCollection<T> collection;
         private int curIndex;
-        private T curItem;
 
 
         public ReverseEnumerator(ReadOnlyCollection<T> collection) {
-            _collection = collection;
-            curIndex = _collection.Count;
-            curItem = default(T);
+            this.collection = collection;
+            curIndex = this.collection.Count;
+            Current = default(T);
 
         }
 
@@ -40,27 +39,22 @@ namespace Imazen.Common.Collections {
             curIndex--;
             //Avoids going beyond the beginning of the collection.
             if (curIndex < 0) {
-                curItem = default(T);
+                Current = default(T);
                 return false;
             } else {
                 // Set current box to next item in collection.
-                curItem = _collection[curIndex];
+                Current = collection[curIndex];
                 return true;
             }
         }
 
-        public void Reset() { curIndex = _collection.Count; curItem = default(T); }
+        public void Reset() { curIndex = collection.Count; Current = default(T); }
 
         void IDisposable.Dispose() { }
 
-        public T Current {
-            get { return curItem; }
-        }
+        public T Current { get; private set; }
 
 
-        object IEnumerator.Current {
-            get { return Current; }
-        }
-
+        object IEnumerator.Current => Current;
     }
 }

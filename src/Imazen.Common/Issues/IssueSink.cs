@@ -11,21 +11,21 @@ namespace Imazen.Common.Issues
 {
     public class IssueSink:IIssueProvider,IIssueReceiver {
 
-        protected string defaultSource = null;
+        protected readonly string defaultSource = null;
         public IssueSink(string defaultSource) {
             this.defaultSource = defaultSource;
         }
 
-        readonly IDictionary<int, IIssue> _issueSet = new Dictionary<int,IIssue>();
-        readonly IList<IIssue> _issues = new List<IIssue>();
-        readonly object issueSync = new object();
+        readonly IDictionary<int, IIssue> issueSet = new Dictionary<int,IIssue>();
+        readonly IList<IIssue> issues = new List<IIssue>();
+        private readonly object issueSync = new object();
         /// <summary>
         /// Returns a copy of the list of reported issues.
         /// </summary>
         /// <returns></returns>
         public virtual IEnumerable<IIssue> GetIssues() {
             lock (issueSync) {
-                return new List<IIssue>(_issues);
+                return new List<IIssue>(issues);
             }
         }  
         /// <summary>
@@ -34,15 +34,15 @@ namespace Imazen.Common.Issues
         /// <param name="i"></param>
         public virtual void AcceptIssue(IIssue i) {
             //Set default source value
-            if (i.Source == null && i as Issue != null) ((Issue)i).Source = defaultSource;
+            if (i.Source == null && i is Issue issue) issue.Source = defaultSource;
 
             //Perform duplicate checking, then add item if unique.
-            int hash = i.GetHashCode();
-            lock (issueSync) {    
-                if (!_issueSet.ContainsKey(hash)) {
-                    _issueSet[hash] = i;
-                    _issues.Add(i);
-                }
+            var hash = i.GetHashCode();
+            lock (issueSync)
+            {
+                if (issueSet.ContainsKey(hash)) return;
+                issueSet[hash] = i;
+                issues.Add(i);
             }
         }
     }

@@ -34,14 +34,14 @@ namespace Imazen.Common.Issues
 
         public string Source { get; set; }
 
-        public string Summary { get; set; } = null;
+        public string Summary { get; private set; } = null;
 
-        public string Details { get; set; } = null;
+        public string Details { get; private set; } = null;
 
-        public IssueSeverity Severity { get; set; } = IssueSeverity.Warning;
+        public IssueSeverity Severity { get; private set; } = IssueSeverity.Warning;
 
         public override int GetHashCode() {
-            StringBuilder sb = new StringBuilder(160);
+            var sb = new StringBuilder(160);
             if (Source != null) sb.Append(Source);
             sb.Append('|');
             if (Summary != null) sb.Append(Summary);

@@ -149,15 +149,13 @@ namespace Imageflow.Server
             }
         }
 
-        private async Task ServeFileFromDisk(HttpContext context, string path, string etag, string contentType)
+        private static async Task ServeFileFromDisk(HttpContext context, string path, string etag, string contentType)
         {
-            using (var readStream = File.OpenRead(path))
-            {
-                context.Response.ContentLength = readStream.Length;
-                context.Response.ContentType = contentType;
-                context.Response.Headers[HeaderNames.ETag] = etag;
-                await readStream.CopyToAsync(context.Response.Body);
-            }
+            await using var readStream = File.OpenRead(path);
+            context.Response.ContentLength = readStream.Length;
+            context.Response.ContentType = contentType;
+            context.Response.Headers[HeaderNames.ETag] = etag;
+            await readStream.CopyToAsync(context.Response.Body);
         }
 
         private async Task ProcessWithMemoryCache(HttpContext context, string cacheKey, string webPath, string sourceFilePath, ResizeParams commands)
