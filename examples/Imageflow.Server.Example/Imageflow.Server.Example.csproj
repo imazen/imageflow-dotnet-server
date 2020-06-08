@@ -12,8 +12,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Imageflow.Net.Server.DiskCache\Imageflow.Net.Server.DiskCache.csproj" />
-    <ProjectReference Include="..\..\src\Imageflow.Net.Server\Imageflow.Net.Server.csproj" />
     <ProjectReference Include="..\..\src\Imageflow.Server.DiskCache\Imageflow.Server.DiskCache.csproj" />
     <ProjectReference Include="..\..\src\Imageflow.Server\Imageflow.Server.csproj" />
   </ItemGroup>
