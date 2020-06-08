@@ -93,7 +93,7 @@ namespace Imageflow.Server
 
             // if we got this far, resize it
             
-            string cacheKey = GetCacheKey(imagePath, resizeParams, lastWriteTimeUtc);
+            var cacheKey = GetCacheKey(imagePath, resizeParams, lastWriteTimeUtc);
             
             if (context.Request.Headers.TryGetValue(HeaderNames.IfNoneMatch, out var etag) && cacheKey == etag) {
                 context.Response.StatusCode = StatusCodes.Status304NotModified;
@@ -105,26 +105,26 @@ namespace Imageflow.Server
 
             if (diskCache != null)
             {
-                await ProcessWithDiskCache(context, cacheKey, imagePath, resizeParams);
+                await ProcessWithDiskCache(context, cacheKey, path.Value, imagePath, resizeParams);
             }
             else if (_memoryCache != null)
             {
-                await ProcessWithMemoryCache(context, cacheKey, imagePath, resizeParams);
+                await ProcessWithMemoryCache(context, cacheKey, path.Value,  imagePath, resizeParams);
             }
             else
             {
-                await ProcessWithNoCache(context, cacheKey, imagePath, resizeParams);
+                await ProcessWithNoCache(context, cacheKey, path.Value,  imagePath, resizeParams);
             }
 
 
         }
 
-        private async Task ProcessWithDiskCache(HttpContext context, string cacheKey, string sourceFilePath,
+        private async Task ProcessWithDiskCache(HttpContext context, string cacheKey, string webPath, string sourceFilePath,
             ResizeParams commands)
         {
             var cacheResult = await diskCache.GetOrCreate(cacheKey, commands.EstimatedFileExtension, async (stream) =>
             {
-                _logger.LogInformation($"Processing image {sourceFilePath} with params {commands}");
+                _logger.LogInformation($"Processing image {webPath} with params {commands}");
 
                 var result = await GetImageData(sourceFilePath, commands.CommandString);
                 await stream.WriteAsync(result.resultBytes.Array, result.resultBytes.Offset, result.resultBytes.Count,
@@ -143,7 +143,7 @@ namespace Imageflow.Server
             }
             else
             {
-                _logger.LogInformation("Serving from disk cache {0}", cacheResult.RelativePath);
+                _logger.LogInformation("Serving {0}?{1} from disk cache {2}", webPath, commands.CommandString, cacheResult.RelativePath);
                 await ServeFileFromDisk(context, cacheResult.PhysicalPath, cacheKey,
                     ContentTypeFor(commands.EstimatedFileExtension));
             }
@@ -160,17 +160,17 @@ namespace Imageflow.Server
             }
         }
 
-        private async Task ProcessWithMemoryCache(HttpContext context, string cacheKey, string sourceFilePath, ResizeParams commands)
+        private async Task ProcessWithMemoryCache(HttpContext context, string cacheKey, string webPath, string sourceFilePath, ResizeParams commands)
         {
             var isCached = _memoryCache.TryGetValue(cacheKey, out ArraySegment<byte> imageBytes);
             var isContentTypeCached = _memoryCache.TryGetValue(cacheKey + ".contentType", out string contentType);
             if (isCached && isContentTypeCached)
             {
-                _logger.LogInformation("Serving from memory cache");
+                _logger.LogInformation("Serving {0}?{1} from memory cache", webPath, commands.CommandString);
             }
             else
             {
-                _logger.LogInformation($"Processing image {sourceFilePath} with params {commands}");
+                _logger.LogInformation($"Processing image {webPath} with params {commands}");
 
                 var imageData = await GetImageData(sourceFilePath, commands.CommandString);
                 imageBytes = imageData.resultBytes;
@@ -189,11 +189,11 @@ namespace Imageflow.Server
             await context.Response.Body.WriteAsync(imageBytes.Array, imageBytes.Offset, imageBytes.Count);
         }
 
-        private async Task ProcessWithNoCache(HttpContext context, string cacheKey, string sourceFilePath,
+        private async Task ProcessWithNoCache(HttpContext context, string cacheKey, string webPath, string sourceFilePath,
             ResizeParams commands)
         {
 
-            _logger.LogInformation($"Processing image {sourceFilePath} with params {commands}");
+            _logger.LogInformation($"Processing image {webPath} with params {commands}");
 
             
             var imageData = await GetImageData(sourceFilePath, commands.CommandString);
