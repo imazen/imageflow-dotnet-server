@@ -13,5 +13,6 @@ namespace Imazen.Common.Issues {
         string Summary { get; }
         string Details { get; }
         IssueSeverity Severity { get; }
+        int Hash();
     }
 }

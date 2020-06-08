@@ -9,15 +9,14 @@ using System.Text;
 
 namespace Imazen.Common.Issues
 {
-    public class IssueSink:IIssueProvider,IIssueReceiver {
-
-        protected readonly string defaultSource = null;
+    public class IssueSink: IIssueProvider,IIssueReceiver {
+        private readonly string defaultSource = null;
         public IssueSink(string defaultSource) {
             this.defaultSource = defaultSource;
         }
 
-        readonly IDictionary<int, IIssue> issueSet = new Dictionary<int,IIssue>();
-        readonly IList<IIssue> issues = new List<IIssue>();
+        private readonly IDictionary<int, IIssue> issueSet = new Dictionary<int,IIssue>();
+        private readonly IList<IIssue> issues = new List<IIssue>();
         private readonly object issueSync = new object();
         /// <summary>
         /// Returns a copy of the list of reported issues.
@@ -37,7 +36,7 @@ namespace Imazen.Common.Issues
             if (i.Source == null && i is Issue issue) issue.Source = defaultSource;
 
             //Perform duplicate checking, then add item if unique.
-            var hash = i.GetHashCode();
+            var hash = i.Hash();
             lock (issueSync)
             {
                 if (issueSet.ContainsKey(hash)) return;

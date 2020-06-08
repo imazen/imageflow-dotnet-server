@@ -40,7 +40,7 @@ namespace Imazen.Common.Issues
 
         public IssueSeverity Severity { get; private set; } = IssueSeverity.Warning;
 
-        public override int GetHashCode() {
+        public int Hash() {
             var sb = new StringBuilder(160);
             if (Source != null) sb.Append(Source);
             sb.Append('|');
@@ -55,10 +55,6 @@ namespace Imazen.Common.Issues
         public override string ToString() {
             return Source + "(" + Severity.ToString() + "):\t" + Summary +
                     ("\n" + Details).Replace("\n", "\n\t\t\t") + "\n";
-        }
-        public override bool Equals(object obj) {
-            if (obj == null) return base.Equals(obj);
-            return GetHashCode() == obj.GetHashCode();
         }
     }
 }
