@@ -28,6 +28,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imageflow.Server.Helpers", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imageflow.Server.Example", "examples\Imageflow.Server.Example\Imageflow.Server.Example.csproj", "{5EDA87AF-34CE-46BF-A847-C06E546E7CB9}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imageflow.Server.Storage.S3", "src\Imageflow.Server.Storage.S3\Imageflow.Server.Storage.S3.csproj", "{AA748528-5F40-42A6-AA03-E1B87343BB38}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -66,6 +68,10 @@ Global
 		{5EDA87AF-34CE-46BF-A847-C06E546E7CB9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5EDA87AF-34CE-46BF-A847-C06E546E7CB9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5EDA87AF-34CE-46BF-A847-C06E546E7CB9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AA748528-5F40-42A6-AA03-E1B87343BB38}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AA748528-5F40-42A6-AA03-E1B87343BB38}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AA748528-5F40-42A6-AA03-E1B87343BB38}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AA748528-5F40-42A6-AA03-E1B87343BB38}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
