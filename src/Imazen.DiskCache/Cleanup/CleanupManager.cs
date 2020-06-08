@@ -20,7 +20,7 @@ namespace Imazen.DiskCache {
         public CleanupManager(ILogger logger, ICleanableCache cache, CleanupStrategy cs) {
             this.cache = cache;
             this.cs = cs;
-            this.logger = this.logger;
+            this.logger = logger;
             queue = new CleanupQueue();
             //Called each request
             cache.CacheResultReturned += delegate(ICleanableCache sender, CacheResult r) {
