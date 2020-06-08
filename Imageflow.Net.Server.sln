@@ -12,12 +12,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Imageflow.Net.Server", "src\Imageflow.Net.Server\Imageflow.Net.Server.csproj", "{5BBE8D2E-4532-4C83-971D-65C5C8251657}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Imageflow.Net.Server.Helpers", "src\Imageflow.Net.ServerHelpers\Imageflow.Net.Server.Helpers.csproj", "{0F273A45-22E4-444D-A268-C07D32BA818B}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Imageflow.Net.Server.Example", "examples\Imageflow.Net.Server.Example\Imageflow.Net.Server.Example.csproj", "{E6DFB996-019F-4238-ADEB-A963DCE1FA13}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Imazen.PersistentCache", "src\Imazen.PersistentCache\Imazen.PersistentCache.csproj", "{C538E7B3-989D-4AAC-A493-13329833994A}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Imazen.PersistentCache.Tests", "tests\Imazen.PersistentCache.Tests\Imazen.PersistentCache.Tests.csproj", "{ED355E5C-0C4A-4B04-9EAB-F1D787E373A9}"
@@ -26,7 +20,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imazen.Common", "src\Imazen
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imazen.DiskCache", "src\Imazen.DiskCache\Imazen.DiskCache.csproj", "{EF8E2C18-430F-4EFB-940C-D6CCB6EBF5E8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imageflow.Net.Server.DiskCache", "src\Imageflow.Net.Server.DiskCache\Imageflow.Net.Server.DiskCache.csproj", "{830818C1-8915-4449-8107-E3DBDE546C8C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imageflow.Server", "src\Imageflow.Server\Imageflow.Server.csproj", "{6D0B91A9-A1BC-4E2B-8A74-0F27C176B3F3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imageflow.Server.DiskCache", "src\Imageflow.Server.DiskCache\Imageflow.Server.DiskCache.csproj", "{47AE7207-8AF6-43C2-88C0-BC6362840566}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imageflow.Server.Helpers", "src\Imageflow.ServerHelpers\Imageflow.Server.Helpers.csproj", "{E6C1D691-72DC-46E8-8520-16A11ABCE593}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imageflow.Server.Example", "examples\Imageflow.Server.Example\Imageflow.Server.Example.csproj", "{5EDA87AF-34CE-46BF-A847-C06E546E7CB9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -34,18 +34,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{5BBE8D2E-4532-4C83-971D-65C5C8251657}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{5BBE8D2E-4532-4C83-971D-65C5C8251657}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{5BBE8D2E-4532-4C83-971D-65C5C8251657}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{5BBE8D2E-4532-4C83-971D-65C5C8251657}.Release|Any CPU.Build.0 = Release|Any CPU
-		{0F273A45-22E4-444D-A268-C07D32BA818B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0F273A45-22E4-444D-A268-C07D32BA818B}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0F273A45-22E4-444D-A268-C07D32BA818B}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0F273A45-22E4-444D-A268-C07D32BA818B}.Release|Any CPU.Build.0 = Release|Any CPU
-		{E6DFB996-019F-4238-ADEB-A963DCE1FA13}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E6DFB996-019F-4238-ADEB-A963DCE1FA13}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E6DFB996-019F-4238-ADEB-A963DCE1FA13}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E6DFB996-019F-4238-ADEB-A963DCE1FA13}.Release|Any CPU.Build.0 = Release|Any CPU
 		{C538E7B3-989D-4AAC-A493-13329833994A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C538E7B3-989D-4AAC-A493-13329833994A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C538E7B3-989D-4AAC-A493-13329833994A}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -62,10 +50,22 @@ Global
 		{EF8E2C18-430F-4EFB-940C-D6CCB6EBF5E8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EF8E2C18-430F-4EFB-940C-D6CCB6EBF5E8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EF8E2C18-430F-4EFB-940C-D6CCB6EBF5E8}.Release|Any CPU.Build.0 = Release|Any CPU
-		{830818C1-8915-4449-8107-E3DBDE546C8C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{830818C1-8915-4449-8107-E3DBDE546C8C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{830818C1-8915-4449-8107-E3DBDE546C8C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{830818C1-8915-4449-8107-E3DBDE546C8C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6D0B91A9-A1BC-4E2B-8A74-0F27C176B3F3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6D0B91A9-A1BC-4E2B-8A74-0F27C176B3F3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6D0B91A9-A1BC-4E2B-8A74-0F27C176B3F3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6D0B91A9-A1BC-4E2B-8A74-0F27C176B3F3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{47AE7207-8AF6-43C2-88C0-BC6362840566}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{47AE7207-8AF6-43C2-88C0-BC6362840566}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{47AE7207-8AF6-43C2-88C0-BC6362840566}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{47AE7207-8AF6-43C2-88C0-BC6362840566}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E6C1D691-72DC-46E8-8520-16A11ABCE593}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E6C1D691-72DC-46E8-8520-16A11ABCE593}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E6C1D691-72DC-46E8-8520-16A11ABCE593}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E6C1D691-72DC-46E8-8520-16A11ABCE593}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5EDA87AF-34CE-46BF-A847-C06E546E7CB9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5EDA87AF-34CE-46BF-A847-C06E546E7CB9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5EDA87AF-34CE-46BF-A847-C06E546E7CB9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5EDA87AF-34CE-46BF-A847-C06E546E7CB9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
