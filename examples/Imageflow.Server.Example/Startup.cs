@@ -8,7 +8,7 @@ using Imageflow.Server;
 using Imageflow.Server.DiskCache;
 using Microsoft.Extensions.Hosting.Internal;
 
-namespace Imageflow.Net.Server.Example
+namespace Imageflow.Server.Example
 {
     public class Startup
     {

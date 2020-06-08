@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 
-namespace Imageflow.Net.Server.Example
+namespace Imageflow.Server.Example
 {
     public class Program
     {
