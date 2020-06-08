@@ -22,7 +22,7 @@ namespace Imageflow.Server
     {
         private readonly RequestDelegate _next;
         private readonly ILogger<ImageflowMiddleware> _logger;
-        private readonly IHostingEnvironment _env;
+        private readonly IWebHostEnvironment _env;
         private readonly IMemoryCache _memoryCache;
         private readonly IClassicDiskCache diskCache;
         private const int DefaultWebPLossyEncoderQuality = 90;
@@ -50,7 +50,7 @@ namespace Imageflow.Server
             "encoder", "decoder", "builder", "s.roundcorners.", "paddingwidth", "paddingheight", "margin", "borderwidth", "decoder.min_precise_scaling_ratio"
         };
 
-        public ImageflowMiddleware(RequestDelegate next, IHostingEnvironment env, ILogger<ImageflowMiddleware> logger, IMemoryCache memoryCache, IClassicDiskCache diskCache)
+        public ImageflowMiddleware(RequestDelegate next, IWebHostEnvironment env, ILogger<ImageflowMiddleware> logger, IMemoryCache memoryCache, IClassicDiskCache diskCache)
         {
             _next = next;
             _env = env;
