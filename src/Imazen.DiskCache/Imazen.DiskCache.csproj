@@ -2,6 +2,16 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <PackageVersion>0.1</PackageVersion>
+    <Title>Imageflow.DiskCache - ClassicDiskCache implementation.</Title>
+    <Authors>Imazen</Authors>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <Copyright>(c) 2020 Imazen LLC</Copyright>
+    <PackageProjectUrl>https://github.com/imazen/imageflow-dotnet-server</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/imazen/imageflow-dotnet-server.git</RepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>
@@ -14,6 +24,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.1.3" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All"/>
   </ItemGroup>
 
 </Project>

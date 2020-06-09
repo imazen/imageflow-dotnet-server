@@ -4,7 +4,15 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <RootNamespace>Imageflow.Server</RootNamespace>
     <PackageVersion>0.1</PackageVersion>
+    <Title>Imageflow .NET Server - Middleware for fetching, processing, and caching images on-demand.</Title>
     <Authors>Imazen</Authors>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <Copyright>(c) 2020 Imazen LLC</Copyright>
+    <PackageProjectUrl>https://github.com/imazen/imageflow-dotnet-server</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/imazen/imageflow-dotnet-server.git</RepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>
@@ -17,6 +25,7 @@
 
   <ItemGroup>
     <PackageReference Include="Imageflow.Net" Version="0.6.2" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
   </ItemGroup>
 
 </Project>
