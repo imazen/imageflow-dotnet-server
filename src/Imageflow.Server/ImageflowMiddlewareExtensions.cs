@@ -5,15 +5,10 @@ namespace Imageflow.Server
 {
     public static class ImageflowMiddlewareExtensions
     {
-
-        public static IServiceCollection AddImageflowMemoryCache(this IServiceCollection services)
+        
+        public static IApplicationBuilder UseImageflow(this IApplicationBuilder builder, ImageflowMiddlewareSettings settings)
         {
-            return services.AddMemoryCache();
-        }
-
-        public static IApplicationBuilder UseImageflow(this IApplicationBuilder builder)
-        {
-            return builder.UseMiddleware<ImageflowMiddleware>();
+            return builder.UseMiddleware<ImageflowMiddleware>(settings);
         }
 
     }

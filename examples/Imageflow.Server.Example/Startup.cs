@@ -31,7 +31,7 @@ namespace Imageflow.Server.Example
             services.AddImageflowS3Service(new S3ServiceSettings( RegionEndpoint.USEast1, null,null)
                 .MapPrefix("/ri/", "us-east-1", "resizer-images")
                 .MapPrefix("/imageflow-resources/", "us-west-2", "imageflow-resources"));
-            services.AddImageflowMemoryCache();
+            services.AddMemoryCache();
             services.AddImageflowDiskCache(new DiskCacheSettings(Path.Combine(Env.ContentRootPath, "imageflow_cache")));
         }
 
@@ -50,7 +50,7 @@ namespace Imageflow.Server.Example
             }
             
             app.UseHttpsRedirection();
-            app.UseImageflow();
+            app.UseImageflow(new ImageflowMiddlewareSettings().SetAllowDiskCaching(true));
             app.UseStaticFiles();
 
             app.UseRouting();

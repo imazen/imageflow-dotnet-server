@@ -13,6 +13,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Imageflow.Server.Extensibility.ClassicDiskCache;
 using Imazen.Common.Storage;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Net.Http.Headers;
 
 namespace Imageflow.Server
@@ -23,20 +24,22 @@ namespace Imageflow.Server
         private readonly ILogger<ImageflowMiddleware> logger;
         private readonly IWebHostEnvironment env;
         private readonly IMemoryCache memoryCache;
+        private readonly IDistributedCache distributedCache;
         private readonly IClassicDiskCache diskCache;
         private readonly BlobProvider blobProvider;
         private readonly DiagnosticsPage diagnosticsPage;
-
-        public ImageflowMiddleware(RequestDelegate next, IWebHostEnvironment env, ILogger<ImageflowMiddleware> logger, IMemoryCache memoryCache, IClassicDiskCache diskCache, IEnumerable<IBlobProvider> blobProviders)
+        private readonly ImageflowMiddlewareSettings settings;
+        public ImageflowMiddleware(RequestDelegate next, IWebHostEnvironment env, ILogger<ImageflowMiddleware> logger, IMemoryCache memoryCache, IDistributedCache distributedCache,  IClassicDiskCache diskCache, IEnumerable<IBlobProvider> blobProviders, ImageflowMiddlewareSettings settings)
         {
             this.next = next;
+            this.settings = settings;
             this.env = env;
             this.logger = logger;
             this.memoryCache = memoryCache;
             this.diskCache = diskCache;
             var providers = blobProviders.ToList();
             this.blobProvider = new BlobProvider(providers, this.env.WebRootPath);
-            diagnosticsPage = new DiagnosticsPage(env, logger, memoryCache, diskCache, providers);
+            diagnosticsPage = new DiagnosticsPage(env, logger, memoryCache, distributedCache, diskCache, providers);
         }
 
         public async Task Invoke(HttpContext context)
@@ -75,8 +78,12 @@ namespace Imageflow.Server
                 return;
             }
 
+            var memoryCacheEnabled = memoryCache != null && settings.AllowMemoryCaching;
+            var diskCacheEnabled = diskCache != null && settings.AllowDiskCaching;
+            var distributedCacheEnabled = distributedCache != null && settings.AllowDistributedCaching;
+            
 
-            if (memoryCache != null || diskCache != null)
+            if (memoryCacheEnabled || diskCacheEnabled || distributedCacheEnabled)
             {
                 var lastModifiedUtcMaybe = blobResult.Value.IsFile
                     ? (await blobResult.Value.GetBlob()).LastModifiedDateUtc ?? DateTime.MinValue
@@ -93,11 +100,11 @@ namespace Imageflow.Server
                     return;
                 }
 
-                if (diskCache != null)
+                if (diskCacheEnabled)
                 {
                     await ProcessWithDiskCache(context, cacheKey, path.Value, blobResult.Value.GetBlob, resizeParams);
                 }
-                else if (memoryCache != null)
+                else if (memoryCacheEnabled)
                 {
                     await ProcessWithMemoryCache(context, cacheKey, path.Value, blobResult.Value.GetBlob, resizeParams);
                 }
@@ -192,8 +199,17 @@ namespace Imageflow.Server
                     imageBytes = new ArraySegment<byte>(ms.GetBuffer());
                 }
 
-                memoryCache.Set(cacheKey, imageBytes);
-                memoryCache.Set(cacheKey + ".contentType", contentType);
+                // Set cache options.
+                var cacheEntryOptions = new MemoryCacheEntryOptions()
+                    .SetSize(imageBytes.Count)
+                    .SetSlidingExpiration(settings.MemoryCacheSlidingExpiration);
+                
+                var cacheEntryMetaOptions = new MemoryCacheEntryOptions()
+                    .SetSize(contentType.Length * 2)
+                    .SetSlidingExpiration(settings.MemoryCacheSlidingExpiration);
+                
+                memoryCache.Set(cacheKey, imageBytes, cacheEntryOptions);
+                memoryCache.Set(cacheKey + ".contentType", contentType, cacheEntryMetaOptions);
             }
 
             // write to stream
@@ -205,6 +221,56 @@ namespace Imageflow.Server
             await context.Response.Body.WriteAsync(imageBytes.Array, imageBytes.Offset, imageBytes.Count);
         }
 
+        private async Task ProcessWithDistributedCache(HttpContext context, string cacheKey, string webPath, Func<Task<IBlobData>> getBlob, ResizeParams commands)
+        {
+            var imageBytes = await distributedCache.GetAsync(cacheKey);
+            var contentType = await distributedCache.GetStringAsync(cacheKey + ".contentType");
+            if (imageBytes != null && contentType != null)
+            {
+                logger.LogInformation("Serving {0}?{1} from distributed cache", webPath, commands.CommandString);
+            }
+            else
+            {
+
+                using var blob = await getBlob();
+                if (commands.HasParams)
+                {
+                    logger.LogInformation($"Distributed Cache Miss: Processing image {webPath}?{commands}");
+
+                    var imageData = await GetImageData(blob, commands.CommandString);
+                    imageBytes = imageData.ResultBytes.Count != imageData.ResultBytes.Array?.Length 
+                        ? imageData.ResultBytes.ToArray() 
+                        : imageData.ResultBytes.Array;
+
+                    contentType = imageData.ContentType;
+                }
+                else
+                {
+                    logger.LogInformation($"Distributed Cache Miss: Proxying image {webPath}?{commands}");
+
+                    contentType = PathHelpers.ContentTypeFor(commands.EstimatedFileExtension);
+                    await using var sourceStream = blob.OpenReadAsync();
+                    var ms = new MemoryStream((int)sourceStream.Length);
+                    await sourceStream.CopyToAsync(ms);
+                    imageBytes = ms.GetBuffer();
+                }
+
+                // Set cache options.
+                var cacheEntryOptions = new DistributedCacheEntryOptions()
+                    .SetSlidingExpiration(settings.DistributedCacheSlidingExpiration);
+    
+                await distributedCache.SetAsync(cacheKey, imageBytes, cacheEntryOptions);
+                await distributedCache.SetStringAsync(cacheKey + ".contentType", contentType, cacheEntryOptions);
+            }
+
+            // write to stream
+            context.Response.ContentType = contentType;
+            context.Response.Headers[HeaderNames.ETag] = cacheKey;
+            context.Response.ContentLength = imageBytes.Length;
+            
+            await context.Response.Body.WriteAsync(imageBytes, 0, imageBytes.Length);
+        }
+           
         private async Task ProcessWithNoCache(HttpContext context, string webPath, Func<Task<IBlobData>> getBlob,
             ResizeParams commands)
         {

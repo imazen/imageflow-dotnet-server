@@ -13,6 +13,7 @@ using Imazen.Common.Issues;
 using Imazen.Common.Storage;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -24,16 +25,17 @@ namespace Imageflow.Server
         private readonly IWebHostEnvironment env;
         private ILogger<ImageflowMiddleware> logger;
         private readonly IMemoryCache memoryCache;
-
+        private readonly IDistributedCache distributedCache;
         private readonly IClassicDiskCache diskCache;
         private readonly IList<IBlobProvider> blobProviders;
         
-        internal DiagnosticsPage(IWebHostEnvironment env, ILogger<ImageflowMiddleware> logger, IMemoryCache memoryCache,
+        internal DiagnosticsPage(IWebHostEnvironment env, ILogger<ImageflowMiddleware> logger, IMemoryCache memoryCache, IDistributedCache distributedCache,
             IClassicDiskCache diskCache, IList<IBlobProvider> blobProviders)
         {
             this.env = env;
             this.logger = logger;
             this.memoryCache = memoryCache;
+            this.distributedCache = distributedCache;
             this.diskCache = diskCache;
             this.blobProviders = blobProviders;
         }
@@ -80,6 +82,7 @@ namespace Imageflow.Server
             s.AppendLine("\nInstalled Plugins");
 
             if (memoryCache != null) s.AppendLine(this.memoryCache.GetType().FullName);
+            if (distributedCache != null) s.AppendLine(this.distributedCache.GetType().FullName);
             if (diskCache != null) s.AppendLine(this.diskCache.GetType().FullName);
             foreach (var provider in blobProviders)
             {
