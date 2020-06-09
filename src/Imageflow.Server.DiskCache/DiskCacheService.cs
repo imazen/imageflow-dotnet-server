@@ -36,17 +36,12 @@ namespace Imageflow.Server.DiskCache
 
         public Task StartAsync(CancellationToken cancellationToken)
         {
-            if (!cache.Start())
-            {
-                throw new InvalidOperationException("DiskCache configuration invalid");
-            }
-            return Task.CompletedTask;
+            return cache.StartAsync(cancellationToken);
         }
 
         public Task StopAsync(CancellationToken cancellationToken)
         {
-            cache.Stop();
-            return Task.CompletedTask;
+            return cache.StopAsync(cancellationToken);
         }
     }
 }

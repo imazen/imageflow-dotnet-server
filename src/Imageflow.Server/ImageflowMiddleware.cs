@@ -25,8 +25,7 @@ namespace Imageflow.Server
         private readonly IMemoryCache memoryCache;
         private readonly IClassicDiskCache diskCache;
         private readonly BlobProvider blobProvider;
-        private const int DefaultWebPLossyEncoderQuality = 90;
-
+        private readonly DiagnosticsPage diagnosticsPage;
 
         public ImageflowMiddleware(RequestDelegate next, IWebHostEnvironment env, ILogger<ImageflowMiddleware> logger, IMemoryCache memoryCache, IClassicDiskCache diskCache, IEnumerable<IBlobProvider> blobProviders)
         {
@@ -35,12 +34,21 @@ namespace Imageflow.Server
             this.logger = logger;
             this.memoryCache = memoryCache;
             this.diskCache = diskCache;
-            this.blobProvider = new BlobProvider(blobProviders, this.env.WebRootPath);
+            var providers = blobProviders.ToList();
+            this.blobProvider = new BlobProvider(providers, this.env.WebRootPath);
+            diagnosticsPage = new DiagnosticsPage(env, logger, memoryCache, diskCache, providers);
         }
 
         public async Task Invoke(HttpContext context)
         {
             var path = context.Request.Path;
+
+            if (diagnosticsPage.MatchesPath(path.Value))
+            {
+                await diagnosticsPage.Invoke(context);
+                return;
+            }
+            
             // We only handle requests with an image extension, period. 
             if (!PathHelpers.IsImagePath(path))
             {

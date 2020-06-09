@@ -37,18 +37,18 @@ namespace Imazen.DiskCache
         /// <summary>
         /// Returns true if the DiskCache instance is operational.
         /// </summary>
-        public bool Started => started;
+        private bool Started => started;
 
         /// <summary>
-        /// Attempts to start the DiskCache using the current settings. Returns true if successful or if already started. Returns false on a configuration error.
-        /// Called by Install()
+        /// Attempts to start the DiskCache using the current settings. 
         /// </summary>
-        public bool Start() {
+        public Task StartAsync(CancellationToken cancellationToken) {
             
-            if (!IsConfigurationValid()) return false;
+            if (!IsConfigurationValid())     throw new InvalidOperationException("DiskCache configuration invalid");
+        
             lock (startSync) {
-                if (started) return true;
-                if (!IsConfigurationValid()) return false;
+                if (started) return Task.CompletedTask;
+                if (!IsConfigurationValid())  throw new InvalidOperationException("DiskCache configuration invalid");
 
                 cache = new AsyncCustomDiskCache(Logger, settings.PhysicalCacheDir, settings.Subfolders, settings.AsyncBufferSize);
                 //Init the cleanup worker
@@ -60,17 +60,17 @@ namespace Imazen.DiskCache
                 Logger?.LogInformation("DiskCache started successfully.");
                 //Started successfully
                 started = true;
-                return true;
+                return Task.CompletedTask;
             }
         }
         /// <summary>
-        /// Returns true if stopped successfully. Cannot be restarted
+        ///    Cannot be restarted once stopped.
         /// </summary>
         /// <returns></returns>
-        public bool Stop() {
+        public Task StopAsync(CancellationToken cancellationToken) {
             cleaner?.Dispose();
             cleaner = null;
-            return true;
+            return Task.CompletedTask;
         }
         
         public async Task<ICacheResult> GetOrCreate(string key, string fileExtension, AsyncWriteResult writeCallback)

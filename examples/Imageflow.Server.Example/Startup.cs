@@ -29,7 +29,8 @@ namespace Imageflow.Server.Example
         {
             services.AddControllersWithViews();
             services.AddImageflowS3Service(new S3ServiceSettings( RegionEndpoint.USEast1, null,null)
-                .MapPrefix("/ri/", "us-east-1", "resizer-images"));
+                .MapPrefix("/ri/", "us-east-1", "resizer-images")
+                .MapPrefix("/imageflow-resources/", "us-west-2", "imageflow-resources"));
             services.AddImageflowMemoryCache();
             services.AddImageflowDiskCache(new DiskCacheSettings(Path.Combine(Env.ContentRootPath, "imageflow_cache")));
         }

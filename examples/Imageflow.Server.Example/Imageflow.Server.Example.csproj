@@ -7,8 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Imageflow.NativeRuntime.win-x86" Version="1.4.0-rc40" />
-    <PackageReference Include="Imageflow.NativeRuntime.win-x86_64-haswell" Version="1.4.0-rc40" />
+    <PackageReference Include="Imageflow.NativeRuntime.win-x86" Version="1.4.1-rc41" />
+    <PackageReference Include="Imageflow.NativeRuntime.win-x86_64-haswell" Version="1.4.1-rc41" />
   </ItemGroup>
 
   <ItemGroup>

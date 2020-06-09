@@ -32,7 +32,10 @@ namespace Imageflow.Server
             "trim.percentpadding", "a.blur", "a.sharpen", "a.removenoise", "a.balancewhite", "dither", "jpeg.progressive",
             "encoder", "decoder", "builder", "s.roundcorners.", "paddingwidth", "paddingheight", "margin", "borderwidth", "decoder.min_precise_scaling_ratio"
         };
-        
+
+        public static IEnumerable<string> AcceptedImageExtensions => suffixes;
+        public static IEnumerable<string> SupportedQuerystringKeys => querystringKeys;
+
         internal static bool IsImagePath(PathString path)
         {
             if (path == null || !path.HasValue)
