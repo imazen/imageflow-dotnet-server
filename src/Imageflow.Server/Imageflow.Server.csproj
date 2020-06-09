@@ -8,12 +8,15 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Imageflow.Net" Version="0.5.0" />
     <FrameworkReference Include="Microsoft.AspNetCore.App" />    
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Imazen.Common\Imazen.Common.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Imageflow.Net" Version="0.6.2" />
   </ItemGroup>
 
 </Project>
