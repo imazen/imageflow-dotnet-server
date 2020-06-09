@@ -5,7 +5,7 @@ using System.Text;
 
 namespace Imazen.Common.Storage
 {
-    public interface IBlobData
+    public interface IBlobData : IDisposable
     {
         bool? Exists { get; }
         DateTime? LastModifiedDateUtc { get; }

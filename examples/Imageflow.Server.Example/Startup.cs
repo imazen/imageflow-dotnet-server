@@ -1,4 +1,5 @@
 using System.IO;
+using Amazon;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -6,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Imageflow.Server;
 using Imageflow.Server.DiskCache;
+using Imageflow.Server.Storage.S3;
 using Microsoft.Extensions.Hosting.Internal;
 
 namespace Imageflow.Server.Example
@@ -26,6 +28,8 @@ namespace Imageflow.Server.Example
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllersWithViews();
+            services.AddImageflowS3Service(new S3ServiceSettings( RegionEndpoint.USEast1, null,null)
+                .MapPrefix("/ri/", "us-east-1", "resizer-images"));
             services.AddImageflowMemoryCache();
             services.AddImageflowDiskCache(new DiskCacheSettings(Path.Combine(Env.ContentRootPath, "imageflow_cache")));
         }

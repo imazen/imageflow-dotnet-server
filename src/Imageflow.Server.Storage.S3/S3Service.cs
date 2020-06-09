@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Amazon;
 using Amazon.Runtime;
 using Amazon.S3;
 using Imazen.Common.Storage;
@@ -20,7 +21,15 @@ namespace Imageflow.Server.Storage.S3
         public S3Service(S3ServiceSettings settings, ILogger<S3Service> logger)
         {
 
-            client = new AmazonS3Client(new BasicAWSCredentials(settings.AccessKeyId, settings.SecretAccessKey));
+            if (settings.AccessKeyId == null)
+            {
+                client = new AmazonS3Client(new AnonymousAWSCredentials(),settings.DefaultRegion);
+            }
+            else
+            {
+                client = new AmazonS3Client(new BasicAWSCredentials(settings.AccessKeyId, settings.SecretAccessKey));
+            }
+
             foreach (var m in settings.mappings)
             {
                 mappings.Add(m.Prefix, m);
@@ -54,7 +63,7 @@ namespace Imageflow.Server.Storage.S3
             try {
                 var req = new Amazon.S3.Model.GetObjectRequest() { BucketName = mapping.Bucket, Key = key };
 
-                using var s = await client.GetObjectAsync(req);
+                var s = await client.GetObjectAsync(req);
                 return new S3Blob(s);
 
             } catch (AmazonS3Exception se) {

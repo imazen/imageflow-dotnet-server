@@ -8,7 +8,7 @@ namespace Imageflow.Server.Storage.S3
     public static class S3ServiceExtensions
     {
 
-        public static IServiceCollection AddImageflowDiskCache(this IServiceCollection services,
+        public static IServiceCollection AddImageflowS3Service(this IServiceCollection services,
             S3ServiceSettings settings)
         {
             services.AddSingleton<IBlobProvider>((container) =>

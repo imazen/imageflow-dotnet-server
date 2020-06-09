@@ -1,6 +1,6 @@
-﻿namespace Imageflow.Server.Structs
+﻿namespace Imageflow.Server
 {
-    public struct ResizeParams
+    internal struct ResizeParams
     {
         public bool HasParams;
         public string CommandString;

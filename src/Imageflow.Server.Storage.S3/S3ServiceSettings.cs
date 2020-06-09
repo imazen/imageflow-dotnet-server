@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Amazon;
 
 namespace Imageflow.Server.Storage.S3
 {
@@ -10,9 +11,11 @@ namespace Imageflow.Server.Storage.S3
 
         internal readonly string AccessKeyId;
         internal readonly string SecretAccessKey;
+        internal readonly RegionEndpoint DefaultRegion;
         internal readonly List<PrefixMapping> mappings = new List<PrefixMapping>();
-        public S3ServiceSettings(string accessKeyId, string secretAccessKey)
+        public S3ServiceSettings( RegionEndpoint defaultRegion, string accessKeyId, string secretAccessKey)
         {
+            DefaultRegion = defaultRegion;
             this.AccessKeyId = accessKeyId;
             this.SecretAccessKey = secretAccessKey;
         }
