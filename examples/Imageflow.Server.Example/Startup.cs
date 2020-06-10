@@ -1,5 +1,6 @@
 using System.IO;
 using Amazon;
+using Imageflow.Fluent;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -50,7 +51,21 @@ namespace Imageflow.Server.Example
             }
             
             app.UseHttpsRedirection();
-            app.UseImageflow(new ImageflowMiddlewareOptions().SetAllowDiskCaching(true));
+            app.UseImageflow(new ImageflowMiddlewareOptions()
+                .SetAllowDiskCaching(false)
+                .AddWatermark(
+                    new NamedWatermark("imazen", 
+                        "/images/imazen_400.png",
+                        new WatermarkOptions()
+                            .LayoutWithFitBox(
+                                new WatermarkFitBox(WatermarkAlign.Image, 10,10,10,10), 
+                                WatermarkConstraintMode.Within, 
+                                new ConstraintGravity(100,100) )
+                            .WithOpacity(0.7f)
+                            .WithHints(
+                                new ResampleHints()
+                                    .ResampleFilter(InterpolationFilter.Robidoux_Sharp, null)
+                                    .Sharpen(7, SharpenWhen.Downscaling)))));
             app.UseStaticFiles();
 
             app.UseRouting();

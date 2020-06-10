@@ -126,12 +126,16 @@ namespace Imageflow.Server
                         (await b.GetBlob())));
             
             //Add all StreamSources
-            var watermarks = new List<InputWatermark>(appliedWatermarks.Count);
-            watermarks.AddRange(
-                appliedWatermarks.Select((t, i) => 
-                    new InputWatermark(
-                        new StreamSource(blobs[i + 1].OpenReadAsync(), true),
-                        t.Watermark)));
+            List<InputWatermark> watermarks = null;
+            if (appliedWatermarks != null)
+            {
+                watermarks = new List<InputWatermark>(appliedWatermarks.Count);
+                watermarks.AddRange(
+                    appliedWatermarks.Select((t, i) =>
+                        new InputWatermark(
+                            new StreamSource(blobs[i + 1].OpenReadAsync(), true),
+                            t.Watermark)));
+            }
 
             using var buildJob = new FluentBuildJob();
             var jobResult = await buildJob.BuildCommandString(
