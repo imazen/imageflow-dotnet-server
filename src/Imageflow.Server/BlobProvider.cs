@@ -33,7 +33,10 @@ namespace Imageflow.Server
             }
         }
 
-
+        internal BlobProviderResult? GetResult(string virtualPath)
+        {
+            return GetBlobResult(virtualPath) ?? GetFileResult(virtualPath);
+        }
         internal BlobProviderResult? GetBlobResult(string virtualPath)
         {
             if (blobPrefixes.Any(p => virtualPath.StartsWith(p, StringComparison.Ordinal)))

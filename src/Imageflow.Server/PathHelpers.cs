@@ -44,7 +44,7 @@ namespace Imageflow.Server
             return suffixes.Any(suffix => path.Value.EndsWith(suffix, StringComparison.OrdinalIgnoreCase));
         }
 
-        internal static string SanitizeExtension(string extension)
+        internal static string SanitizeImageExtension(string extension)
         {
             extension = extension.ToLowerInvariant().TrimStart('.');
             return extension switch
@@ -68,31 +68,7 @@ namespace Imageflow.Server
                 _ => "application/octet-stream"
             };
         }
-        internal static ResizeParams GetResizeParams(string sourceFileExtension, IQueryCollection query)
-        {
-            var resizeParams = new ResizeParams
-            {
-                HasParams = querystringKeys.Any(query.ContainsKey)
-            };
-
-            var extension = sourceFileExtension;
-            if (query.TryGetValue("format", out var newExtension))
-            {
-                extension = newExtension;
-            }
-
-            resizeParams.EstimatedFileExtension = SanitizeExtension(extension);
-                
-
-            // if no params present, quit early
-            if (!resizeParams.HasParams)
-                return resizeParams;
-
-            // extract resize params
-            resizeParams.CommandString = string.Join("&", MatchingResizeQueryStringParameters(query));
-
-            return resizeParams;
-        }
+       
 
         internal static IEnumerable<string> MatchingResizeQueryStringParameters(IQueryCollection queryCollection)
         {
@@ -101,10 +77,10 @@ namespace Imageflow.Server
                 .Select(qsKey => qsKey + "=" + queryCollection[qsKey]);
         }
 
-        internal static string GetCacheKey(string imagePath, ResizeParams resizeParams, DateTime lastWriteTimeUtc)
+        internal static string Base64Hash(string data)
         {
             using var sha2 = SHA256.Create();
-            var stringBytes = Encoding.UTF8.GetBytes($"{imagePath}?{resizeParams.ToString()}|{lastWriteTimeUtc}");
+            var stringBytes = Encoding.UTF8.GetBytes(data);
             // check cache and return if cached
             var hashBytes =
                 sha2.ComputeHash(stringBytes);
@@ -113,7 +89,7 @@ namespace Imageflow.Server
                 .Replace('+', '-')
                 .Replace('/', '_');
         }
-
+        
      
     }
 }

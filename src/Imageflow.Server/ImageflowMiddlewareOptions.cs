@@ -1,4 +1,7 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Imageflow.Server
 {
@@ -15,6 +18,18 @@ namespace Imageflow.Server
         public bool AllowDiskCaching { get; set; } = true;
         public bool AllowDistributedCaching { get; set; } = false;
 
+        private readonly List<NamedWatermark> namedWatermarks = new List<NamedWatermark>();
+        public IReadOnlyCollection<NamedWatermark> NamedWatermarks => namedWatermarks;
+
+        public ImageflowMiddlewareOptions AddWatermark(NamedWatermark watermark)
+        {
+            if (namedWatermarks.Any(w => w.Name.Equals(watermark.Name, StringComparison.OrdinalIgnoreCase)))
+            {
+                throw new InvalidOperationException($"A watermark already exists by the name {watermark.Name}");
+            }
+            namedWatermarks.Add(watermark);
+            return this;
+        }
         public ImageflowMiddlewareOptions SetAllowMemoryCaching(bool value)
         {
             this.AllowMemoryCaching = value;
