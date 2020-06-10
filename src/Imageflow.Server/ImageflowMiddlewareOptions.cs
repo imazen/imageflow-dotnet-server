@@ -20,7 +20,23 @@ namespace Imageflow.Server
 
         private readonly List<NamedWatermark> namedWatermarks = new List<NamedWatermark>();
         public IReadOnlyCollection<NamedWatermark> NamedWatermarks => namedWatermarks;
+        
+        private readonly List<PathMapping> mappedPaths = new List<PathMapping>();
+        
+        public IReadOnlyCollection<PathMapping> MappedPaths => mappedPaths;
 
+        public bool MapWebRoot { get; set; } = true;
+        public ImageflowMiddlewareOptions SetMapWebRoot(bool value)
+        {
+            MapWebRoot = value;
+            return this;
+        }
+        
+        public ImageflowMiddlewareOptions MapPath(string virtualPath, string physicalPath)
+        {
+            mappedPaths.Add(new PathMapping(virtualPath,physicalPath));
+            return this;
+        }
         public ImageflowMiddlewareOptions AddWatermark(NamedWatermark watermark)
         {
             if (namedWatermarks.Any(w => w.Name.Equals(watermark.Name, StringComparison.OrdinalIgnoreCase)))

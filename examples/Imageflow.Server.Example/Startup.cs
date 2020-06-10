@@ -52,13 +52,14 @@ namespace Imageflow.Server.Example
             
             app.UseHttpsRedirection();
             app.UseImageflow(new ImageflowMiddlewareOptions()
+                .SetMapWebRoot(true)
                 .SetAllowDiskCaching(false)
                 .AddWatermark(
                     new NamedWatermark("imazen", 
                         "/images/imazen_400.png",
                         new WatermarkOptions()
                             .LayoutWithFitBox(
-                                new WatermarkFitBox(WatermarkAlign.Image, 10,10,10,10), 
+                                new WatermarkFitBox(WatermarkAlign.Image, 10,10,90,90), 
                                 WatermarkConstraintMode.Within, 
                                 new ConstraintGravity(100,100) )
                             .WithOpacity(0.7f)

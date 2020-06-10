@@ -76,7 +76,7 @@ namespace Imazen.PersistentCache.Evicter
                     await WriteMultipleLogs(entries, CancellationToken.None);
                 }
             }
-            catch (Exception e)
+            catch (Exception)
             {
 
             }
@@ -97,7 +97,7 @@ namespace Imazen.PersistentCache.Evicter
                 }
 
             }
-            catch (Exception e)
+            catch (Exception)
             {
 
             }

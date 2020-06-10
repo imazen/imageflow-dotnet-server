@@ -38,7 +38,10 @@ namespace Imageflow.Server
             this.memoryCache = memoryCache;
             this.diskCache = diskCache;
             var providers = blobProviders.ToList();
-            this.blobProvider = new BlobProvider(providers, this.env.WebRootPath);
+            var mappedPaths = options.MappedPaths.ToList();
+            if (options.MapWebRoot)
+                mappedPaths.Add(new PathMapping("/", this.env.WebRootPath));
+            blobProvider = new BlobProvider(providers, mappedPaths);
             diagnosticsPage = new DiagnosticsPage(env, logger, memoryCache, distributedCache, diskCache, providers);
         }
 

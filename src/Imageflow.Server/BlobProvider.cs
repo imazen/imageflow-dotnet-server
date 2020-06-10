@@ -13,10 +13,12 @@ namespace Imageflow.Server
     {
         private readonly List<IBlobProvider> blobProviders = new List<IBlobProvider>();
         private readonly List<string> blobPrefixes = new List<string>();
-        private readonly string webRootPath;
-        public BlobProvider(IEnumerable<IBlobProvider> blobProviders, string webRootPath)
+        private readonly List<PathMapping> pathMappings;
+        public BlobProvider(IEnumerable<IBlobProvider> blobProviders, List<PathMapping> pathMappings)
         {
-            this.webRootPath = webRootPath;
+            this.pathMappings = pathMappings.ToList();
+            
+            
             foreach (var provider in blobProviders)
             {
                 this.blobProviders.Add(provider);
@@ -58,11 +60,20 @@ namespace Imageflow.Server
 
         internal BlobProviderResult? GetFileResult(string virtualPath)
         {
+            var mapping = pathMappings.FirstOrDefault(
+                m => virtualPath.StartsWith(m.VirtualPath, StringComparison.Ordinal));
+            if (mapping.PhysicalPath == null || mapping.VirtualPath == null) return null;
 
-            var imagePath = Path.Combine(
-                webRootPath,
-                virtualPath.Replace('/', Path.DirectorySeparatorChar).TrimStart(Path.DirectorySeparatorChar));
-            var lastWriteTimeUtc = File.GetLastWriteTimeUtc(imagePath);
+            var relativePath = virtualPath
+                .Substring(mapping.VirtualPath.Length)
+                .Replace('/', Path.DirectorySeparatorChar)
+                .TrimStart(Path.DirectorySeparatorChar);
+            
+            var physicalPath = Path.Combine(
+                mapping.PhysicalPath.TrimEnd(Path.DirectorySeparatorChar),
+                relativePath);
+            
+            var lastWriteTimeUtc = File.GetLastWriteTimeUtc(physicalPath);
             if (lastWriteTimeUtc.Year == 1601) // file doesn't exist, pass to next middleware
             {
                 return null;
@@ -74,7 +85,7 @@ namespace Imageflow.Server
                 IsFile = true,
                 GetBlob = () => Task.FromResult(new BlobProviderFile()
                 {
-                    Path = imagePath,
+                    Path = physicalPath,
                     Exists = true,
                     LastModifiedDateUtc = lastWriteTimeUtc
                 } as IBlobData)
