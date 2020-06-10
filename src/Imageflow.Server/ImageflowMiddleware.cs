@@ -28,11 +28,11 @@ namespace Imageflow.Server
         private readonly IClassicDiskCache diskCache;
         private readonly BlobProvider blobProvider;
         private readonly DiagnosticsPage diagnosticsPage;
-        private readonly ImageflowMiddlewareSettings settings;
-        public ImageflowMiddleware(RequestDelegate next, IWebHostEnvironment env, ILogger<ImageflowMiddleware> logger, IMemoryCache memoryCache, IDistributedCache distributedCache,  IClassicDiskCache diskCache, IEnumerable<IBlobProvider> blobProviders, ImageflowMiddlewareSettings settings)
+        private readonly ImageflowMiddlewareOptions options;
+        public ImageflowMiddleware(RequestDelegate next, IWebHostEnvironment env, ILogger<ImageflowMiddleware> logger, IMemoryCache memoryCache, IDistributedCache distributedCache,  IClassicDiskCache diskCache, IEnumerable<IBlobProvider> blobProviders, ImageflowMiddlewareOptions options)
         {
             this.next = next;
-            this.settings = settings;
+            this.options = options;
             this.env = env;
             this.logger = logger;
             this.memoryCache = memoryCache;
@@ -78,9 +78,9 @@ namespace Imageflow.Server
                 return;
             }
 
-            var memoryCacheEnabled = memoryCache != null && settings.AllowMemoryCaching;
-            var diskCacheEnabled = diskCache != null && settings.AllowDiskCaching;
-            var distributedCacheEnabled = distributedCache != null && settings.AllowDistributedCaching;
+            var memoryCacheEnabled = memoryCache != null && options.AllowMemoryCaching;
+            var diskCacheEnabled = diskCache != null && options.AllowDiskCaching;
+            var distributedCacheEnabled = distributedCache != null && options.AllowDistributedCaching;
             
 
             if (memoryCacheEnabled || diskCacheEnabled || distributedCacheEnabled)
@@ -202,11 +202,11 @@ namespace Imageflow.Server
                 // Set cache options.
                 var cacheEntryOptions = new MemoryCacheEntryOptions()
                     .SetSize(imageBytes.Count)
-                    .SetSlidingExpiration(settings.MemoryCacheSlidingExpiration);
+                    .SetSlidingExpiration(options.MemoryCacheSlidingExpiration);
                 
                 var cacheEntryMetaOptions = new MemoryCacheEntryOptions()
                     .SetSize(contentType.Length * 2)
-                    .SetSlidingExpiration(settings.MemoryCacheSlidingExpiration);
+                    .SetSlidingExpiration(options.MemoryCacheSlidingExpiration);
                 
                 memoryCache.Set(cacheKey, imageBytes, cacheEntryOptions);
                 memoryCache.Set(cacheKey + ".contentType", contentType, cacheEntryMetaOptions);
@@ -257,7 +257,7 @@ namespace Imageflow.Server
 
                 // Set cache options.
                 var cacheEntryOptions = new DistributedCacheEntryOptions()
-                    .SetSlidingExpiration(settings.DistributedCacheSlidingExpiration);
+                    .SetSlidingExpiration(options.DistributedCacheSlidingExpiration);
     
                 await distributedCache.SetAsync(cacheKey, imageBytes, cacheEntryOptions);
                 await distributedCache.SetStringAsync(cacheKey + ".contentType", contentType, cacheEntryOptions);

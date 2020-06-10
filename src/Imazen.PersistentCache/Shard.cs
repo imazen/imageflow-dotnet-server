@@ -15,20 +15,20 @@ namespace Imazen.PersistentCache
         readonly uint shardId;
         private Task frequencyTrackingPersistenceTask;
         private readonly Evicter.Evicter evicter;
-        private readonly PersistentCacheSettings settings;
+        private readonly PersistentCacheOptions options;
         
         private readonly CancellationTokenSource shutdownTokenSource =
                                                        new CancellationTokenSource();
         private readonly ConcurrentQueue<Exception> exceptionLog = new ConcurrentQueue<Exception>();
 
         private readonly ConcurrentQueue<Task> putByteTasks = new ConcurrentQueue<Task>();
-        public Shard(IPersistentStore store, uint shardId, IClock clock, CacheKeyHasher hasher, PersistentCacheSettings settings)
+        public Shard(IPersistentStore store, uint shardId, IClock clock, CacheKeyHasher hasher, PersistentCacheOptions options)
         {
-            usage = new UsageTracker(clock, settings.UsageFrequencyHalfLifeMinutes);
+            usage = new UsageTracker(clock, options.UsageFrequencyHalfLifeMinutes);
             this.store = store;
             this.shardId = shardId;
-            this.settings = settings;
-            evicter = new Evicter.Evicter(shardId, store, usage, hasher, clock, settings, shutdownTokenSource);
+            this.options = options;
+            evicter = new Evicter.Evicter(shardId, store, usage, hasher, clock, options, shutdownTokenSource);
         }
 
         internal Exception PopException()
@@ -113,7 +113,7 @@ namespace Imazen.PersistentCache
                 {
                     var pingCount = usage.PingCount();
 
-                    await Task.Delay(settings.ReadInfoFlushIntervalMs, cancellationToken);
+                    await Task.Delay(options.ReadInfoFlushIntervalMs, cancellationToken);
                     cancellationToken.ThrowIfCancellationRequested();
 
                     //Only flush if we've gotten more than 100 reads

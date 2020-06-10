@@ -6,9 +6,9 @@ namespace Imageflow.Server
     public static class ImageflowMiddlewareExtensions
     {
         
-        public static IApplicationBuilder UseImageflow(this IApplicationBuilder builder, ImageflowMiddlewareSettings settings)
+        public static IApplicationBuilder UseImageflow(this IApplicationBuilder builder, ImageflowMiddlewareOptions options)
         {
-            return builder.UseMiddleware<ImageflowMiddleware>(settings);
+            return builder.UseMiddleware<ImageflowMiddleware>(options);
         }
 
     }

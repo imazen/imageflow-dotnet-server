@@ -20,7 +20,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Imazen.DiskCache\Imazen.DiskCache.csproj" />
-        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All"/>
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
     </ItemGroup>
 
 </Project>

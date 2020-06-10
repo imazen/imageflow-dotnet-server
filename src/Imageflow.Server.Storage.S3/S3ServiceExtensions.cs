@@ -9,12 +9,12 @@ namespace Imageflow.Server.Storage.S3
     {
 
         public static IServiceCollection AddImageflowS3Service(this IServiceCollection services,
-            S3ServiceSettings settings)
+            S3ServiceOptions options)
         {
             services.AddSingleton<IBlobProvider>((container) =>
             {
                 var logger = container.GetRequiredService<ILogger<S3Service>>();
-                return new S3Service(settings, logger);
+                return new S3Service(options, logger);
             });
 
             return services;

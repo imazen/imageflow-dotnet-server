@@ -20,7 +20,7 @@
 
     <ItemGroup>
         <PackageReference Include="AWSSDK.S3" Version="3.3.111.9" />
-        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All"/>
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
     </ItemGroup>
 
 </Project>

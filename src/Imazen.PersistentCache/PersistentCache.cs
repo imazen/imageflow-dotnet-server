@@ -11,14 +11,14 @@ namespace Imazen.PersistentCache
 {
     public class PersistentCache : IPersistentCache
     {
-        public PersistentCache(IPersistentStore store, IClock clock, PersistentCacheSettings settings)
+        public PersistentCache(IPersistentStore store, IClock clock, PersistentCacheOptions options)
         {
             //TODO guard against null store, null clock, zero shardCount, or zero halflife
             this.store = store;
-            hasher = new CacheKeyHasher(settings.ShardCount);
-            shards = new Shard[settings.ShardCount];
-            for (uint i =0; i < settings.ShardCount; i++){
-                shards[i] = new Shard(store, i, clock, hasher, settings);
+            hasher = new CacheKeyHasher(options.ShardCount);
+            shards = new Shard[options.ShardCount];
+            for (uint i =0; i < options.ShardCount; i++){
+                shards[i] = new Shard(store, i, clock, hasher, options);
             }
             
         }

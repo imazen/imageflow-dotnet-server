@@ -2,9 +2,9 @@ using System;
 
 namespace Imageflow.Server
 {
-    public class ImageflowMiddlewareSettings
+    public class ImageflowMiddlewareOptions
     {
-        public ImageflowMiddlewareSettings()
+        public ImageflowMiddlewareOptions()
         {
         }
 
@@ -15,27 +15,27 @@ namespace Imageflow.Server
         public bool AllowDiskCaching { get; set; } = true;
         public bool AllowDistributedCaching { get; set; } = false;
 
-        public ImageflowMiddlewareSettings SetAllowMemoryCaching(bool value)
+        public ImageflowMiddlewareOptions SetAllowMemoryCaching(bool value)
         {
             this.AllowMemoryCaching = value;
             return this;
         }
-        public ImageflowMiddlewareSettings SetMemoryCacheSlidingExpiration(TimeSpan value)
+        public ImageflowMiddlewareOptions SetMemoryCacheSlidingExpiration(TimeSpan value)
         {
             this.MemoryCacheSlidingExpiration = value;
             return this;
         }
-        public ImageflowMiddlewareSettings SetDistributedCacheSlidingExpiration(TimeSpan value)
+        public ImageflowMiddlewareOptions SetDistributedCacheSlidingExpiration(TimeSpan value)
         {
             this.DistributedCacheSlidingExpiration = value;
             return this;
         }
-        public ImageflowMiddlewareSettings SetAllowDiskCaching(bool value)
+        public ImageflowMiddlewareOptions SetAllowDiskCaching(bool value)
         {
             this.AllowDiskCaching = value;
             return this;
         }
-        public ImageflowMiddlewareSettings SetAllowDistributedCaching(bool value)
+        public ImageflowMiddlewareOptions SetAllowDistributedCaching(bool value)
         {
             this.AllowDistributedCaching = value;
             return this;

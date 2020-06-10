@@ -2,9 +2,9 @@ using System;
 
 namespace Imazen.DiskCache
 {
-    public class ClassicDiskCacheSettings
+    public class ClassicDiskCacheOptions
     {
-        public ClassicDiskCacheSettings(string physicalCacheDir)
+        public ClassicDiskCacheOptions(string physicalCacheDir)
         {
             this.PhysicalCacheDir = physicalCacheDir;
         }

@@ -11,16 +11,16 @@ namespace Imazen.PersistentCache.Evicter
     {
         private readonly uint shardId;
         private readonly IPersistentStore store;
-        private readonly PersistentCacheSettings settings;
+        private readonly PersistentCacheOptions options;
         private ulong? lastCount;
         private DateTimeOffset lastTimeRead = DateTimeOffset.MinValue;
         private readonly IClock clock;
         private readonly AsyncLock sizeLock = new AsyncLock();
-        public SizeTracker(uint shardId, IPersistentStore store, IClock clock, PersistentCacheSettings settings)
+        public SizeTracker(uint shardId, IPersistentStore store, IClock clock, PersistentCacheOptions options)
         {
             this.shardId = shardId;
             this.store = store;
-            this.settings = settings;
+            this.options = options;
             this.clock = clock;
         }
 

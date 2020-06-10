@@ -24,22 +24,22 @@ namespace Imazen.PersistentCache.Evicter
         private readonly IPersistentStore store;
         private readonly UsageTracker usage;
         private readonly IClock clock;
-        private readonly PersistentCacheSettings settings;
+        private readonly PersistentCacheOptions options;
         private readonly CancellationTokenSource shutdownTokenSource;
         private readonly SizeTracker sizeTracker;
         private readonly CacheKeyHasher hasher; 
         private readonly AsyncLock evictionLock = new AsyncLock();
         private readonly AsyncLock flushLogLock = new AsyncLock();
-        public Evicter(uint shardId, IPersistentStore store, UsageTracker usage, CacheKeyHasher hasher, IClock clock, PersistentCacheSettings settings, CancellationTokenSource shutdownTokenSource)
+        public Evicter(uint shardId, IPersistentStore store, UsageTracker usage, CacheKeyHasher hasher, IClock clock, PersistentCacheOptions options, CancellationTokenSource shutdownTokenSource)
         {
             this.shardId = shardId;
             this.store = store;
             this.usage = usage;
             this.clock = clock;
-            this.settings = settings;
+            this.options = options;
             this.shutdownTokenSource = shutdownTokenSource;
             this.hasher = hasher;
-            sizeTracker = new SizeTracker(shardId, store, clock, settings);
+            sizeTracker = new SizeTracker(shardId, store, clock, options);
         }
 
         private Task logFlushRuntimeTask;
@@ -108,7 +108,7 @@ namespace Imazen.PersistentCache.Evicter
         async Task WriteMultipleLogs(List<WriteEntry> entries, CancellationToken cancellationToken)
         {
             if (entries.Count == 0) return;
-            var entriesPerLog = (int)settings.MaxWriteLogSize / WriteEntry.RowBytes();
+            var entriesPerLog = (int)options.MaxWriteLogSize / WriteEntry.RowBytes();
 
             var enumerable = entries.AsEnumerable();
             while (enumerable.Any())
@@ -136,7 +136,7 @@ namespace Imazen.PersistentCache.Evicter
         async Task WriteLogsMerged(List<WriteEntry> entries, CancellationToken cancellationToken) { 
 
             // Write logs unmerged unless we have too few entries. 
-            var entryThreshold = (int)(.9 * (double)settings.MaxWriteLogSize / (double)WriteEntry.RowBytes());
+            var entryThreshold = (int)(.9 * (double)options.MaxWriteLogSize / (double)WriteEntry.RowBytes());
             if (entries.Count > entryThreshold)
             {
                 await FlushLogUnmerged();
@@ -152,7 +152,7 @@ namespace Imazen.PersistentCache.Evicter
             // Add logs into `logs` until we have enough bytes
             foreach(var log in logList)
             {
-                if (totalBytes + log.SizeInBytes > settings.MaxWriteLogSize)
+                if (totalBytes + log.SizeInBytes > options.MaxWriteLogSize)
                 {
                     break;
                 }
@@ -201,7 +201,7 @@ namespace Imazen.PersistentCache.Evicter
             
             while (!cancellationToken.IsCancellationRequested)
             {
-                await Task.Delay(settings.WriteLogFlushIntervalMs, cancellationToken);
+                await Task.Delay(options.WriteLogFlushIntervalMs, cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();
 
                 await FlushLogMerged();
@@ -231,12 +231,12 @@ namespace Imazen.PersistentCache.Evicter
             using (var lockInstance = await evictionLock.LockAsync())
             {
                 var currentSize = await sizeTracker.GetCachedSize();
-                if (currentSize + (ulong)length < settings.MaxCachedBytes)
+                if (currentSize + (ulong)length < options.MaxCachedBytes)
                 {
                     return; // There's enough space already. 
                 }
 
-                var bytesToDelete = (currentSize + (ulong)length) - (ulong)(settings.MaxCachedBytes - (settings.FreeSpacePercentGoal / 100 * settings.MaxCachedBytes));
+                var bytesToDelete = (currentSize + (ulong)length) - (ulong)(options.MaxCachedBytes - (options.FreeSpacePercentGoal / 100 * options.MaxCachedBytes));
                 ulong bytesDeleted = 0;
 
                 while (bytesDeleted < bytesToDelete)
@@ -246,13 +246,13 @@ namespace Imazen.PersistentCache.Evicter
                     if (list.Count < 1) return; 
                     var rng = new Random();
                     var logs = new List<IBlobInfo>();
-                    var writeEntries = new List<WriteEntry>((int)(settings.MaxWriteLogSize / (ulong)WriteEntry.RowBytes()));
+                    var writeEntries = new List<WriteEntry>((int)(options.MaxWriteLogSize / (ulong)WriteEntry.RowBytes()));
 
                     ulong logsSizeSum = 0;
                     while (true)
                     {
                         var next = list[rng.Next(0, list.Count - 1)];
-                        if (logsSizeSum + next.SizeInBytes < settings.MaxWriteLogSize)
+                        if (logsSizeSum + next.SizeInBytes < options.MaxWriteLogSize)
                         {
                             using (var stream = await store.ReadStream(shardId, next.KeyName, cancellationToken))
                             {

@@ -9,12 +9,12 @@ namespace Imageflow.Server.DiskCache
 {
     public static class DiskCacheServiceExtensions
     {
-        public static IServiceCollection AddImageflowDiskCache(this IServiceCollection services, DiskCacheSettings settings)
+        public static IServiceCollection AddImageflowDiskCache(this IServiceCollection services, DiskCacheOptions options)
         {
             services.AddSingleton<IClassicDiskCache>((container) =>
             {
                 var logger = container.GetRequiredService<ILogger<DiskCacheService>>();
-                return new DiskCacheService(settings, logger);
+                return new DiskCacheService(options, logger);
             });
             
          

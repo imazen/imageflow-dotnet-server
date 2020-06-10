@@ -13,13 +13,13 @@ namespace Imageflow.Server.DiskCache
 {
     public class DiskCacheService: IClassicDiskCache
     {
-        private readonly DiskCacheSettings settings;
+        private readonly DiskCacheOptions options;
         private readonly ClassicDiskCache cache;
         private readonly ILogger logger;
-        public DiskCacheService(DiskCacheSettings settings, ILogger logger)
+        public DiskCacheService(DiskCacheOptions options, ILogger logger)
         {
-            this.settings = settings;
-            this.cache = new ClassicDiskCache(settings, logger );
+            this.options = options;
+            this.cache = new ClassicDiskCache(options, logger );
             this.logger = logger;
         }
 

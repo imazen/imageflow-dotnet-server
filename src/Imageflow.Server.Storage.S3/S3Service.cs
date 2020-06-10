@@ -18,19 +18,19 @@ namespace Imageflow.Server.Storage.S3
         private readonly List<string> prefixes = new List<string>();
 
         private readonly AmazonS3Client client;
-        public S3Service(S3ServiceSettings settings, ILogger<S3Service> logger)
+        public S3Service(S3ServiceOptions options, ILogger<S3Service> logger)
         {
 
-            if (settings.AccessKeyId == null)
+            if (options.AccessKeyId == null)
             {
-                client = new AmazonS3Client(new AnonymousAWSCredentials(),settings.DefaultRegion);
+                client = new AmazonS3Client(new AnonymousAWSCredentials(),options.DefaultRegion);
             }
             else
             {
-                client = new AmazonS3Client(new BasicAWSCredentials(settings.AccessKeyId, settings.SecretAccessKey));
+                client = new AmazonS3Client(new BasicAWSCredentials(options.AccessKeyId, options.SecretAccessKey));
             }
 
-            foreach (var m in settings.mappings)
+            foreach (var m in options.mappings)
             {
                 mappings.Add(m.Prefix, m);
                 prefixes.Add(m.Prefix);

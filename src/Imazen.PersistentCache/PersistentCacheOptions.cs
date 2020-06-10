@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Imazen.PersistentCache
 {
-    public class PersistentCacheSettings
+    public class PersistentCacheOptions
     {
         /// <summary>
         /// You must manually delete all cached data when reducing the shard count. 

@@ -28,11 +28,11 @@ namespace Imageflow.Server.Example
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllersWithViews();
-            services.AddImageflowS3Service(new S3ServiceSettings( RegionEndpoint.USEast1, null,null)
+            services.AddImageflowS3Service(new S3ServiceOptions( RegionEndpoint.USEast1, null,null)
                 .MapPrefix("/ri/", "us-east-1", "resizer-images")
                 .MapPrefix("/imageflow-resources/", "us-west-2", "imageflow-resources"));
             services.AddMemoryCache();
-            services.AddImageflowDiskCache(new DiskCacheSettings(Path.Combine(Env.ContentRootPath, "imageflow_cache")));
+            services.AddImageflowDiskCache(new DiskCacheOptions(Path.Combine(Env.ContentRootPath, "imageflow_cache")));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -50,7 +50,7 @@ namespace Imageflow.Server.Example
             }
             
             app.UseHttpsRedirection();
-            app.UseImageflow(new ImageflowMiddlewareSettings().SetAllowDiskCaching(true));
+            app.UseImageflow(new ImageflowMiddlewareOptions().SetAllowDiskCaching(true));
             app.UseStaticFiles();
 
             app.UseRouting();

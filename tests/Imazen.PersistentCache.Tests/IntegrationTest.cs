@@ -14,7 +14,7 @@ namespace Imazen.PersistentCache.Tests
             var path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}");
             Directory.CreateDirectory(path);
             var store = new PersistentDiskStore(path);
-            var settings = new PersistentCacheSettings()
+            var settings = new PersistentCacheOptions()
             {
                 FreeSpacePercentGoal = 50,
                 MaxCachedBytes = 1000,
