@@ -54,6 +54,7 @@ namespace Imageflow.Server.Example
             app.UseImageflow(new ImageflowMiddlewareOptions()
                 .SetMapWebRoot(true)
                 .SetAllowDiskCaching(false)
+                .SetDefaultCacheControlString("public, max-age=2592000")
                 .AddWatermark(
                     new NamedWatermark("imazen", 
                         "/images/imazen_400.png",

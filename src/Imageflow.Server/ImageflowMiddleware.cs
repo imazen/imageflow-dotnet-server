@@ -101,6 +101,7 @@ namespace Imageflow.Server
                 else if (memoryCacheEnabled)
                 {
                     await ProcessWithMemoryCache(context, cacheKey, imageJobInfo);
+                    // ReSharper disable once ConditionIsAlwaysTrueOrFalse
                 }else if (distributedCacheEnabled)
                 {
                     await ProcessWithDistributedCache(context, cacheKey, imageJobInfo);
@@ -122,7 +123,7 @@ namespace Imageflow.Server
                     logger.LogInformation($"DiskCache Miss: Processing image {info.VirtualPath}?{info}");
 
  
-                    var result = await GetImageData(info);
+                    var result = await info.ProcessUncached();
                     await stream.WriteAsync(result.ResultBytes.Array, result.ResultBytes.Offset,
                         result.ResultBytes.Count,
                         CancellationToken.None);
@@ -143,7 +144,7 @@ namespace Imageflow.Server
             {
                 context.Response.ContentType = PathHelpers.ContentTypeFor(info.EstimatedFileExtension);
                 context.Response.ContentLength = cacheResult.Data.Length;
-                context.Response.Headers[HeaderNames.ETag] = cacheKey;
+                SetCachingHeaders(context, cacheKey);
                 await cacheResult.Data.CopyToAsync(context.Response.Body);
             }
             else
@@ -154,12 +155,12 @@ namespace Imageflow.Server
             }
         }
 
-        private static async Task ServeFileFromDisk(HttpContext context, string path, string etag, string contentType)
+        private async Task ServeFileFromDisk(HttpContext context, string path, string etag, string contentType)
         {
             await using var readStream = File.OpenRead(path);
             context.Response.ContentLength = readStream.Length;
             context.Response.ContentType = contentType;
-            context.Response.Headers[HeaderNames.ETag] = etag;
+            SetCachingHeaders(context, etag);
             await readStream.CopyToAsync(context.Response.Body);
         }
 
@@ -178,7 +179,7 @@ namespace Imageflow.Server
                 {
                     logger.LogInformation($"Memory Cache Miss: Processing image {info.VirtualPath}?{info.CommandString}");
 
-                    var imageData = await GetImageData(info);
+                    var imageData = await info.ProcessUncached();
                     imageBytes = imageData.ResultBytes;
                     contentType = imageData.ContentType;
                 }
@@ -208,9 +209,9 @@ namespace Imageflow.Server
 
             // write to stream
             context.Response.ContentType = contentType;
-            context.Response.Headers[HeaderNames.ETag] = cacheKey;
             context.Response.ContentLength = imageBytes.Count;
-            
+            SetCachingHeaders(context, cacheKey);
+
 
             await context.Response.Body.WriteAsync(imageBytes.Array, imageBytes.Offset, imageBytes.Count);
         }
@@ -231,7 +232,7 @@ namespace Imageflow.Server
                 {
                     logger.LogInformation($"Distributed Cache Miss: Processing image {info.VirtualPath}?{info.CommandString}");
 
-                    var imageData = await GetImageData(info);
+                    var imageData = await info.ProcessUncached();
                     imageBytes = imageData.ResultBytes.Count != imageData.ResultBytes.Array?.Length 
                         ? imageData.ResultBytes.ToArray() 
                         : imageData.ResultBytes.Array;
@@ -259,9 +260,9 @@ namespace Imageflow.Server
 
             // write to stream
             context.Response.ContentType = contentType;
-            context.Response.Headers[HeaderNames.ETag] = cacheKey;
             context.Response.ContentLength = imageBytes.Length;
-            
+            SetCachingHeaders(context, cacheKey);
+
             await context.Response.Body.WriteAsync(imageBytes, 0, imageBytes.Length);
         }
            
@@ -284,14 +285,14 @@ namespace Imageflow.Server
             {
                 logger.LogInformation($"Processing image {info.VirtualPath} with params {info.CommandString}");
 
-                var imageData = await GetImageData(info);
+                var imageData = await info.ProcessUncached();
                 var imageBytes = imageData.ResultBytes;
                 var contentType = imageData.ContentType;
 
                 // write to stream
                 context.Response.ContentType = contentType;
-                context.Response.Headers[HeaderNames.ETag] = betterCacheKey;
                 context.Response.ContentLength = imageBytes.Count;
+                SetCachingHeaders(context, betterCacheKey);
 
                 await context.Response.Body.WriteAsync(imageBytes.Array, imageBytes.Offset, imageBytes.Count);
             }
@@ -302,19 +303,19 @@ namespace Imageflow.Server
                 var contentType = PathHelpers.ContentTypeFor(info.EstimatedFileExtension);
                 await using var sourceStream = (await info.GetPrimaryBlob()).OpenReadAsync();
                 context.Response.ContentType = contentType;
-                context.Response.Headers[HeaderNames.ETag] = betterCacheKey;
                 context.Response.ContentLength = sourceStream.Length;
-
+                SetCachingHeaders(context, betterCacheKey);
                 await sourceStream.CopyToAsync(context.Response.Body);
             }
             
 
         }
 
-     
-        private Task<ImageData> GetImageData(ImageJobInfo info)
+        private void SetCachingHeaders(HttpContext context, string etag)
         {
-            return info.ProcessUncached();
+            context.Response.Headers[HeaderNames.ETag] = etag;
+            if (options.DefaultCacheControlString != null)
+                context.Response.Headers[HeaderNames.CacheControl] = options.DefaultCacheControlString;
         }
         
     }

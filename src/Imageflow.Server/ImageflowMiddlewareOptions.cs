@@ -26,6 +26,8 @@ namespace Imageflow.Server
         public IReadOnlyCollection<PathMapping> MappedPaths => mappedPaths;
 
         public bool MapWebRoot { get; set; } = true;
+        
+        public string DefaultCacheControlString { get; set; }
         public ImageflowMiddlewareOptions SetMapWebRoot(bool value)
         {
             MapWebRoot = value;
@@ -69,6 +71,18 @@ namespace Imageflow.Server
         public ImageflowMiddlewareOptions SetAllowDistributedCaching(bool value)
         {
             this.AllowDistributedCaching = value;
+            return this;
+        }
+
+        /// <summary>
+        /// Use "public, max-age=2592000" to cache for 30 days and cache on CDNs and proxies.
+        /// </summary>
+        /// <param name="cacheControlString"></param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        public ImageflowMiddlewareOptions SetDefaultCacheControlString(string cacheControlString)
+        {
+            DefaultCacheControlString = cacheControlString;
             return this;
         }
     }
