@@ -106,7 +106,7 @@ namespace Imageflow.Server
         public static string SerializeCommandString(Dictionary<string, string> finalQuery)
         {
             var qs = QueryString.Create(finalQuery.Select(p => new KeyValuePair<string, StringValues>(p.Key, p.Value)));
-            return qs.ToString() ?? "";
+            return qs.ToString()?.TrimStart('?') ?? "";
         }
     }
 }

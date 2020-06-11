@@ -68,7 +68,7 @@ namespace Imageflow.Server
         public bool HasParams { get; }
         
         public bool Authorized { get; }
-        public string CommandString { get; }
+        public string CommandString { get; } = "";
         public string EstimatedFileExtension { get; }
 
         private readonly BlobProvider provider;
