@@ -1,0 +1,45 @@
+name: Imageflow.Server Nuget Packages
+ 
+on: [push]
+ 
+jobs:
+  build:
+ 
+    runs-on: ubuntu-18.04
+     
+    steps:
+    - uses: actions/checkout@v2
+    - name: Fetch all history for all tags and branches
+      run: git fetch --prune --unshallow
+    - name: Install GitVersion
+      uses: gittools/actions/gitversion/setup@v0.9
+      with:
+          versionSpec: '5.1.x'
+    - name: Use GitVersion
+      id: gitversion # step id used as reference for output values
+      uses: gittools/actions/gitversion/execute@v0.9
+    - run: |
+        echo "NuGetVersionV2: ${{ steps.gitversion.outputs.nuGetVersionV2 }}"
+        echo "NuGetPreReleaseTagV2: ${{ steps.gitversion.outputs.CommitsSinceVersionSourcePadded }}"
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 3.1.101
+    - name: Build with dotnet
+      run: dotnet build --configuration Release
+    - name: Test with dotnet
+      run: dotnet test
+    - name: Pack Imazen.Common with dotnet
+      run: dotnet pack src/Imazen.Common/Imazen.Common.csproj --output nuget-packages --configuration Release -p:PackageVersion=${{ steps.gitversion.outputs.nuGetVersionV2 }}-${{ steps.gitversion.outputs.CommitsSinceVersionSourcePadded }} 
+    - name: Pack Imazen.DiskCache with dotnet
+      run: dotnet pack src/Imazen.DiskCache/Imazen.DiskCache.csproj --output nuget-packages --configuration Release -p:PackageVersion=${{ steps.gitversion.outputs.nuGetVersionV2 }}-${{ steps.gitversion.outputs.CommitsSinceVersionSourcePadded }} 
+    - name: Pack Imageflow.Server with dotnet
+      run: dotnet pack src/Imageflow.Server/Imageflow.Server.csproj --output nuget-packages --configuration Release -p:PackageVersion=${{ steps.gitversion.outputs.nuGetVersionV2 }}-${{ steps.gitversion.outputs.CommitsSinceVersionSourcePadded }} 
+    - name: Pack Imageflow.Server.DiskCache with dotnet
+      run: dotnet pack src/Imageflow.Server.DiskCache/Imageflow.Server.DiskCache.csproj --output nuget-packages --configuration Release -p:PackageVersion=${{ steps.gitversion.outputs.nuGetVersionV2 }}-${{ steps.gitversion.outputs.CommitsSinceVersionSourcePadded }} 
+    - name: Pack Imageflow.Server.Storage.S3 with dotnet
+      run: dotnet pack src/Imageflow.Server.Storage.S3/Imageflow.Server.Storage.S3.csproj --output nuget-packages --configuration Release -p:PackageVersion=${{ steps.gitversion.outputs.nuGetVersionV2 }}-${{ steps.gitversion.outputs.CommitsSinceVersionSourcePadded }} 
+    - name: Pack Imageflow.Server.Storage.AzureBlob with dotnet
+      run: dotnet pack src/Imageflow.Server.Storage.AzureBlob/Imageflow.Server.Storage.AzureBlob.csproj --output nuget-packages --configuration Release -p:PackageVersion=${{ steps.gitversion.outputs.nuGetVersionV2 }}-${{ steps.gitversion.outputs.CommitsSinceVersionSourcePadded }} 
+    - name: Push all packageswith dotnet
+      run: dotnet nuget push nuget-packages/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
