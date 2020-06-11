@@ -37,6 +37,7 @@ namespace Imageflow.Server
             this.logger = logger;
             this.memoryCache = memoryCache;
             this.diskCache = diskCache;
+            this.distributedCache = distributedCache;
             var providers = blobProviders.ToList();
             var mappedPaths = options.MappedPaths.ToList();
             if (options.MapWebRoot)
