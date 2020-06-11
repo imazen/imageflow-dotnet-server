@@ -311,7 +311,7 @@ namespace Imazen.PersistentCache.Evicter
                     }
 
                     bytesDeleted += bytesDeletedThisLoop;
-                    sizeTracker.OffsetBy(-(long)bytesDeletedThisLoop);
+                    await sizeTracker.OffsetBy(-(long)bytesDeletedThisLoop);
 
                 } // Repeat until we have enough space
             }
