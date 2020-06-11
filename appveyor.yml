@@ -82,13 +82,6 @@ install:
   - ps: Update-AppveyorBuild -Version "$env:SEMVER_2"
   - echo "SEMVER_1=%SEMVER_1%, SEMVER_2=%SEMVER_2% ASSEMBLY_VERSION=%ASSEMBLY_VERSION% FILE_VERSION=%FILE_VERSION% INFORMATIONAL_VERSION=%INFORMATIONAL_VERSION%"
 
-assembly_info:
-  patch: true
-  file: '**\AssemblyInfo.*'
-  assembly_version: $(ASSEMBLY_VERSION)
-  assembly_file_version: $(FILE_VERSION)
-  assembly_informational_version: $(INFORMATIONAL_VERSION)
-
 dotnet_csproj:
   patch: true
   file: '**\*.csproj'
@@ -106,45 +99,33 @@ nuget:
 configuration: Release
 
 before_build: 
-  - dotnet restore src/Imageflow.dncore.sln 
-  - nuget restore  tests/Imageflow.TestDotNetFull/Imageflow.TestDotNetFull.csproj -SolutionDirectory src
-  - choco install opencover.portable
-  - choco install codecov
-  - choco install docfx -y
-
+  - dotnet restore Imageflow.Net.Server.sln 
 
 build:
   parallel: true                  # enable MSBuild parallel builds
-  project: src/Imageflow.dnfull.sln     # path to Visual Studio solution or project
+  project: src/Imageflow.Net.Server.sln     # path to Visual Studio solution or project
   publish_nuget: true             # package projects with .nuspec files and push to artifacts
   publish_nuget_symbols: true     # generate and publish NuGet symbol packages
 
 test_script:
-  - dotnet test tests/Imageflow.Test/ -c Debug
-  - dotnet test tests/Imageflow.Test/ -c Release
-  - vstest.console /logger:Appveyor tests\Imageflow.TestDotNetFull\bin\Release\Imageflow.TestDotNetFull.dll
-  - vstest.console /logger:Appveyor /Platform:x86 tests\Imageflow.TestDotNetFull\bin\Release\Imageflow.TestDotNetFull.dll
-  - vstest.console /logger:Appveyor /Platform:x64 tests\Imageflow.TestDotNetFull\bin\Release\Imageflow.TestDotNetFull.dll
-  - OpenCover.Console.exe -register:user -target:"C:/Program Files/dotnet/dotnet.exe" -targetargs:test -output:".\coverage.xml" -oldstyle
-  - codecov -f "coverage.xml"
+  - dotnet build --configuration Release
+  - dotnet test
+
 
 after_test:
   - cd %APPVEYOR_BUILD_FOLDER%
   - rmdir /q /s .\artifacts || exit 0
   - mkdir .\artifacts\staging\
-  - xcopy /Y src\Imageflow\bin\Release\netstandard2.0\*.pdb artifacts\staging\ || exit 0
-  - xcopy /Y src\Imageflow\bin\Release\netstandard2.0\*.dll  artifacts\staging\
+  - xcopy /Y src\*\bin\Release\netstandard2.0\*.pdb artifacts\staging\ || exit 0
+  - xcopy /Y src\*\bin\Release\netstandard2.0\*.dll  artifacts\staging\
   - cd artifacts\staging
   - 7z a -r "..\..\%ARTIFACT_NAME%.zip" *
   - cd %APPVEYOR_BUILD_FOLDER%
   - appveyor PushArtifact "%ARTIFACT_NAME%.zip"
 
-#TODO: consider DocFx integration https://github.com/docascode/docfx-seed
-
-
 deploy:
   - provider: GitHub
-    description: 'imageflow-win'
+    description: 'imageflow-server-win'
     artifact: /.*\.zip/
     draft: false
     prerelease: true
