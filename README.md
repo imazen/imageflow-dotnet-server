@@ -19,6 +19,9 @@ Supports
 
 ```
 PM> Install-Package Imageflow.Server
+PM> Install-Package Imageflow.Server.DiskCache
+PM> Install-Package Imageflow.Server.Storage.S3
+PM> Install-Package Imageflow.Server.Storage.AzureBlob
 PM> Install-Package Imageflow.NativeRuntime.win-x86 
 PM> Install-Package Imageflow.NativeRuntime.win-x86_64
 PM> Install-Package Imageflow.NativeRuntime.osx_10_11-x86_64
