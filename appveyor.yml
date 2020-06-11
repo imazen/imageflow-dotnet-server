@@ -97,11 +97,11 @@ nuget:
 configuration: Release
 
 before_build: 
-  - dotnet restore Imageflow.Net.Server.sln 
+  - dotnet restore Imageflow.Server.sln 
 
 build:
   parallel: true                  # enable MSBuild parallel builds
-  project: src/Imageflow.Net.Server.sln     # path to Visual Studio solution or project
+  project: Imageflow.Server.sln     # path to Visual Studio solution or project
   publish_nuget: true             # package projects with .nuspec files and push to artifacts
   publish_nuget_symbols: true     # generate and publish NuGet symbol packages
 
