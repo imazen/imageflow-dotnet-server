@@ -30,16 +30,16 @@ jobs:
     - name: Test with dotnet
       run: dotnet test
     - name: Pack Imazen.Common with dotnet
-      run: dotnet pack src/Imazen.Common/Imazen.Common.csproj --output nuget-packages --configuration Release -p:PackageVersion=${{ steps.gitversion.outputs.nuGetVersionV2 }}-${{ steps.gitversion.outputs.CommitsSinceVersionSourcePadded }} 
+      run: dotnet pack src/Imazen.Common/Imazen.Common.csproj --output nuget-packages --configuration Release -p:PackageVersion=${{ steps.gitversion.outputs.nuGetVersionV2 }}
     - name: Pack Imazen.DiskCache with dotnet
-      run: dotnet pack src/Imazen.DiskCache/Imazen.DiskCache.csproj --output nuget-packages --configuration Release -p:PackageVersion=${{ steps.gitversion.outputs.nuGetVersionV2 }}-${{ steps.gitversion.outputs.CommitsSinceVersionSourcePadded }} 
+      run: dotnet pack src/Imazen.DiskCache/Imazen.DiskCache.csproj --output nuget-packages --configuration Release -p:PackageVersion=${{ steps.gitversion.outputs.nuGetVersionV2 }}
     - name: Pack Imageflow.Server with dotnet
-      run: dotnet pack src/Imageflow.Server/Imageflow.Server.csproj --output nuget-packages --configuration Release -p:PackageVersion=${{ steps.gitversion.outputs.nuGetVersionV2 }}-${{ steps.gitversion.outputs.CommitsSinceVersionSourcePadded }} 
+      run: dotnet pack src/Imageflow.Server/Imageflow.Server.csproj --output nuget-packages --configuration Release -p:PackageVersion=${{ steps.gitversion.outputs.nuGetVersionV2 }}
     - name: Pack Imageflow.Server.DiskCache with dotnet
-      run: dotnet pack src/Imageflow.Server.DiskCache/Imageflow.Server.DiskCache.csproj --output nuget-packages --configuration Release -p:PackageVersion=${{ steps.gitversion.outputs.nuGetVersionV2 }}-${{ steps.gitversion.outputs.CommitsSinceVersionSourcePadded }} 
+      run: dotnet pack src/Imageflow.Server.DiskCache/Imageflow.Server.DiskCache.csproj --output nuget-packages --configuration Release -p:PackageVersion=${{ steps.gitversion.outputs.nuGetVersionV2 }}
     - name: Pack Imageflow.Server.Storage.S3 with dotnet
-      run: dotnet pack src/Imageflow.Server.Storage.S3/Imageflow.Server.Storage.S3.csproj --output nuget-packages --configuration Release -p:PackageVersion=${{ steps.gitversion.outputs.nuGetVersionV2 }}-${{ steps.gitversion.outputs.CommitsSinceVersionSourcePadded }} 
+      run: dotnet pack src/Imageflow.Server.Storage.S3/Imageflow.Server.Storage.S3.csproj --output nuget-packages --configuration Release -p:PackageVersion=${{ steps.gitversion.outputs.nuGetVersionV2 }}
     - name: Pack Imageflow.Server.Storage.AzureBlob with dotnet
-      run: dotnet pack src/Imageflow.Server.Storage.AzureBlob/Imageflow.Server.Storage.AzureBlob.csproj --output nuget-packages --configuration Release -p:PackageVersion=${{ steps.gitversion.outputs.nuGetVersionV2 }}-${{ steps.gitversion.outputs.CommitsSinceVersionSourcePadded }} 
+      run: dotnet pack src/Imageflow.Server.Storage.AzureBlob/Imageflow.Server.Storage.AzureBlob.csproj --output nuget-packages --configuration Release -p:PackageVersion=${{ steps.gitversion.outputs.nuGetVersionV2 }}
     - name: Push all packageswith dotnet
       run: dotnet nuget push nuget-packages/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
