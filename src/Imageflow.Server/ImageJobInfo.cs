@@ -8,6 +8,7 @@ using Imageflow.Fluent;
 using Imazen.Common.Storage;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
+using Newtonsoft.Json;
 
 namespace Imageflow.Server
 {
@@ -90,6 +91,16 @@ namespace Imageflow.Server
         {
             return PathHelpers.Base64Hash(string.Join('|',strings));
         }
+
+        private string[] serializedWatermarkConfigs = null;
+        private IEnumerable<string> SerializeWatermarkConfigs()
+        {
+            if (serializedWatermarkConfigs != null) return serializedWatermarkConfigs;
+            if (appliedWatermarks == null) return Enumerable.Empty<string>();
+            serializedWatermarkConfigs = appliedWatermarks.Select(w => w.Serialized()).ToArray();
+            return serializedWatermarkConfigs;
+        }
+
         public async Task<string> GetFastCacheKey()
         {
             // Only get DateTime values from local files
@@ -99,7 +110,7 @@ namespace Imageflow.Server
                     .Select(async b =>
                         (await b.GetBlob())?.LastModifiedDateUtc?.ToBinary().ToString()));
             
-            return HashStrings(new string[] {VirtualPath, CommandString}.Concat(dateTimes));
+            return HashStrings(new string[] {VirtualPath, CommandString}.Concat(dateTimes).Concat(SerializeWatermarkConfigs()));
         }
 
         public override string ToString()
@@ -114,7 +125,7 @@ namespace Imageflow.Server
                     .Select(async b =>
                         (await b.GetBlob())?.LastModifiedDateUtc?.ToBinary().ToString()));
             
-            return HashStrings(new string[] {VirtualPath, CommandString}.Concat(dateTimes));
+            return HashStrings(new string[] {VirtualPath, CommandString}.Concat(dateTimes).Concat(SerializeWatermarkConfigs()));
         }
 
         public async Task<ImageData> ProcessUncached()

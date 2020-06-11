@@ -53,7 +53,7 @@ namespace Imageflow.Server.Example
             app.UseHttpsRedirection();
             app.UseImageflow(new ImageflowMiddlewareOptions()
                 .SetMapWebRoot(true)
-                .SetAllowDiskCaching(false)
+                .SetAllowDiskCaching(true)
                 .SetDefaultCacheControlString("public, max-age=2592000")
                 .AddWatermark(
                     new NamedWatermark("imazen", 
@@ -62,7 +62,7 @@ namespace Imageflow.Server.Example
                             .LayoutWithFitBox(
                                 new WatermarkFitBox(WatermarkAlign.Image, 10,10,90,90), 
                                 WatermarkConstraintMode.Within, 
-                                new ConstraintGravity(100,100) )
+                                new ConstraintGravity(100,0) )
                             .WithOpacity(0.7f)
                             .WithHints(
                                 new ResampleHints()
