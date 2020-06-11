@@ -14,40 +14,43 @@ namespace Imageflow.Server
 {
     internal class ImageJobInfo
     {
-        public ImageJobInfo(string virtualPath, IQueryCollection query,
-            IReadOnlyCollection<NamedWatermark> namedWatermarks, BlobProvider blobProvider)
+        public ImageJobInfo(HttpContext context, ImageflowMiddlewareOptions options, BlobProvider blobProvider)
         {
-            HasParams = PathHelpers.SupportedQuerystringKeys.Any(query.ContainsKey);
+            Authorized = ProcessRewritesAndAuthorization(context, options);
+
+            if (!Authorized) return;
+      
+            HasParams = PathHelpers.SupportedQuerystringKeys.Any(FinalQuery.ContainsKey);
 
 
-            var extension = Path.GetExtension(virtualPath);
-            if (query.TryGetValue("format", out var newExtension))
+            var extension = Path.GetExtension(FinalVirtualPath);
+            if (FinalQuery.TryGetValue("format", out var newExtension))
             {
                 extension = newExtension;
             }
 
             EstimatedFileExtension = PathHelpers.SanitizeImageExtension(extension);
             
-            primaryBlob = new BlobFetchCache(virtualPath, blobProvider);
+            primaryBlob = new BlobFetchCache(FinalVirtualPath, blobProvider);
             allBlobs = new List<BlobFetchCache>(1) {primaryBlob};
 
             if (HasParams)
             {
-                CommandString = string.Join("&", PathHelpers.MatchingResizeQueryStringParameters(query));
-                
+                CommandString = PathHelpers.SerializeCommandString(FinalQuery);
+                   
                 // Look up watermark names
-                if (query.TryGetValue("watermark", out var watermarkValues))
+                if (FinalQuery.TryGetValue("watermark", out var watermarkValues))
                 {
-                    var watermarkNames = watermarkValues.SelectMany(w => w.Split(",")).Select(s => s.Trim(' '));
+                    var watermarkNames = watermarkValues.Split(",").Select(s => s.Trim(' '));
                     
                     appliedWatermarks = new List<NamedWatermark>();
                     foreach (var name in watermarkNames)
                     {
-                        var watermark = namedWatermarks.FirstOrDefault(w =>
+                        var watermark = options.NamedWatermarks.FirstOrDefault(w =>
                             w.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
                         if (watermark == null)
                         {
-                            throw new ArgumentOutOfRangeException(nameof(query), $"watermark {name} was referenced from the querystring but no watermark by that name is registered with the middleware");
+                            throw new InvalidOperationException($"watermark {name} was referenced from the querystring but no watermark by that name is registered with the middleware");
                         }
                         
                         appliedWatermarks.Add(watermark);
@@ -55,13 +58,16 @@ namespace Imageflow.Server
                     }
                 }
             }
-
-            VirtualPath = virtualPath;
+            
             provider = blobProvider;
         }
 
-        public string VirtualPath { get; }
+        public string FinalVirtualPath { get; private set; }
+        
+        public Dictionary<string,string> FinalQuery { get; private set; }
         public bool HasParams { get; }
+        
+        public bool Authorized { get; }
         public string CommandString { get; }
         public string EstimatedFileExtension { get; }
 
@@ -71,9 +77,39 @@ namespace Imageflow.Server
 
         private readonly List<BlobFetchCache> allBlobs;
         private readonly BlobFetchCache primaryBlob;
-        
 
-       
+
+        private bool ProcessRewritesAndAuthorization(HttpContext context, ImageflowMiddlewareOptions options)
+        {
+            var path = context.Request.Path.Value;
+            var args = new UrlEventArgs(context, context.Request.Path.Value, PathHelpers.ToQueryDictionary(context.Request.Query));
+            foreach (var handler in options.PreRewriteAuthorization)
+            {
+                var matches = string.IsNullOrEmpty(handler.PathPrefix) ||
+                              path.StartsWith(handler.PathPrefix, StringComparison.OrdinalIgnoreCase);
+                if (matches && !handler.Handler(args)) return false;
+            }
+            foreach (var handler in options.Rewrite)
+            {
+                var matches = string.IsNullOrEmpty(handler.PathPrefix) ||
+                              path.StartsWith(handler.PathPrefix, StringComparison.OrdinalIgnoreCase);
+                if (matches)
+                {
+                    handler.Handler(args);
+                    path = args.VirtualPath;
+                }
+            }
+            foreach (var handler in options.PreRewriteAuthorization)
+            {
+                var matches = string.IsNullOrEmpty(handler.PathPrefix) ||
+                              path.StartsWith(handler.PathPrefix, StringComparison.OrdinalIgnoreCase);
+                if (matches && !handler.Handler(args)) return false;
+            }
+
+            FinalVirtualPath = args.VirtualPath;
+            FinalQuery = args.Query;
+            return true; 
+        }
         
        
         public bool PrimaryBlobMayExist()
@@ -110,7 +146,7 @@ namespace Imageflow.Server
                     .Select(async b =>
                         (await b.GetBlob())?.LastModifiedDateUtc?.ToBinary().ToString()));
             
-            return HashStrings(new string[] {VirtualPath, CommandString}.Concat(dateTimes).Concat(SerializeWatermarkConfigs()));
+            return HashStrings(new string[] {FinalVirtualPath, CommandString}.Concat(dateTimes).Concat(SerializeWatermarkConfigs()));
         }
 
         public override string ToString()
@@ -125,7 +161,7 @@ namespace Imageflow.Server
                     .Select(async b =>
                         (await b.GetBlob())?.LastModifiedDateUtc?.ToBinary().ToString()));
             
-            return HashStrings(new string[] {VirtualPath, CommandString}.Concat(dateTimes).Concat(SerializeWatermarkConfigs()));
+            return HashStrings(new string[] {FinalVirtualPath, CommandString}.Concat(dateTimes).Concat(SerializeWatermarkConfigs()));
         }
 
         public async Task<ImageData> ProcessUncached()

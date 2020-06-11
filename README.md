@@ -114,6 +114,11 @@ namespace Imageflow.Server.Example
                 .SetAllowMemoryCaching(false)
                 // Cache publicly (including on shared proxies and CDNs) for 30 days
                 .SetDefaultCacheControlString("public, max-age=2592000")
+                // Force all paths under "/gallery" to be watermarked
+                .AddRewriteHandler("/gallery", args =>
+                {
+                    args.Query["watermark"] = "imazen";
+                })
                 // Register a named watermark that floats 10% from the bottom-right corner of the image
                 // With 70% opacity and some sharpness applied. 
                 .AddWatermark(
@@ -128,7 +133,8 @@ namespace Imageflow.Server.Example
                             .WithHints(
                                 new ResampleHints()
                                     .ResampleFilter(InterpolationFilter.Robidoux_Sharp, null)
-                                    .Sharpen(7, SharpenWhen.Downscaling)))));
+                                    .Sharpen(7, SharpenWhen.Downscaling))
+                            .WithMinCanvasSize(300,300))));
             
             
             app.UseStaticFiles();

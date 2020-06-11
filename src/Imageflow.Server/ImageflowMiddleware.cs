@@ -65,7 +65,13 @@ namespace Imageflow.Server
             }
 
 
-            var imageJobInfo = new ImageJobInfo(path.Value, context.Request.Query, options.NamedWatermarks, blobProvider);
+            var imageJobInfo = new ImageJobInfo(context, options, blobProvider);
+
+            if (!imageJobInfo.Authorized)
+            {
+                await NotAuthorized(context);
+                return;
+            }
             
             // If the file is definitely missing hand to the next middleware
             // Remote providers will fail late rather than make 2 requests
@@ -115,13 +121,23 @@ namespace Imageflow.Server
             }
         }
 
+        private async Task NotAuthorized(HttpContext context)
+        {
+            var s = "You are not authorized to access the given resource.";
+            
+            context.Response.StatusCode = 403;
+            context.Response.ContentType = "text/plain; charset=utf-8";
+            var bytes = Encoding.UTF8.GetBytes(s);
+            await context.Response.Body.WriteAsync(bytes, 0, bytes.Length);
+        }
+
         private async Task ProcessWithDiskCache(HttpContext context, string cacheKey, ImageJobInfo info)
         {
             var cacheResult = await diskCache.GetOrCreate(cacheKey, info.EstimatedFileExtension, async (stream) =>
             {
                 if (info.HasParams)
                 {
-                    logger.LogInformation($"DiskCache Miss: Processing image {info.VirtualPath}?{info}");
+                    logger.LogInformation($"DiskCache Miss: Processing image {info.FinalVirtualPath}?{info}");
 
  
                     var result = await info.ProcessUncached();
@@ -131,7 +147,7 @@ namespace Imageflow.Server
                 }
                 else
                 {
-                    logger.LogInformation($"DiskCache Miss: Proxying image {info.VirtualPath}");
+                    logger.LogInformation($"DiskCache Miss: Proxying image {info.FinalVirtualPath}");
                     
                     await using var sourceStream = (await info.GetPrimaryBlob()).OpenReadAsync();
                     await sourceStream.CopyToAsync(stream);
@@ -150,7 +166,7 @@ namespace Imageflow.Server
             }
             else
             {
-                logger.LogInformation("Serving {0}?{1} from disk cache {2}", info.VirtualPath, info.CommandString, cacheResult.RelativePath);
+                logger.LogInformation("Serving {0}?{1} from disk cache {2}", info.FinalVirtualPath, info.CommandString, cacheResult.RelativePath);
                 await ServeFileFromDisk(context, cacheResult.PhysicalPath, cacheKey,
                     PathHelpers.ContentTypeFor(info.EstimatedFileExtension));
             }
@@ -171,14 +187,14 @@ namespace Imageflow.Server
             var isContentTypeCached = memoryCache.TryGetValue(cacheKey + ".contentType", out string contentType);
             if (isCached && isContentTypeCached)
             {
-                logger.LogInformation("Serving {0}?{1} from memory cache", info.VirtualPath, info.CommandString);
+                logger.LogInformation("Serving {0}?{1} from memory cache", info.FinalVirtualPath, info.CommandString);
             }
             else
             {
                 
                 if (info.HasParams)
                 {
-                    logger.LogInformation($"Memory Cache Miss: Processing image {info.VirtualPath}?{info.CommandString}");
+                    logger.LogInformation($"Memory Cache Miss: Processing image {info.FinalVirtualPath}?{info.CommandString}");
 
                     var imageData = await info.ProcessUncached();
                     imageBytes = imageData.ResultBytes;
@@ -186,7 +202,7 @@ namespace Imageflow.Server
                 }
                 else
                 {
-                    logger.LogInformation($"Memory Cache Miss: Proxying image {info.VirtualPath}?{info.CommandString}");
+                    logger.LogInformation($"Memory Cache Miss: Proxying image {info.FinalVirtualPath}?{info.CommandString}");
 
                     contentType = PathHelpers.ContentTypeFor(info.EstimatedFileExtension);
                     await using var sourceStream = (await info.GetPrimaryBlob()).OpenReadAsync();
@@ -223,7 +239,7 @@ namespace Imageflow.Server
             var contentType = await distributedCache.GetStringAsync(cacheKey + ".contentType");
             if (imageBytes != null && contentType != null)
             {
-                logger.LogInformation("Serving {0}?{1} from distributed cache", info.VirtualPath, info.CommandString);
+                logger.LogInformation("Serving {0}?{1} from distributed cache", info.FinalVirtualPath, info.CommandString);
             }
             else
             {
@@ -231,7 +247,7 @@ namespace Imageflow.Server
                
                 if (info.HasParams)
                 {
-                    logger.LogInformation($"Distributed Cache Miss: Processing image {info.VirtualPath}?{info.CommandString}");
+                    logger.LogInformation($"Distributed Cache Miss: Processing image {info.FinalVirtualPath}?{info.CommandString}");
 
                     var imageData = await info.ProcessUncached();
                     imageBytes = imageData.ResultBytes.Count != imageData.ResultBytes.Array?.Length 
@@ -242,7 +258,7 @@ namespace Imageflow.Server
                 }
                 else
                 {
-                    logger.LogInformation($"Distributed Cache Miss: Proxying image {info.VirtualPath}?{info.CommandString}");
+                    logger.LogInformation($"Distributed Cache Miss: Proxying image {info.FinalVirtualPath}?{info.CommandString}");
 
                     contentType = PathHelpers.ContentTypeFor(info.EstimatedFileExtension);
                     await using var sourceStream = (await info.GetPrimaryBlob()).OpenReadAsync();
@@ -284,7 +300,7 @@ namespace Imageflow.Server
             
             if (info.HasParams)
             {
-                logger.LogInformation($"Processing image {info.VirtualPath} with params {info.CommandString}");
+                logger.LogInformation($"Processing image {info.FinalVirtualPath} with params {info.CommandString}");
 
                 var imageData = await info.ProcessUncached();
                 var imageBytes = imageData.ResultBytes;
@@ -299,7 +315,7 @@ namespace Imageflow.Server
             }
             else
             {
-                logger.LogInformation($"Proxying image {info.VirtualPath} with params {info.CommandString}");
+                logger.LogInformation($"Proxying image {info.FinalVirtualPath} with params {info.CommandString}");
 
                 var contentType = PathHelpers.ContentTypeFor(info.EstimatedFileExtension);
                 await using var sourceStream = (await info.GetPrimaryBlob()).OpenReadAsync();

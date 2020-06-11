@@ -4,6 +4,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Primitives;
 
 namespace Imageflow.Server
 {
@@ -89,7 +90,23 @@ namespace Imageflow.Server
                 .Replace('+', '-')
                 .Replace('/', '_');
         }
-        
-     
+
+
+        public static Dictionary<string, string> ToQueryDictionary(IQueryCollection requestQuery)
+        {
+            var dict = new Dictionary<string,string>(requestQuery.Count);
+            foreach (var pair in requestQuery)
+            {
+                dict.Add(pair.Key, pair.Value.ToString());
+            }
+
+            return dict;
+        }
+
+        public static string SerializeCommandString(Dictionary<string, string> finalQuery)
+        {
+            var qs = QueryString.Create(finalQuery.Select(p => new KeyValuePair<string, StringValues>(p.Key, p.Value)));
+            return qs.ToString() ?? "";
+        }
     }
 }
