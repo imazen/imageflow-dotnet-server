@@ -1,8 +1,6 @@
 version: '{build}-appveyor' # We override this during 'install'
 image: Visual Studio 2019
-branches:
-  only:
-    - master
+
 
 install:
   # This script is for automating releases triggered by GitHub.com - or, rather, determining all the right strings 
@@ -135,7 +133,7 @@ deploy:
       appveyor_repo_tag: true
   - provider: NuGet
     api_key:
-      secure: jPnriIusKBYppJGfXCxBJdSvJozEfUzsojmG0834ZCJjJqGV8c5KSBsmxADNc4R+
+      secure: W0fJC3/ZD5Ur1OyoaBxa4c95rGP8sREZq7gn4B839bK1oDfr5/wJ0e7cBDA7pp1a
     skip_symbols: true
     artifact: /.*\.nupkg/
     on:
