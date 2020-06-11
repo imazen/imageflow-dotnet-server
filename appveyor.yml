@@ -109,28 +109,7 @@ test_script:
   - dotnet build --configuration Release
   - dotnet test
 
-
-after_test:
-  - cd %APPVEYOR_BUILD_FOLDER%
-  - rmdir /q /s .\artifacts || exit 0
-  - mkdir .\artifacts\staging\
-  - xcopy /Y src\*\bin\Release\netstandard2.0\*.pdb artifacts\staging\ || exit 0
-  - xcopy /Y src\*\bin\Release\netstandard2.0\*.dll  artifacts\staging\
-  - cd artifacts\staging
-  - 7z a -r "..\..\%ARTIFACT_NAME%.zip" *
-  - cd %APPVEYOR_BUILD_FOLDER%
-  - appveyor PushArtifact "%ARTIFACT_NAME%.zip"
-
 deploy:
-  - provider: GitHub
-    description: 'imageflow-server-win'
-    artifact: /.*\.zip/
-    draft: false
-    prerelease: true
-    auth_token:
-        secure: XNXXYANEz7IQCdQpfqy55ahwrfJJ84bCjRLYjyVrAs0w7m/Nf+X1L4tODqLhBUxw
-    on:
-      appveyor_repo_tag: true
   - provider: NuGet
     api_key:
       secure: W0fJC3/ZD5Ur1OyoaBxa4c95rGP8sREZq7gn4B839bK1oDfr5/wJ0e7cBDA7pp1a
