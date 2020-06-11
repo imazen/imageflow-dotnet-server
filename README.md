@@ -1,5 +1,20 @@
-![Imageflow.Server Nuget Packages](https://github.com/imazen/imageflow-dotnet-server/workflows/Imageflow.Server%20Nuget%20Packages/badge.svg)
-Imageflow.NET Server is a Middleware for ASP.NET core that processes images using Imageflow, the image handling library for web servers. Imageflow focuses on security, quality, and performance - in that order.
+[![Imageflow.Server Nuget Packages](https://github.com/imazen/imageflow-dotnet-server/workflows/Imageflow.Server%20Nuget%20Packages/badge.svg)](https://github.com/imazen/imageflow-dotnet-server/actions?query=workflow%3A%22Imageflow.Server+Nuget+Packages%22)
+
+Imageflow.NET Server is image processing and optimizing middleware for ASP.NET Core 3.1+.
+ 
+Under the hood, it uses Imageflow, the fastest image handling library for web servers. 
+Imageflow focuses on security, quality, and performance - in that order.
+
+Supports
+
+* Windows, Mac, and Linux
+* Processing images located on Azure Blob Storage or Amazon S3
+* Disk Caching
+* Memory Caching
+* Distributed Caching
+* Watermarking
+* Mapping arbitrary virtual paths to physical ones. 
+* Imageflow's [Querystring API](https://docs.imageflow.io/querystring/introduction.html)
 
 
 ```
