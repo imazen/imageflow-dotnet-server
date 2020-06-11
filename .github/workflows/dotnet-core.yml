@@ -42,4 +42,4 @@ jobs:
     - name: Pack Imageflow.Server.Storage.AzureBlob with dotnet
       run: dotnet pack src/Imageflow.Server.Storage.AzureBlob/Imageflow.Server.Storage.AzureBlob.csproj --output nuget-packages --configuration Release -p:PackageVersion=${{ steps.gitversion.outputs.nuGetVersionV2 }}
     - name: Push all packageswith dotnet
-      run: dotnet nuget push 'nuget-packages/*.nupkg' --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
+      run: dotnet nuget push 'nuget-packages/*.nupkg' --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
