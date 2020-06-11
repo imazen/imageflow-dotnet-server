@@ -17,8 +17,10 @@ namespace Imageflow.Server.Storage.AzureBlob
             ConnectionString = connectionString;
         }
 
-
-        public AzureBlobServiceOptions MapPrefix(string urlPrefix, string container, string blobPrefix = "")
+        public AzureBlobServiceOptions MapPrefix(string urlPrefix, string container)
+            => MapPrefix(urlPrefix, container, "");
+        
+        public AzureBlobServiceOptions MapPrefix(string urlPrefix, string container, string blobPrefix)
         {
             var prefix = urlPrefix.TrimStart('/').TrimEnd('/');
             if (prefix.Length == 0)
