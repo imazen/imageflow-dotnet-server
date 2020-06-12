@@ -49,11 +49,11 @@ namespace Imageflow.Server.Storage.AzureBlob
             }
 
             var mapping = mappings[prefix];
-            var key = mapping.UrlPrefix + virtualPath.Substring(prefix.Length);
+            var blobName = virtualPath.Substring(prefix.Length);
 
             try
             {
-                var blobClient = client.GetBlobContainerClient(mapping.Container).GetBlobClient(key);
+                var blobClient = client.GetBlobContainerClient(mapping.Container).GetBlobClient(blobName);
 
                 var s = await blobClient.DownloadAsync();
                 return new AzureBlob(s);
