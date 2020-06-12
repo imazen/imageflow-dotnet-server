@@ -41,7 +41,12 @@ namespace Imageflow.Server
             var providers = blobProviders.ToList();
             var mappedPaths = options.MappedPaths.ToList();
             if (options.MapWebRoot)
+            {
+                if (this.env?.WebRootPath == null)
+                    throw new InvalidOperationException("Cannot call MapWebRoot if env.WebRootPath is null");
                 mappedPaths.Add(new PathMapping("/", this.env.WebRootPath));
+            }
+
             blobProvider = new BlobProvider(providers, mappedPaths);
             diagnosticsPage = new DiagnosticsPage(env, logger, memoryCache, distributedCache, diskCache, providers);
         }
