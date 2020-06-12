@@ -23,7 +23,7 @@ namespace Imageflow.Server
         private static readonly string[] querystringKeys = new string[]
         {
             "mode", "anchor", "flip", "sflip", "scale", "cache", "process",
-            "quality", "zoom", "crop", "cropxunits", "cropyunits",
+            "quality", "zoom", "dpr", "crop", "cropxunits", "cropyunits",
             "w", "h", "width", "height", "maxwidth", "maxheight", "format", "thumbnail",
             "autorotate", "srotate", "rotate", "ignoreicc",
             "stretch", "webp.lossless", "webp.quality",
