@@ -76,7 +76,7 @@ namespace Imazen.PersistentCache.Evicter
                     await WriteMultipleLogs(entries, CancellationToken.None);
                 }
             }
-            catch (Exception e)
+            catch (Exception)
             {
 
             }
@@ -97,7 +97,7 @@ namespace Imazen.PersistentCache.Evicter
                 }
 
             }
-            catch (Exception e)
+            catch (Exception)
             {
 
             }
@@ -311,7 +311,7 @@ namespace Imazen.PersistentCache.Evicter
                     }
 
                     bytesDeleted += bytesDeletedThisLoop;
-                    sizeTracker.OffsetBy(-(long)bytesDeletedThisLoop);
+                    await sizeTracker.OffsetBy(-(long)bytesDeletedThisLoop);
 
                 } // Repeat until we have enough space
             }

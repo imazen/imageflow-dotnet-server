@@ -8,7 +8,7 @@ namespace Imazen.PersistentCache.Tests
 {
     public class IntegrationTest
     {
-        [Fact]
+        [Fact(Skip = "Too much disk churn")]
         public async void Test1()
         {
             var path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}");
@@ -33,7 +33,7 @@ namespace Imazen.PersistentCache.Tests
                 
                 var dataBytes = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 
-                for (int i = 0; i < 100; i++)
+                for (int i = 0; i < 10; i++)
                 {
                     var key = new CacheKey
                     {
@@ -52,7 +52,7 @@ namespace Imazen.PersistentCache.Tests
                 await cache.FlushWrites();
 
 
-                for (int i = 0; i < 100; i++)
+                for (int i = 0; i < 10; i++)
                 {
                     var key = new CacheKey
                     {
