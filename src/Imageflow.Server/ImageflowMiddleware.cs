@@ -61,7 +61,7 @@ namespace Imageflow.Server
                 await diagnosticsPage.Invoke(context);
                 return;
             }
-            
+
             // We only handle requests with an image extension, period. 
             if (!PathHelpers.IsImagePath(path))
             {
@@ -77,7 +77,7 @@ namespace Imageflow.Server
                 await NotAuthorized(context);
                 return;
             }
-            
+
             // If the file is definitely missing hand to the next middleware
             // Remote providers will fail late rather than make 2 requests
             if (!imageJobInfo.PrimaryBlobMayExist())
@@ -87,16 +87,17 @@ namespace Imageflow.Server
             }
 
 
-            
+
             var memoryCacheEnabled = memoryCache != null && options.AllowMemoryCaching;
             var diskCacheEnabled = diskCache != null && options.AllowDiskCaching;
             var distributedCacheEnabled = distributedCache != null && options.AllowDistributedCaching;
-            
 
+
+            string cacheKey = null;
             if (memoryCacheEnabled || diskCacheEnabled || distributedCacheEnabled)
             {
 
-                var cacheKey = await imageJobInfo.GetFastCacheKey();
+                cacheKey = await imageJobInfo.GetFastCacheKey();
 
                 if (context.Request.Headers.TryGetValue(HeaderNames.IfNoneMatch, out var etag) && cacheKey == etag)
                 {
@@ -105,7 +106,10 @@ namespace Imageflow.Server
                     context.Response.ContentType = null;
                     return;
                 }
+            }
 
+            try
+            {
                 if (diskCacheEnabled)
                 {
                     await ProcessWithDiskCache(context, cacheKey, imageJobInfo);
@@ -114,15 +118,19 @@ namespace Imageflow.Server
                 {
                     await ProcessWithMemoryCache(context, cacheKey, imageJobInfo);
                     // ReSharper disable once ConditionIsAlwaysTrueOrFalse
-                }else if (distributedCacheEnabled)
+                }
+                else if (distributedCacheEnabled)
                 {
                     await ProcessWithDistributedCache(context, cacheKey, imageJobInfo);
                 }
-
+                else
+                {
+                    await ProcessWithNoCache(context, imageJobInfo);
+                }
             }
-            else
+            catch (FileNotFoundException e)
             {
-                await ProcessWithNoCache(context,  imageJobInfo);
+                await NotFound(context);
             }
         }
 
@@ -135,6 +143,17 @@ namespace Imageflow.Server
             var bytes = Encoding.UTF8.GetBytes(s);
             await context.Response.Body.WriteAsync(bytes, 0, bytes.Length);
         }
+        
+        private async Task NotFound(HttpContext context)
+        {
+            var s = "The specified resource does not exist.";
+            
+            context.Response.StatusCode = 404;
+            context.Response.ContentType = "text/plain; charset=utf-8";
+            var bytes = Encoding.UTF8.GetBytes(s);
+            await context.Response.Body.WriteAsync(bytes, 0, bytes.Length);
+        }
+
 
         private async Task ProcessWithDiskCache(HttpContext context, string cacheKey, ImageJobInfo info)
         {
