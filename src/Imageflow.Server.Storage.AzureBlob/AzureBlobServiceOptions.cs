@@ -30,6 +30,8 @@ namespace Imageflow.Server.Storage.AzureBlob
 
             prefix = '/' + prefix + '/';
 
+            blobPrefix = blobPrefix.Trim('/');
+
 
             mappings.Add(new PrefixMapping()
             {
