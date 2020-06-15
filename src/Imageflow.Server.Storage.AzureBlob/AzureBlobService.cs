@@ -51,8 +51,8 @@ namespace Imageflow.Server.Storage.AzureBlob
             var mapping = mappings[prefix];
             
             var key = string.IsNullOrEmpty(mapping.BlobPrefix)
-                    ? '/' + virtualPath.Substring(prefix.Length).TrimStart('/')
-                    : '/' + mapping.BlobPrefix + "/" + virtualPath.Substring(prefix.Length).TrimStart('/');
+                    ? virtualPath.Substring(prefix.Length).TrimStart('/')
+                    : mapping.BlobPrefix + "/" + virtualPath.Substring(prefix.Length).TrimStart('/');
 
             try
             {
