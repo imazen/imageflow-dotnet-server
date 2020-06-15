@@ -25,7 +25,7 @@ namespace Imageflow.Server
         
         public IReadOnlyCollection<PathMapping> MappedPaths => mappedPaths;
 
-        public bool MapWebRoot { get; set; } = true;
+        public bool MapWebRoot { get; set; } = false;
         
         public string DefaultCacheControlString { get; set; }
         
