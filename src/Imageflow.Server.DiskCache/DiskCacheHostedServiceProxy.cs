@@ -1,6 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Imageflow.Server.Extensibility.ClassicDiskCache;
+using Imazen.Common.Extensibility.ClassicDiskCache;
 using Microsoft.Extensions.Hosting;
 
 namespace Imageflow.Server.DiskCache

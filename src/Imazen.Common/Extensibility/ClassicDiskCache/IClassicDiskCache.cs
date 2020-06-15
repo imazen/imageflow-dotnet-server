@@ -3,7 +3,7 @@ using Imazen.Common.Extensibility.ClassicDiskCache;
 using Imazen.Common.Issues;
 using Microsoft.Extensions.Hosting;
 
-namespace Imageflow.Server.Extensibility.ClassicDiskCache
+namespace Imazen.Common.Extensibility.ClassicDiskCache
 {
     public interface IClassicDiskCache: IIssueProvider, IHostedService
     {

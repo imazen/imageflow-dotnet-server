@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Imageflow.Server.Extensibility.ClassicDiskCache;
 using Imazen.Common.Extensibility.ClassicDiskCache;
 using Imazen.Common.Issues;
 using Imazen.DiskCache;

@@ -8,7 +8,7 @@ using System.Runtime.CompilerServices;
 using System.Security;
 using System.Text;
 using System.Threading.Tasks;
-using Imageflow.Server.Extensibility.ClassicDiskCache;
+using Imazen.Common.Extensibility.ClassicDiskCache;
 using Imazen.Common.Issues;
 using Imazen.Common.Storage;
 using Microsoft.AspNetCore.Hosting;
