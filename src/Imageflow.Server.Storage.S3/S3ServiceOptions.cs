@@ -21,6 +21,9 @@ namespace Imageflow.Server.Storage.S3
         }
 
         public S3ServiceOptions MapPrefix(string prefix, string region, string bucket)
+            => MapPrefix(prefix, region, bucket, "");
+        
+        public S3ServiceOptions MapPrefix(string prefix, string region, string bucket, string blobPrefix)
         {
             prefix = prefix.TrimStart('/').TrimEnd('/');
             if (prefix.Length == 0)
@@ -29,9 +32,9 @@ namespace Imageflow.Server.Storage.S3
             }
 
             prefix = '/' + prefix + '/';
-            
+            blobPrefix = blobPrefix.Trim('/');
 
-            mappings.Add(new PrefixMapping() {Bucket=bucket, Prefix=prefix, Region=region});
+            mappings.Add(new PrefixMapping() {Bucket=bucket, Prefix=prefix, Region=region, BlobPrefix = blobPrefix});
             return this;
         }
         

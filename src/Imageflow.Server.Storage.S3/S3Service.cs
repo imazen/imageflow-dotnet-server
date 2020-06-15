@@ -58,8 +58,11 @@ namespace Imageflow.Server.Storage.S3
             }
 
             var mapping = mappings[prefix];
-            var key = virtualPath.Substring(prefix.Length);
             
+            var key = string.IsNullOrEmpty(mapping.BlobPrefix)
+                ? '/' + virtualPath.Substring(prefix.Length).TrimStart('/')
+                : '/' + mapping.BlobPrefix + "/" + virtualPath.Substring(prefix.Length).TrimStart('/');
+
             try {
                 var req = new Amazon.S3.Model.GetObjectRequest() { BucketName = mapping.Bucket, Key = key };
 
