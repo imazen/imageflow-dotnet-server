@@ -93,16 +93,16 @@ namespace Imageflow.Server.Example
                     new NamedWatermark("imazen", 
                         "/images/imazen_400.png",
                         new WatermarkOptions()
-                            .LayoutWithFitBox(
+                            .SetFitBoxLayout(
                                 new WatermarkFitBox(WatermarkAlign.Image, 10,10,90,90), 
                                 WatermarkConstraintMode.Within, 
                                 new ConstraintGravity(100,100) )
-                            .WithOpacity(0.7f)
-                            .WithHints(
+                            .SetOpacity(0.7f)
+                            .SetHints(
                                 new ResampleHints()
-                                    .ResampleFilter(InterpolationFilter.Robidoux_Sharp, null)
-                                    .Sharpen(7, SharpenWhen.Downscaling))
-                            .WithMinCanvasSize(300,300))));
+                                    .SetResampleFilters(InterpolationFilter.Robidoux_Sharp, null)
+                                    .SetSharpen(7, SharpenWhen.Downscaling))
+                            .SetMinCanvasSize(300,300))));
             
             
             app.UseStaticFiles();
