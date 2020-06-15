@@ -141,8 +141,8 @@ namespace Imageflow.Server.Tests
                     {
                         services.AddImageflowDiskCache(new DiskCacheOptions(diskCacheDir) {AsyncWrites = false});
                         services.AddImageflowS3Service(
-                            new S3ServiceOptions(RegionEndpoint.USEast1, null, null)
-                                .MapPrefix("/ri/", "us-east-1", "resizer-images"));
+                            new S3ServiceOptions(null, null)
+                                .MapPrefix("/ri/", RegionEndpoint.USEast1, "resizer-images"));
                     })
                     .ConfigureWebHost(webHost =>
                     {

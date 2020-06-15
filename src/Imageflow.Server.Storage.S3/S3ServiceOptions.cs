@@ -11,19 +11,17 @@ namespace Imageflow.Server.Storage.S3
 
         internal readonly string AccessKeyId;
         internal readonly string SecretAccessKey;
-        internal readonly RegionEndpoint DefaultRegion;
         internal readonly List<PrefixMapping> mappings = new List<PrefixMapping>();
-        public S3ServiceOptions( RegionEndpoint defaultRegion, string accessKeyId, string secretAccessKey)
+        public S3ServiceOptions(string accessKeyId, string secretAccessKey)
         {
-            DefaultRegion = defaultRegion;
             this.AccessKeyId = accessKeyId;
             this.SecretAccessKey = secretAccessKey;
         }
 
-        public S3ServiceOptions MapPrefix(string prefix, string region, string bucket)
+        public S3ServiceOptions MapPrefix(string prefix, RegionEndpoint region, string bucket)
             => MapPrefix(prefix, region, bucket, "");
         
-        public S3ServiceOptions MapPrefix(string prefix, string region, string bucket, string blobPrefix)
+        public S3ServiceOptions MapPrefix(string prefix, RegionEndpoint region, string bucket, string blobPrefix)
         {
             prefix = prefix.TrimStart('/').TrimEnd('/');
             if (prefix.Length == 0)

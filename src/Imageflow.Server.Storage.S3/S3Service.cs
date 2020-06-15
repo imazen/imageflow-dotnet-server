@@ -17,17 +17,17 @@ namespace Imageflow.Server.Storage.S3
         
         private readonly List<string> prefixes = new List<string>();
 
-        private readonly AmazonS3Client client;
+        private readonly AWSCredentials credentials;
         public S3Service(S3ServiceOptions options, ILogger<S3Service> logger)
         {
 
             if (options.AccessKeyId == null)
             {
-                client = new AmazonS3Client(new AnonymousAWSCredentials(),options.DefaultRegion);
+                credentials = new AnonymousAWSCredentials();
             }
             else
             {
-                client = new AmazonS3Client(new BasicAWSCredentials(options.AccessKeyId, options.SecretAccessKey), options.DefaultRegion);
+                credentials = new  BasicAWSCredentials(options.AccessKeyId, options.SecretAccessKey);
             }
 
             foreach (var m in options.mappings)
@@ -64,6 +64,7 @@ namespace Imageflow.Server.Storage.S3
                 : mapping.BlobPrefix + "/" + virtualPath.Substring(prefix.Length).TrimStart('/');
 
             try {
+                using var client = new AmazonS3Client(credentials, mapping.Region);
                 var req = new Amazon.S3.Model.GetObjectRequest() { BucketName = mapping.Bucket, Key = key };
 
                 var s = await client.GetObjectAsync(req);

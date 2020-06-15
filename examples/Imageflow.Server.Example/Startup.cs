@@ -31,10 +31,10 @@ namespace Imageflow.Server.Example
             
             // Make S3 containers available at /ri/ and /imageflow-resources/
             // If you use credentials, do not check them into your repository
-            services.AddImageflowS3Service(new S3ServiceOptions( RegionEndpoint.USEast1, null,null)
-                .MapPrefix("/ri/", "us-east-1", "resizer-images")
-                .MapPrefix("/imageflow-resources/", "us-west-2", "imageflow-resources"));
-
+            services.AddImageflowS3Service(new S3ServiceOptions( null,null)
+                .MapPrefix("/ri/", RegionEndpoint.USEast1, "resizer-images")
+                .MapPrefix("/imageflow-resources/", RegionEndpoint.USWest2, "imageflow-resources"));
+            
             // Make Azure container available at /azure
             services.AddImageflowAzureBlobService(
                 new AzureBlobServiceOptions(
