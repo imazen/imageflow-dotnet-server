@@ -1,8 +1,9 @@
 [![Build status](https://ci.appveyor.com/api/projects/status/5hm0ekhe455i56fp/branch/master?svg=true)](https://ci.appveyor.com/project/imazen/imageflow-dotnet-server/branch/master)
 
-Imageflow.NET Server is image processing and optimizing middleware for ASP.NET Core 3.1+.
+Imageflow.NET Server is image processing and optimizing middleware for ASP.NET Core 3.1+. 
+If you don't need an http server, [try Imageflow.NET](https://github.com/imazen/imageflow-dotnet).
  
-Under the hood, it uses Imageflow, the fastest image handling library for web servers. 
+Under the hood, it uses [Imageflow](https://imageflow.io), the fastest image handling library for web servers. 
 Imageflow focuses on security, quality, and performance - in that order.
 
 Supports
