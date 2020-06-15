@@ -68,10 +68,17 @@ namespace Imageflow.Server
                 .Substring(mapping.VirtualPath.Length)
                 .Replace('/', Path.DirectorySeparatorChar)
                 .TrimStart(Path.DirectorySeparatorChar);
+
+            var physicalDir = Path.GetFullPath(mapping.PhysicalPath.TrimEnd(Path.DirectorySeparatorChar));
             
-            var physicalPath = Path.Combine(
-                mapping.PhysicalPath.TrimEnd(Path.DirectorySeparatorChar),
-                relativePath);
+            var physicalPath = Path.GetFullPath(Path.Combine(
+                physicalDir,
+                relativePath));
+            if (!physicalPath.StartsWith(physicalDir, StringComparison.Ordinal))
+            {
+                return null; //We stopped a directory traversal attack (most likely)
+            }
+            
             
             var lastWriteTimeUtc = File.GetLastWriteTimeUtc(physicalPath);
             if (lastWriteTimeUtc.Year == 1601) // file doesn't exist, pass to next middleware
