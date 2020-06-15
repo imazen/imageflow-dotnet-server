@@ -27,7 +27,7 @@ namespace Imageflow.Server.Storage.S3
             }
             else
             {
-                client = new AmazonS3Client(new BasicAWSCredentials(options.AccessKeyId, options.SecretAccessKey));
+                client = new AmazonS3Client(new BasicAWSCredentials(options.AccessKeyId, options.SecretAccessKey), options.DefaultRegion);
             }
 
             foreach (var m in options.mappings)
