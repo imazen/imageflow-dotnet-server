@@ -1,33 +1,69 @@
 [![Build status](https://ci.appveyor.com/api/projects/status/5hm0ekhe455i56fp/branch/master?svg=true)](https://ci.appveyor.com/project/imazen/imageflow-dotnet-server/branch/master)
 
 Imageflow.NET Server is image processing and optimizing middleware for ASP.NET Core 3.1+. 
-If you don't need an http server, [try Imageflow.NET](https://github.com/imazen/imageflow-dotnet).
+If you don't need an HTTP server, [try Imageflow.NET](https://github.com/imazen/imageflow-dotnet).
  
 Under the hood, it uses [Imageflow](https://imageflow.io), the fastest image handling library for web servers. 
 Imageflow focuses on security, quality, and performance - in that order.
 
-Supports
+### Features
 
-* Windows, Mac, and Linux
-* Processing images located on Azure Blob Storage or Amazon S3
+* Supports Windows, Mac, and Linux
+* Processing images located on disk, Azure Blob Storage or Amazon S3
 * Disk Caching
 * Memory Caching
 * Distributed Caching
 * Watermarking
 * Mapping arbitrary virtual paths to physical ones. 
-* Imageflow's [Querystring API](https://docs.imageflow.io/querystring/introduction.html)
+* Imageflow's [Querystring API](https://docs.imageflow.io/querystring/introduction.html) (compatible with ImageResizer)
 
+## Basic Installation
+
+You can look at `examples/Imageflow.Server.ExampleMinimal` to see the result. 
+
+1. Create a new ASP.NET Core 3.1 project using the Empty template. 
+2. Create a directory called "wwwroot" and add a file "image.jpg"
+3. Install both `Imageflow.Server` and all `Imageflow.NativeRuntime.*` packages for platforms you are targeting. 
+    ```
+    Install-Package Imageflow.Server
+    Install-Package Imageflow.NativeRuntime.win-x86 -pre
+    Install-Package Imageflow.NativeRuntime.win-x86_64 -pre
+    Install-Package Imageflow.NativeRuntime.osx_10_11-x86_64 -pre
+    Install-Package Imageflow.NativeRuntime.ubuntu_16_04-x86_64 -pre
+    Install-Package Imageflow.NativeRuntime.ubuntu_18_04-x86_64 -pre
+    ```
+4. Open Startup.cs and edit the Configure method.  Add
+    ```c#
+    app.UseImageflow(new ImageflowMiddlewareOptions()
+        .SetMapWebRoot(true));
+    ```
+5. Replace the endpoint with something that generates an image tag, like 
+   ```c#
+   app.UseEndpoints(endpoints =>
+   {
+       endpoints.MapGet("/", async context =>
+       {
+           context.Response.ContentType = "text/html";
+           await context.Response.WriteAsync("<img src=\"fire-umbrella-small.jpg?width=450\" />");
+       });
+   });
+   ```
+6. Run your project and see the image be dynamically resized. 
+
+## Installing everything
+
+See `examples/Imageflow.Server.Example` for this example. 
 
 ```
-PM> Install-Package Imageflow.Server
-PM> Install-Package Imageflow.Server.DiskCache
-PM> Install-Package Imageflow.Server.Storage.S3
-PM> Install-Package Imageflow.Server.Storage.AzureBlob
-PM> Install-Package Imageflow.NativeRuntime.win-x86 -pre
-PM> Install-Package Imageflow.NativeRuntime.win-x86_64 -pre
-PM> Install-Package Imageflow.NativeRuntime.osx_10_11-x86_64 -pre
-PM> Install-Package Imageflow.NativeRuntime.ubuntu_16_04-x86_64 -pre
-PM> Install-Package Imageflow.NativeRuntime.ubuntu_18_04-x86_64 -pre
+Install-Package Imageflow.Server
+Install-Package Imageflow.Server.DiskCache
+Install-Package Imageflow.Server.Storage.S3
+Install-Package Imageflow.Server.Storage.AzureBlob
+Install-Package Imageflow.NativeRuntime.win-x86 -pre
+Install-Package Imageflow.NativeRuntime.win-x86_64 -pre
+Install-Package Imageflow.NativeRuntime.osx_10_11-x86_64 -pre
+Install-Package Imageflow.NativeRuntime.ubuntu_16_04-x86_64 -pre
+Install-Package Imageflow.NativeRuntime.ubuntu_18_04-x86_64 -pre
 ```
 
 ```c#
@@ -64,7 +100,7 @@ namespace Imageflow.Server.Example
             
             // Make S3 containers available at /ri/ and /imageflow-resources/
             // If you use credentials, do not check them into your repository
-            services.AddImageflowS3Service(new S3ServiceOptions( null,null)
+            services.AddImageflowS3Service(new S3ServiceOptions(null, null)
                 .MapPrefix("/ri/", RegionEndpoint.USEast1, "resizer-images")
                 .MapPrefix("/imageflow-resources/", RegionEndpoint.USWest2, "imageflow-resources"));
 
