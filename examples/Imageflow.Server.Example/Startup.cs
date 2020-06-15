@@ -90,19 +90,20 @@ namespace Imageflow.Server.Example
                 // Register a named watermark that floats 10% from the bottom-right corner of the image
                 // With 70% opacity and some sharpness applied. 
                 .AddWatermark(
-                    new NamedWatermark("imazen", 
+                    new NamedWatermark("imazen",
                         "/images/imazen_400.png",
                         new WatermarkOptions()
                             .SetFitBoxLayout(
-                                new WatermarkFitBox(WatermarkAlign.Image, 10,10,90,90), 
-                                WatermarkConstraintMode.Within, 
-                                new ConstraintGravity(100,100) )
+                                new WatermarkFitBox(WatermarkAlign.Image, 10, 10, 90, 90),
+                                WatermarkConstraintMode.Within,
+                                new ConstraintGravity(100, 100))
                             .SetOpacity(0.7f)
                             .SetHints(
                                 new ResampleHints()
                                     .SetResampleFilters(InterpolationFilter.Robidoux_Sharp, null)
                                     .SetSharpen(7, SharpenWhen.Downscaling))
-                            .SetMinCanvasSize(200,200))));
+                            .SetMinCanvasSize(200, 150))));
+            
             
             
             app.UseStaticFiles();
