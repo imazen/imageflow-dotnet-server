@@ -16,7 +16,7 @@ namespace Imageflow.Server.Storage.S3
 
         public bool? Exists => true;
         public DateTime? LastModifiedDateUtc => response.LastModified.ToUniversalTime();
-        public Stream OpenReadAsync()
+        public Stream OpenRead()
         {
             return response.ResponseStream;
         }

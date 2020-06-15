@@ -9,7 +9,7 @@ namespace Imageflow.Server
         public string Path;
         public bool? Exists { get; set; }
         public DateTime? LastModifiedDateUtc { get; set; }
-        public Stream OpenReadAsync()
+        public Stream OpenRead()
         {
             return File.OpenRead(Path);
         }

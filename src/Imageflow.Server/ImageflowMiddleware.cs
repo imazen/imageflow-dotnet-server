@@ -173,7 +173,7 @@ namespace Imageflow.Server
                 {
                     logger.LogInformation($"DiskCache Miss: Proxying image {info.FinalVirtualPath}");
                     
-                    await using var sourceStream = (await info.GetPrimaryBlob()).OpenReadAsync();
+                    await using var sourceStream = (await info.GetPrimaryBlob()).OpenRead();
                     await sourceStream.CopyToAsync(stream);
                 }
             });
@@ -229,7 +229,7 @@ namespace Imageflow.Server
                     logger.LogInformation($"Memory Cache Miss: Proxying image {info.FinalVirtualPath}?{info.CommandString}");
 
                     contentType = PathHelpers.ContentTypeFor(info.EstimatedFileExtension);
-                    await using var sourceStream = (await info.GetPrimaryBlob()).OpenReadAsync();
+                    await using var sourceStream = (await info.GetPrimaryBlob()).OpenRead();
                     var ms = new MemoryStream((int)sourceStream.Length);
                     await sourceStream.CopyToAsync(ms);
                     imageBytes = new ArraySegment<byte>(ms.GetBuffer());
@@ -285,7 +285,7 @@ namespace Imageflow.Server
                     logger.LogInformation($"Distributed Cache Miss: Proxying image {info.FinalVirtualPath}?{info.CommandString}");
 
                     contentType = PathHelpers.ContentTypeFor(info.EstimatedFileExtension);
-                    await using var sourceStream = (await info.GetPrimaryBlob()).OpenReadAsync();
+                    await using var sourceStream = (await info.GetPrimaryBlob()).OpenRead();
                     var ms = new MemoryStream((int)sourceStream.Length);
                     await sourceStream.CopyToAsync(ms);
                     imageBytes = ms.GetBuffer();
@@ -342,7 +342,7 @@ namespace Imageflow.Server
                 logger.LogInformation($"Proxying image {info.FinalVirtualPath} with params {info.CommandString}");
 
                 var contentType = PathHelpers.ContentTypeFor(info.EstimatedFileExtension);
-                await using var sourceStream = (await info.GetPrimaryBlob()).OpenReadAsync();
+                await using var sourceStream = (await info.GetPrimaryBlob()).OpenRead();
                 context.Response.ContentType = contentType;
                 context.Response.ContentLength = sourceStream.Length;
                 SetCachingHeaders(context, betterCacheKey);

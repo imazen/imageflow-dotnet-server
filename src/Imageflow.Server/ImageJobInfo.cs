@@ -180,13 +180,13 @@ namespace Imageflow.Server
                 watermarks.AddRange(
                     appliedWatermarks.Select((t, i) =>
                         new InputWatermark(
-                            new StreamSource(blobs[i + 1].OpenReadAsync(), true),
+                            new StreamSource(blobs[i + 1].OpenRead(), true),
                             t.Watermark)));
             }
 
             using var buildJob = new FluentBuildJob();
             var jobResult = await buildJob.BuildCommandString(
-                    new StreamSource(blobs[0].OpenReadAsync(), true),
+                    new StreamSource(blobs[0].OpenRead(), true),
                     new BytesDestination(), CommandString, watermarks)
                 .Finish()
                 .InProcessAsync();

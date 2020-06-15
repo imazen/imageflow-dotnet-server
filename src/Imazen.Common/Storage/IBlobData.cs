@@ -10,6 +10,6 @@ namespace Imazen.Common.Storage
         bool? Exists { get; }
         DateTime? LastModifiedDateUtc { get; }
 
-        Stream OpenReadAsync();
+        Stream OpenRead();
     }
 }

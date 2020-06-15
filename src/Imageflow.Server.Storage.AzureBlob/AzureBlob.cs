@@ -17,7 +17,7 @@ namespace Imageflow.Server.Storage.AzureBlob
 
         public bool? Exists => true;
         public DateTime? LastModifiedDateUtc => response.Value.Details.LastModified.UtcDateTime;
-        public Stream OpenReadAsync()
+        public Stream OpenRead()
         {
             return response.Value.Content;
         }
