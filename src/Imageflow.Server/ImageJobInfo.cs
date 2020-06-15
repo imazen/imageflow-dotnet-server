@@ -33,7 +33,7 @@ namespace Imageflow.Server
             
             primaryBlob = new BlobFetchCache(FinalVirtualPath, blobProvider);
             allBlobs = new List<BlobFetchCache>(1) {primaryBlob};
-
+            
             if (HasParams)
             {
                 CommandString = PathHelpers.SerializeCommandString(FinalQuery);
