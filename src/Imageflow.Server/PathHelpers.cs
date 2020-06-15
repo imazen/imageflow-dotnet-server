@@ -58,7 +58,7 @@ namespace Imageflow.Server
             };
         }
 
-        internal static string ContentTypeFor(string extension)
+        internal static string ContentTypeForImageExtension(string extension)
         {
             return extension switch
             {
@@ -69,14 +69,7 @@ namespace Imageflow.Server
                 _ => "application/octet-stream"
             };
         }
-       
-
-        internal static IEnumerable<string> MatchingResizeQueryStringParameters(IQueryCollection queryCollection)
-        {
-            return querystringKeys
-                .Where(queryCollection.ContainsKey)
-                .Select(qsKey => qsKey + "=" + queryCollection[qsKey]);
-        }
+        
 
         internal static string Base64Hash(string data)
         {
@@ -94,7 +87,7 @@ namespace Imageflow.Server
 
         public static Dictionary<string, string> ToQueryDictionary(IQueryCollection requestQuery)
         {
-            var dict = new Dictionary<string,string>(requestQuery.Count);
+            var dict = new Dictionary<string,string>(requestQuery.Count, StringComparer.OrdinalIgnoreCase);
             foreach (var pair in requestQuery)
             {
                 dict.Add(pair.Key, pair.Value.ToString());

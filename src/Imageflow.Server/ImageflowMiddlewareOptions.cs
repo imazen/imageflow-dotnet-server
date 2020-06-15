@@ -35,6 +35,22 @@ namespace Imageflow.Server
 
         internal readonly List<UrlHandler<Func<UrlEventArgs, bool>>> PostRewriteAuthorization = new List<UrlHandler<Func<UrlEventArgs, bool>>>();
 
+        internal readonly Dictionary<string, string> CommandDefaults = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// Use this to add default command values if they are missing. Does not affect image requests with no querystring.
+        /// Example: AddCommandDefault("down.colorspace", "srgb") reverts to ImageResizer's legacy behavior in scaling shadows and highlights.
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentOutOfRangeException"></exception>
+        public ImageflowMiddlewareOptions AddCommandDefault(string key, string value)
+        {
+            if (CommandDefaults.ContainsKey(key)) throw new ArgumentOutOfRangeException(nameof(key), "A default has already been added for this key");
+            CommandDefaults[key] = value;
+            return this;
+        }
         public ImageflowMiddlewareOptions AddRewriteHandler(string pathPrefix, Action<UrlEventArgs> handler)
         {
             Rewrite.Add(new UrlHandler<Action<UrlEventArgs>>(pathPrefix, handler));

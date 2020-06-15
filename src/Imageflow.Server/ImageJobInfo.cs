@@ -99,6 +99,14 @@ namespace Imageflow.Server
                     path = args.VirtualPath;
                 }
             }
+            // Set defaults if keys are missing
+            foreach (var pair in options.CommandDefaults)
+            {
+                if (!args.Query.ContainsKey(pair.Key))
+                {
+                    args.Query[pair.Key] = pair.Value;
+                }
+            }
             foreach (var handler in options.PreRewriteAuthorization)
             {
                 var matches = string.IsNullOrEmpty(handler.PathPrefix) ||

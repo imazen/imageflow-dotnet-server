@@ -183,7 +183,7 @@ namespace Imageflow.Server
 
             if (cacheResult.Data != null)
             {
-                context.Response.ContentType = PathHelpers.ContentTypeFor(info.EstimatedFileExtension);
+                context.Response.ContentType = PathHelpers.ContentTypeForImageExtension(info.EstimatedFileExtension);
                 context.Response.ContentLength = cacheResult.Data.Length;
                 SetCachingHeaders(context, cacheKey);
                 await cacheResult.Data.CopyToAsync(context.Response.Body);
@@ -192,7 +192,7 @@ namespace Imageflow.Server
             {
                 logger?.LogInformation("Serving {0}?{1} from disk cache {2}", info.FinalVirtualPath, info.CommandString, cacheResult.RelativePath);
                 await ServeFileFromDisk(context, cacheResult.PhysicalPath, cacheKey,
-                    PathHelpers.ContentTypeFor(info.EstimatedFileExtension));
+                    PathHelpers.ContentTypeForImageExtension(info.EstimatedFileExtension));
             }
         }
 
@@ -228,7 +228,7 @@ namespace Imageflow.Server
                 {
                     logger?.LogInformation($"Memory Cache Miss: Proxying image {info.FinalVirtualPath}?{info.CommandString}");
 
-                    contentType = PathHelpers.ContentTypeFor(info.EstimatedFileExtension);
+                    contentType = PathHelpers.ContentTypeForImageExtension(info.EstimatedFileExtension);
                     await using var sourceStream = (await info.GetPrimaryBlob()).OpenRead();
                     var ms = new MemoryStream((int)sourceStream.Length);
                     await sourceStream.CopyToAsync(ms);
@@ -284,7 +284,7 @@ namespace Imageflow.Server
                 {
                     logger?.LogInformation($"Distributed Cache Miss: Proxying image {info.FinalVirtualPath}?{info.CommandString}");
 
-                    contentType = PathHelpers.ContentTypeFor(info.EstimatedFileExtension);
+                    contentType = PathHelpers.ContentTypeForImageExtension(info.EstimatedFileExtension);
                     await using var sourceStream = (await info.GetPrimaryBlob()).OpenRead();
                     var ms = new MemoryStream((int)sourceStream.Length);
                     await sourceStream.CopyToAsync(ms);
@@ -341,7 +341,7 @@ namespace Imageflow.Server
             {
                 logger?.LogInformation($"Proxying image {info.FinalVirtualPath} with params {info.CommandString}");
 
-                var contentType = PathHelpers.ContentTypeFor(info.EstimatedFileExtension);
+                var contentType = PathHelpers.ContentTypeForImageExtension(info.EstimatedFileExtension);
                 await using var sourceStream = (await info.GetPrimaryBlob()).OpenRead();
                 context.Response.ContentType = contentType;
                 context.Response.ContentLength = sourceStream.Length;

@@ -87,6 +87,9 @@ namespace Imageflow.Server.Example
                 {
                     args.Query["watermark"] = "imazen";
                 })
+                .AddCommandDefault("down.filter", "mitchell")
+                .AddCommandDefault("f.sharpen", "15")
+                .AddCommandDefault("webp.quality", "90")
                 // Register a named watermark that floats 10% from the bottom-right corner of the image
                 // With 70% opacity and some sharpness applied. 
                 .AddWatermark(
