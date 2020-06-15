@@ -128,9 +128,9 @@ namespace Imageflow.Server
                     await ProcessWithNoCache(context, imageJobInfo);
                 }
             }
-            catch (FileNotFoundException e)
+            catch (BlobMissingException e)
             {
-                await NotFound(context);
+                await NotFound(context, e);
             }
         }
 
@@ -144,9 +144,9 @@ namespace Imageflow.Server
             await context.Response.Body.WriteAsync(bytes, 0, bytes.Length);
         }
         
-        private async Task NotFound(HttpContext context)
+        private async Task NotFound(HttpContext context, BlobMissingException e)
         {
-            var s = "The specified resource does not exist.";
+            var s = "The specified resource does not exist.\r\n" + e.Message;
             
             context.Response.StatusCode = 404;
             context.Response.ContentType = "text/plain; charset=utf-8";

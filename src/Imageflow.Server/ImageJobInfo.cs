@@ -179,9 +179,14 @@ namespace Imageflow.Server
                 watermarks = new List<InputWatermark>(appliedWatermarks.Count);
                 watermarks.AddRange(
                     appliedWatermarks.Select((t, i) =>
-                        new InputWatermark(
+                    {
+                        if (blobs[i + 1] == null)
+                            throw new BlobMissingException(
+                                $"Cannot locate watermark \"{t.Name}\" at virtual path \"{t.VirtualPath}\"");
+                        return new InputWatermark(
                             new StreamSource(blobs[i + 1].OpenRead(), true),
-                            t.Watermark)));
+                            t.Watermark);
+                    }));
             }
 
             using var buildJob = new FluentBuildJob();
