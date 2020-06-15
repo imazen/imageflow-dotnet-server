@@ -44,9 +44,9 @@ namespace Imageflow.Server.Example
 
             // You can add a distributed cache, such as redis, if you add it and and
             // call ImageflowMiddlewareOptions.SetAllowDistributedCaching(true)
-            services.AddDistributedMemoryCache();
+            //services.AddDistributedMemoryCache();
             // You can add a memory cache and call ImageflowMiddlewareOptions.SetAllowMemoryCaching(true)
-            services.AddMemoryCache();
+            //services.AddMemoryCache();
             // You can add a disk cache and call ImageflowMiddlewareOptions.SetAllowDiskCaching(true)
             // If you're deploying to azure, provide a disk cache folder *not* inside ContentRootPath
             // to prevent the app from recycling whenever folders are created.
@@ -71,7 +71,7 @@ namespace Imageflow.Server.Example
             // You have a lot of configuration options
             app.UseImageflow(new ImageflowMiddlewareOptions()
                 // Maps / to WebRootPath
-                .SetMapWebRoot(true) 
+                .SetMapWebRoot(true)
                 // Maps /folder to WebRootPath/folder
                 .MapPath("/folder", Path.Combine(Env.ContentRootPath, "folder"))
                 // Allow Disk Caching
