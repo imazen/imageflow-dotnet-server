@@ -88,9 +88,9 @@ namespace Imageflow.Server
 
 
 
-            var memoryCacheEnabled = memoryCache != null && options.AllowMemoryCaching;
-            var diskCacheEnabled = diskCache != null && options.AllowDiskCaching;
-            var distributedCacheEnabled = distributedCache != null && options.AllowDistributedCaching;
+            var memoryCacheEnabled = memoryCache != null && options.AllowMemoryCaching && imageJobInfo.NeedsCaching();
+            var diskCacheEnabled = diskCache != null && options.AllowDiskCaching && imageJobInfo.NeedsCaching();
+            var distributedCacheEnabled = distributedCache != null && options.AllowDistributedCaching && imageJobInfo.NeedsCaching();
 
 
             string cacheKey = null;

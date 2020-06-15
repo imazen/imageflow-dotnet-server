@@ -124,7 +124,11 @@ namespace Imageflow.Server
         {
             return primaryBlob.GetBlobResult() != null;
         }
-        
+
+        public bool NeedsCaching()
+        {
+            return HasParams || primaryBlob?.GetBlobResult()?.IsFile == false;
+        }
       
         public Task<IBlobData> GetPrimaryBlob()
         {
