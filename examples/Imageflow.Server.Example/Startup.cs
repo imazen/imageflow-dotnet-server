@@ -102,7 +102,7 @@ namespace Imageflow.Server.Example
                                 new ResampleHints()
                                     .SetResampleFilters(InterpolationFilter.Robidoux_Sharp, null)
                                     .SetSharpen(7, SharpenWhen.Downscaling))
-                            .SetMinCanvasSize(300,300))));
+                            .SetMinCanvasSize(200,200))));
             
             
             app.UseStaticFiles();
