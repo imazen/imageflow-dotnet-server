@@ -9,7 +9,7 @@ namespace Imazen.PersistentCache.Tests
     public class IntegrationTest
     {
         [Fact(Skip = "Too much disk churn")]
-        public async void Test1()
+        public async void TestDiskChurn()
         {
             var path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}");
             Directory.CreateDirectory(path);

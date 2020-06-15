@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netcoreapp3.1</TargetFramework>
+
+        <IsPackable>false</IsPackable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Imageflow.NativeRuntime.osx_10_11-x86_64" Version="1.4.4-rc44" />
+        <PackageReference Include="Imageflow.NativeRuntime.ubuntu_16_04-x86_64" Version="1.4.4-rc44" />
+        <PackageReference Include="Imageflow.NativeRuntime.ubuntu_18_04-x86_64" Version="1.4.4-rc44" />
+        <PackageReference Include="Imageflow.NativeRuntime.win-x86" Version="1.4.4-rc44" />
+        <PackageReference Include="Imageflow.NativeRuntime.win-x86_64" Version="1.4.4-rc44" />
+        <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="3.1.5" />
+        <PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" Version="3.1.5" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.5.0" />
+        <PackageReference Include="xunit" Version="2.4.0" />
+        <PackageReference Include="xunit.runner.visualstudio" Version="2.4.0" />
+        <PackageReference Include="coverlet.collector" Version="1.2.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\src\Imageflow.Server.DiskCache\Imageflow.Server.DiskCache.csproj" />
+      <ProjectReference Include="..\..\src\Imageflow.Server.Storage.AzureBlob\Imageflow.Server.Storage.AzureBlob.csproj" />
+      <ProjectReference Include="..\..\src\Imageflow.Server.Storage.S3\Imageflow.Server.Storage.S3.csproj" />
+      <ProjectReference Include="..\..\src\Imageflow.Server\Imageflow.Server.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="TestFiles" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <EmbeddedResource Include="TestFiles\*.jpg" />
+        <EmbeddedResource Include="TestFiles\*.webp" />
+        <EmbeddedResource Include="TestFiles\*.png" />
+        <EmbeddedResource Include="TestFiles\*.gif" />
+    </ItemGroup>
+
+</Project>
