@@ -4,14 +4,17 @@ Imageflow.NET Server is image processing and optimizing middleware for ASP.NET C
 If you don't need an HTTP server, [try Imageflow.NET](https://github.com/imazen/imageflow-dotnet).
  
 Under the hood, it uses [Imageflow](https://imageflow.io), the fastest image handling library for web servers. 
-Imageflow focuses on security, quality, and performance - in that order.
+Imageflow focuses on security, quality, and performance.
 
 For help migrating from ImageResizer, see [the migrating from ImageResizer](#migrating-from-imageresizer) section and open an issue or email `support@imazen.io` if you have any questions. 
+
+We offer commercial licenses at https://imageresizing.net/pricing, or you can use
+Imageflow, Imageflow.NET and Imageflow.NET Server under the terms of the AGPLv3.
 
 ### Features
 
 * Supports Windows, Mac, and Linux
-* Processing images located on disk, Azure Blob Storage or Amazon S3
+* Processes images located on disk, Azure Blob Storage or Amazon S3
 * Disk Caching
 * Memory Caching
 * Distributed Caching
