@@ -213,7 +213,7 @@ Note: You must install the [appropriate NativeRuntime(s)](https://www.nuget.org/
 * Most popular plugins are now built-in, including WebP, AnimatedGifs,
     PrettyGifs, SimpleFilters, FastScaling, Watermark, VirtualFolder,
      ClientCache, AutoRotate, and WhitespaceTrimmer.
-* The following plugins are not available: DropShadow, FolderResizeSyntax,
+* The following plugins are not available: DropShadow,
     Gradient, Image404, RedEye, Faces, SeamCarving, WIC, TinyCache, 
     PsdReader, PsdComposer, MongoReader, FreeImage, FFMpeg, 
     AdvancedFilters, CopyMetadata. 
@@ -234,7 +234,7 @@ Note: You must install the [appropriate NativeRuntime(s)](https://www.nuget.org/
     `jpeg_idct_downscale_linear`, `watermark`, `s.invert`, `s.sepia`, 
     `s.grayscale`, `s.alpha`, `s.brightness`, `s.contrast`, `s.saturation`, 
     `trim.threshold`, `trim.percentpadding`, `a.balancewhite`,  `jpeg.progressive`,
-    `decoder.min_precise_scaling_ratio`, `scale`
+    `decoder.min_precise_scaling_ratio`, `scale`, `preset`
  * TIFF files are not supported, so `page=x` is not supported.
  * Animated GIFs are fully supported, so `frame=x` is ignored.
  * Images are always auto-rotated based on Exif information, so `autorotate` is ignored.
