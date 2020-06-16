@@ -1,4 +1,4 @@
-[![Build status](https://ci.appveyor.com/api/projects/status/5hm0ekhe455i56fp/branch/master?svg=true)](https://ci.appveyor.com/project/imazen/imageflow-dotnet-server/branch/master)
+[![.NET Core](https://github.com/imazen/imageflow-dotnet-server/workflows/.NET%20Core/badge.svg)](https://github.com/imazen/imageflow-dotnet-server/actions?query=workflow%3A%22.NET+Core%22) [![Build status](https://ci.appveyor.com/api/projects/status/5hm0ekhe455i56fp/branch/master?svg=true)](https://ci.appveyor.com/project/imazen/imageflow-dotnet-server/branch/master)
 
 Imageflow.NET Server is image processing and optimizing middleware for ASP.NET Core 3.1+. 
 If you don't need an HTTP server, [try Imageflow.NET](https://github.com/imazen/imageflow-dotnet).
