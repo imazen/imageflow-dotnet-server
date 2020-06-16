@@ -162,6 +162,12 @@ namespace Imageflow.Server.Example
                 {
                     args.Query["watermark"] = "imazen";
                 })
+                //When set to true, this only allows ?preset=value URLs, returning 403 if you try to use any other commands. 
+                .SetUsePresetsExclusively(false)
+                .AddPreset(new PresetOptions("large", PresetPriority.DefaultValues)
+                    .SetCommand("width", "1024")
+                    .SetCommand("height", "1024")
+                    .SetCommand("mode", "max"))
                 // Register a named watermark that floats 10% from the bottom-right corner of the image
                 // With 70% opacity and some sharpness applied. 
                 .AddWatermark(

@@ -92,6 +92,8 @@ namespace Imageflow.Server.Example
                 .AddCommandDefault("down.filter", "mitchell")
                 .AddCommandDefault("f.sharpen", "15")
                 .AddCommandDefault("webp.quality", "90")
+                //When set to true, this only allows ?preset=value URLs, returning 403 if you try to use any other commands. 
+                .SetUsePresetsExclusively(false)
                 .AddPreset(new PresetOptions("large", PresetPriority.DefaultValues)
                     .SetCommand("width", "1024")
                     .SetCommand("height", "1024")
