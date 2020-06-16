@@ -54,7 +54,11 @@ namespace Imageflow.Server.Tests
                 
                 using var watermarkBrokenResponse = await client.GetAsync("/fire.jpg?watermark=broken");
                 Assert.Equal(HttpStatusCode.NotFound,watermarkBrokenResponse.StatusCode);
-                
+
+                await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+                {
+                    using var watermarkInvalidResponse = await client.GetAsync("/fire.jpg?watermark=not-a-watermark");
+                });
                 
                 using var watermarkResponse = await client.GetAsync("/fire.jpg?watermark=imazen");
                 watermarkResponse.EnsureSuccessStatusCode();
@@ -174,6 +178,114 @@ namespace Imageflow.Server.Tests
                 
                 var cacheFiles = Directory.GetFiles(diskCacheDir, "*.png", SearchOption.AllDirectories);
                 Assert.Single(cacheFiles);
+            }
+        }
+        
+        [Fact]
+        public async void TestPresetsExclusive()
+        {
+            using (var contentRoot = new TempContentRoot()
+                .AddResource("images/fire.jpg", "TestFiles.fire-umbrella-small.jpg"))
+            {
+
+                var hostBuilder = new HostBuilder()
+                    .ConfigureWebHost(webHost =>
+                    {
+                        // Add TestServer
+                        webHost.UseTestServer();
+                        webHost.Configure(app =>
+                        {
+                            app.UseImageflow(new ImageflowMiddlewareOptions()
+                                .SetMapWebRoot(false)
+                                // Maps / to ContentRootPath/images
+                                .MapPath("/", Path.Combine(contentRoot.PhysicalPath, "images"))
+                                .SetUsePresetsExclusively(true)
+                                .AddPreset(new PresetOptions("small", PresetPriority.OverrideQuery)
+                                    .SetCommand("maxwidth", "1")
+                                    .SetCommand("maxheight", "1"))
+                                );
+                        });
+                    });
+
+                // Build and start the IHost
+                using var host = await hostBuilder.StartAsync();
+
+                // Create an HttpClient to send requests to the TestServer
+                using var client = host.GetTestClient();
+
+                using var notFoundResponse = await client.GetAsync("/not_there.jpg");
+                Assert.Equal(HttpStatusCode.NotFound,notFoundResponse.StatusCode);
+                
+                using var foundResponse = await client.GetAsync("/fire.jpg");
+                foundResponse.EnsureSuccessStatusCode();
+                
+                
+                using var presetValidResponse = await client.GetAsync("/fire.jpg?preset=small");
+                presetValidResponse.EnsureSuccessStatusCode();
+                
+                
+                await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+                {
+                    using var watermarkInvalidResponse = await client.GetAsync("/fire.jpg?preset=not-a-preset");
+                });
+                
+                using var nonPresetResponse = await client.GetAsync("/fire.jpg?width=1");
+                Assert.Equal(HttpStatusCode.Forbidden,nonPresetResponse.StatusCode);
+                
+                await host.StopAsync(CancellationToken.None);
+            }
+        }
+        
+        [Fact]
+        public async void TestPresets()
+        {
+            using (var contentRoot = new TempContentRoot()
+                .AddResource("images/fire.jpg", "TestFiles.fire-umbrella-small.jpg"))
+            {
+
+                var hostBuilder = new HostBuilder()
+                    .ConfigureWebHost(webHost =>
+                    {
+                        // Add TestServer
+                        webHost.UseTestServer();
+                        webHost.Configure(app =>
+                        {
+                            app.UseImageflow(new ImageflowMiddlewareOptions()
+                                .SetMapWebRoot(false)
+                                // Maps / to ContentRootPath/images
+                                .MapPath("/", Path.Combine(contentRoot.PhysicalPath, "images"))
+                                .AddPreset(new PresetOptions("tiny", PresetPriority.OverrideQuery)
+                                    .SetCommand("width", "2")
+                                    .SetCommand("height", "1"))
+                                .AddPreset(new PresetOptions("small", PresetPriority.DefaultValues)
+                                    .SetCommand("width", "30")
+                                    .SetCommand("height", "20"))
+                                );
+                        });
+                    });
+
+                // Build and start the IHost
+                using var host = await hostBuilder.StartAsync();
+
+                // Create an HttpClient to send requests to the TestServer
+                using var client = host.GetTestClient();
+
+                using var presetValidResponse = await client.GetAsync("/fire.jpg?preset=small&height=35&mode=pad");
+                presetValidResponse.EnsureSuccessStatusCode();
+                var responseBytes = await presetValidResponse.Content.ReadAsByteArrayAsync();
+                var imageResults = await FluentBuildJob.GetImageInfo(new BytesSource(responseBytes));
+                Assert.Equal(30,imageResults.ImageWidth);
+                Assert.Equal(35,imageResults.ImageHeight);
+                
+                
+                using var presetTinyResponse = await client.GetAsync("/fire.jpg?preset=tiny&height=35");
+                presetTinyResponse.EnsureSuccessStatusCode();
+                responseBytes = await presetTinyResponse.Content.ReadAsByteArrayAsync();
+                imageResults = await FluentBuildJob.GetImageInfo(new BytesSource(responseBytes));
+                Assert.Equal(2,imageResults.ImageWidth);
+                Assert.Equal(1,imageResults.ImageHeight);
+                
+                await host.StopAsync(CancellationToken.None);
             }
         }
     }

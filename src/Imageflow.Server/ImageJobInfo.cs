@@ -89,6 +89,43 @@ namespace Imageflow.Server
                               path.StartsWith(handler.PathPrefix, StringComparison.OrdinalIgnoreCase);
                 if (matches && !handler.Handler(args)) return false;
             }
+
+            if (options.UsePresetsExclusively)
+            {
+                var firstKey = args.Query.FirstOrDefault().Key;
+                
+                if (args.Query.Count > 1 || (firstKey != null && firstKey != "preset"))
+                {
+                    return false;
+                }
+            }
+
+            // Parse and apply presets before rewriting
+            if (args.Query.TryGetValue("preset", out var presetNames))
+            {
+                var presetNamesList = presetNames
+                    .Split(new char[] {','}, StringSplitOptions.RemoveEmptyEntries);
+                foreach (var presetName in presetNamesList)
+                {
+                    if (options.Presets.TryGetValue(presetName, out var presetOptions))
+                    {
+                        foreach (var pair in presetOptions.pairs)
+                        {
+                            if (presetOptions.Priority == PresetPriority.OverrideQuery ||
+                                !args.Query.ContainsKey(pair.Key))
+                            {
+                                args.Query[pair.Key] = pair.Value;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException($"The image preset {presetName} was referenced from the querystring but is not registered.");
+                    }
+                }
+            }
+            
+            // Apply rewrite handlers
             foreach (var handler in options.Rewrite)
             {
                 var matches = string.IsNullOrEmpty(handler.PathPrefix) ||
@@ -99,15 +136,21 @@ namespace Imageflow.Server
                     path = args.VirtualPath;
                 }
             }
-            // Set defaults if keys are missing
-            foreach (var pair in options.CommandDefaults)
+            
+            // Set defaults if keys are missing, but at least 1 supported key is present
+            if (PathHelpers.SupportedQuerystringKeys.Any(args.Query.ContainsKey))
             {
-                if (!args.Query.ContainsKey(pair.Key))
+                foreach (var pair in options.CommandDefaults)
                 {
-                    args.Query[pair.Key] = pair.Value;
+                    if (!args.Query.ContainsKey(pair.Key))
+                    {
+                        args.Query[pair.Key] = pair.Value;
+                    }
                 }
             }
-            foreach (var handler in options.PreRewriteAuthorization)
+
+            // Run post-rewrite authorization
+            foreach (var handler in options.PostRewriteAuthorization)
             {
                 var matches = string.IsNullOrEmpty(handler.PathPrefix) ||
                               path.StartsWith(handler.PathPrefix, StringComparison.OrdinalIgnoreCase);

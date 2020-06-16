@@ -31,11 +31,13 @@ namespace Imageflow.Server.Example
             
             // Make S3 containers available at /ri/ and /imageflow-resources/
             // If you use credentials, do not check them into your repository
+            // You can call AddImageflowS3Service multiple times for each unique access key
             services.AddImageflowS3Service(new S3ServiceOptions( null,null)
                 .MapPrefix("/ri/", RegionEndpoint.USEast1, "resizer-images")
                 .MapPrefix("/imageflow-resources/", RegionEndpoint.USWest2, "imageflow-resources"));
             
             // Make Azure container available at /azure
+            // You can call AddImageflowAzureBlobService multiple times for each connection string
             services.AddImageflowAzureBlobService(
                 new AzureBlobServiceOptions(
                         "UseDevelopmentStorage=true;",
@@ -44,9 +46,9 @@ namespace Imageflow.Server.Example
 
             // You can add a distributed cache, such as redis, if you add it and and
             // call ImageflowMiddlewareOptions.SetAllowDistributedCaching(true)
-            //services.AddDistributedMemoryCache();
+            services.AddDistributedMemoryCache();
             // You can add a memory cache and call ImageflowMiddlewareOptions.SetAllowMemoryCaching(true)
-            //services.AddMemoryCache();
+            services.AddMemoryCache();
             // You can add a disk cache and call ImageflowMiddlewareOptions.SetAllowDiskCaching(true)
             // If you're deploying to azure, provide a disk cache folder *not* inside ContentRootPath
             // to prevent the app from recycling whenever folders are created.
@@ -90,6 +92,10 @@ namespace Imageflow.Server.Example
                 .AddCommandDefault("down.filter", "mitchell")
                 .AddCommandDefault("f.sharpen", "15")
                 .AddCommandDefault("webp.quality", "90")
+                .AddPreset(new PresetOptions("large", PresetPriority.DefaultValues)
+                    .SetCommand("width", "1024")
+                    .SetCommand("height", "1024")
+                    .SetCommand("mode", "max"))
                 // Register a named watermark that floats 10% from the bottom-right corner of the image
                 // With 70% opacity and some sharpness applied. 
                 .AddWatermark(

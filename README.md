@@ -6,6 +6,8 @@ If you don't need an HTTP server, [try Imageflow.NET](https://github.com/imazen/
 Under the hood, it uses [Imageflow](https://imageflow.io), the fastest image handling library for web servers. 
 Imageflow focuses on security, quality, and performance - in that order.
 
+For help migrating from ImageResizer, see [the migrating from ImageResizer](#migrating-from-imageresizer) section and open an issue or email `support@imazen.io` if you have any questions. 
+
 ### Features
 
 * Supports Windows, Mac, and Linux
@@ -20,6 +22,10 @@ Imageflow focuses on security, quality, and performance - in that order.
 ## Basic Installation
 
 You can look at `examples/Imageflow.Server.ExampleMinimal` to see the result. 
+
+These steps assume you want to serve and modify images from the `wwwroot` folder. 
+You can call `.SetMapWebRoot(false).MapPath("/", physicalPath)` to map a different physical folder. 
+For examples on serving files from S3 or Azure, see the full example after this. 
 
 1. Create a new ASP.NET Core 3.1 project using the Empty template. 
 2. Create a directory called "wwwroot" and add a file "image.jpg"
@@ -193,3 +199,57 @@ Note: You must install the [appropriate NativeRuntime(s)](https://www.nuget.org/
 
 [NativeRuntimes](https://www.nuget.org/packages?q=Imageflow+AND+NativeRuntime) that are suffixed with -haswell (2013, AVX2 support) require a CPU of that generation or later. 
 
+## Migrating from ImageResizer
+
+### General Notes
+* Unlike ImageResizer, Imageflow does not support .TIFF files. Please convert them to 
+.png or .jpg before migrating to Imageflow.NET Server. There is no secure open-source codec for .TIFF files, so we chose to not support the format.
+* Nearly all querystring commands are supported, with few infrequently exceptions:
+    * We no longer support adding borders to images as that can be done better in CSS.
+    * We no longer support rounding the corners of images or adding drop shadows; this can also be done in CSS.
+    * Rotation must be in intervals of 90 degrees.
+    * Blurring and noise removal is not yet supported.
+* Blob storage providers now expect blobs to be treated as immutable, as there is too much latency to check the modified date.
+* Most popular plugins are now built-in, including WebP, AnimatedGifs,
+    PrettyGifs, SimpleFilters, FastScaling, Watermark, VirtualFolder,
+     ClientCache, AutoRotate, and WhitespaceTrimmer.
+* The following plugins are not available: DropShadow, FolderResizeSyntax,
+    Gradient, Image404, RedEye, Faces, SeamCarving, WIC, TinyCache, 
+    PsdReader, PsdComposer, MongoReader, FreeImage, FFMpeg, 
+    AdvancedFilters, CopyMetadata. 
+* SqlReader functionality can be replicated by implementing Imazen.Common.Storage.IBlobProvider.
+* Blob Providers now only need to implement 
+    Imazen.Common.Storage.IBlobProvider, which greatly simplifies plugging in new storage.
+
+
+ ### Querystring Command Migration Details
+ 
+ Nearly all features are supported
+ 
+* The following commands are supported: `mode`, `anchor`, `flip`, `sflip`,
+    `quality`, `zoom`, `dpr`, `crop`, `cropxunits`, `cropyunits`,
+    `w`, `h`, `width`, `height`, `maxwidth`, `maxheight`, `format`,
+    `srotate`, `rotate`, `stretch`, `webp.lossless`, `webp.quality`,
+    `f.sharpen`, `f.sharpen_when`, `down.colorspace`, `bgcolor`, 
+    `jpeg_idct_downscale_linear`, `watermark`, `s.invert`, `s.sepia`, 
+    `s.grayscale`, `s.alpha`, `s.brightness`, `s.contrast`, `s.saturation`, 
+    `trim.threshold`, `trim.percentpadding`, `a.balancewhite`,  `jpeg.progressive`,
+    `decoder.min_precise_scaling_ratio`, `scale`
+ * TIFF files are not supported, so `page=x` is not supported.
+ * Animated GIFs are fully supported, so `frame=x` is ignored.
+ * Images are always auto-rotated based on Exif information, so `autorotate` is ignored.
+ * Images can only be rotated in 90 degree intervals, so `rotate` is partially supported.
+ * PNG encoding adapts the palette size as needed, so `colors` is ignored.
+ * PNG and GIFs are always dithered, so `dither` is ignored.
+ * Jpeg subsampling is auto-selected by chroma evaluation, so `subsampling` is ignored.
+ * Adding margins, padding, and borders to images is obsolete, so 
+    `paddingwidth`, `paddingheight`, `margin`
+    `borderwidth`, `bordercolor` and `paddingcolor` are now ignored. 
+ * Rounding corners is not supported, so `s.roundcorners` is ignored.
+ * Caching, processing, and encoders/builders/decoders are not configurable via the querystring,
+    so `cache`, `process`, `encoder`, `decoder`, and `builder` are ignored.
+ * Sharpening is now done with `f.sharpen`, not `a.sharpen`, and `a.sharpen` is ignored.
+ * Noise removal is not yet supported, so `a.removenoise` is ignored.
+ * Blurring is not yet supported, so `a.blur` is ignored.
+ * ICC profiles are never ignored, so `ignoreicc` is ignored.
+ * 404 redirects are not implemented, so `404` is ignored.

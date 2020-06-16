@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace Imageflow.Server
@@ -25,7 +26,9 @@ namespace Imageflow.Server
         
         public IReadOnlyCollection<PathMapping> MappedPaths => mappedPaths;
 
-        public bool MapWebRoot { get; set; } = false;
+        public bool MapWebRoot { get; set; }
+        
+        public bool UsePresetsExclusively { get; set; }
         
         public string DefaultCacheControlString { get; set; }
         
@@ -36,6 +39,8 @@ namespace Imageflow.Server
         internal readonly List<UrlHandler<Func<UrlEventArgs, bool>>> PostRewriteAuthorization = new List<UrlHandler<Func<UrlEventArgs, bool>>>();
 
         internal readonly Dictionary<string, string> CommandDefaults = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        
+        internal readonly Dictionary<string, PresetOptions> Presets = new Dictionary<string, PresetOptions>(StringComparer.OrdinalIgnoreCase);
 
         /// <summary>
         /// Use this to add default command values if they are missing. Does not affect image requests with no querystring.
@@ -51,6 +56,14 @@ namespace Imageflow.Server
             CommandDefaults[key] = value;
             return this;
         }
+        
+        public ImageflowMiddlewareOptions AddPreset(PresetOptions preset)
+        {
+            if (Presets.ContainsKey(preset.Name)) throw new ArgumentOutOfRangeException(nameof(preset), "A preset by this name has already been added");
+            Presets[preset.Name] = preset;
+            return this;
+        }
+        
         public ImageflowMiddlewareOptions AddRewriteHandler(string pathPrefix, Action<UrlEventArgs> handler)
         {
             Rewrite.Add(new UrlHandler<Action<UrlEventArgs>>(pathPrefix, handler));
@@ -73,6 +86,18 @@ namespace Imageflow.Server
             return this;
         }
         
+        /// <summary>
+        /// If true, querystrings will be discarded except for their preset key/value. Querystrings without a preset key will throw an error. 
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public ImageflowMiddlewareOptions SetUsePresetsExclusively(bool value)
+        {
+            UsePresetsExclusively = value;
+            return this;
+        }
+
+
         public ImageflowMiddlewareOptions MapPath(string virtualPath, string physicalPath)
         {
             mappedPaths.Add(new PathMapping(virtualPath,physicalPath));
