@@ -162,6 +162,8 @@ namespace Imageflow.Server.Example
                 {
                     args.Query["watermark"] = "imazen";
                 })
+                .AddCommandDefault("down.filter", "mitchell")
+                .AddCommandDefault("f.sharpen", "15")
                 //When set to true, this only allows ?preset=value URLs, returning 403 if you try to use any other commands. 
                 .SetUsePresetsExclusively(false)
                 .AddPreset(new PresetOptions("large", PresetPriority.DefaultValues)
@@ -208,6 +210,15 @@ Note: You must install the [appropriate NativeRuntime(s)](https://www.nuget.org/
 ## Migrating from ImageResizer
 
 ### General Notes
+* Imageflow does not let shadows overwhelm image highlights 
+  (it resizes images in linear RGB instead of averaging compressed sRGB 
+  values). This is correct behavior, but can lower the visual impact of 
+  certain images while improving most. To restore the old behavior add `down.colorspace=srgb`.
+  To do this site-wide, use `.AddCommandDefault("down.colorspace", "srgb")`
+* Imageflow focuses on correctness, so it does not over-sharpen images by default. For some image types, 
+  additional sharpening is appropriate. You can make images slightly sharper by using
+  the Mitchell resampling filter with `.AddCommandDefault("down.filter", "mitchell")`. 
+  You can add stronger sharpening with `.AddCommandDefault("f.sharpen", "15")`
 * Unlike ImageResizer, Imageflow does not support .TIFF files. Please convert them to 
 .png or .jpg before migrating to Imageflow.NET Server. There is no secure open-source codec for .TIFF files, so we chose to not support the format.
 * Nearly all querystring commands are supported, with few infrequently exceptions:
