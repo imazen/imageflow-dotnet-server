@@ -244,7 +244,7 @@ namespace Imageflow.Server
                     }));
             }
 
-            using var buildJob = new FluentBuildJob();
+            using var buildJob = new ImageJob();
             var jobResult = await buildJob.BuildCommandString(
                     new StreamSource(blobs[0].OpenRead(), true),
                     new BytesDestination(), CommandString, watermarks)

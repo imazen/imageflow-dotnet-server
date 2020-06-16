@@ -273,7 +273,7 @@ namespace Imageflow.Server.Tests
                 using var presetValidResponse = await client.GetAsync("/fire.jpg?preset=small&height=35&mode=pad");
                 presetValidResponse.EnsureSuccessStatusCode();
                 var responseBytes = await presetValidResponse.Content.ReadAsByteArrayAsync();
-                var imageResults = await FluentBuildJob.GetImageInfo(new BytesSource(responseBytes));
+                var imageResults = await ImageJob.GetImageInfo(new BytesSource(responseBytes));
                 Assert.Equal(30,imageResults.ImageWidth);
                 Assert.Equal(35,imageResults.ImageHeight);
                 
@@ -281,7 +281,7 @@ namespace Imageflow.Server.Tests
                 using var presetTinyResponse = await client.GetAsync("/fire.jpg?preset=tiny&height=35");
                 presetTinyResponse.EnsureSuccessStatusCode();
                 responseBytes = await presetTinyResponse.Content.ReadAsByteArrayAsync();
-                imageResults = await FluentBuildJob.GetImageInfo(new BytesSource(responseBytes));
+                imageResults = await ImageJob.GetImageInfo(new BytesSource(responseBytes));
                 Assert.Equal(2,imageResults.ImageWidth);
                 Assert.Equal(1,imageResults.ImageHeight);
                 
