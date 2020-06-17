@@ -37,11 +37,6 @@ For examples on serving files from S3 or Azure, see the full example after this.
 3. Install both `Imageflow.Server` and all `Imageflow.NativeRuntime.*` packages for platforms you are targeting. 
     ```
     Install-Package Imageflow.Server
-    Install-Package Imageflow.NativeRuntime.win-x86 -pre
-    Install-Package Imageflow.NativeRuntime.win-x86_64 -pre
-    Install-Package Imageflow.NativeRuntime.osx_10_11-x86_64 -pre
-    Install-Package Imageflow.NativeRuntime.ubuntu_16_04-x86_64 -pre
-    Install-Package Imageflow.NativeRuntime.ubuntu_18_04-x86_64 -pre
     ```
 4. Open Startup.cs and edit the Configure method.  Add
     ```c#
@@ -70,11 +65,6 @@ Install-Package Imageflow.Server
 Install-Package Imageflow.Server.DiskCache
 Install-Package Imageflow.Server.Storage.S3
 Install-Package Imageflow.Server.Storage.AzureBlob
-Install-Package Imageflow.NativeRuntime.win-x86 -pre
-Install-Package Imageflow.NativeRuntime.win-x86_64 -pre
-Install-Package Imageflow.NativeRuntime.osx_10_11-x86_64 -pre
-Install-Package Imageflow.NativeRuntime.ubuntu_16_04-x86_64 -pre
-Install-Package Imageflow.NativeRuntime.ubuntu_18_04-x86_64 -pre
 ```
 
 ```c#
