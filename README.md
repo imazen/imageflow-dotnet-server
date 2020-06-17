@@ -9,7 +9,7 @@ Imageflow focuses on security, quality, and performance.
 For help migrating from ImageResizer, see [the migrating from ImageResizer](#migrating-from-imageresizer) section and open an issue or email `support@imazen.io` if you have any questions. 
 
 We offer commercial licenses at https://imageresizing.net/pricing, or you can use
-Imageflow, Imageflow.NET and Imageflow.NET Server under the terms of the AGPLv3.
+Imageflow, Imageflow.NET and Imageflow.NET Server under the terms of the AGPLv3. License keys are not yet required for commercial use, but we ask that you buy a license to help fund development of the Imageflow product suite. 
 
 Imageflow .NET Server is considered production-ready for trusted image files. 
 
