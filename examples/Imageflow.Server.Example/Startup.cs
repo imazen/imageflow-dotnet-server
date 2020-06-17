@@ -98,6 +98,12 @@ namespace Imageflow.Server.Example
                     .SetCommand("width", "1024")
                     .SetCommand("height", "1024")
                     .SetCommand("mode", "max"))
+                // It's a good idea to limit image sizes for security. Requests causing these to be exceeded will fail
+                // The last argument to FrameSizeLimit() is the maximum number of megapixels
+                .SetJobSecurityOptions(new SecurityOptions()
+                    .SetMaxDecodeSize(new FrameSizeLimit(8000,8000, 40))
+                    .SetMaxFrameSize(new FrameSizeLimit(8000,8000, 40))
+                    .SetMaxEncodeSize(new FrameSizeLimit(8000,8000, 20)))
                 // Register a named watermark that floats 10% from the bottom-right corner of the image
                 // With 70% opacity and some sharpness applied. 
                 .AddWatermark(

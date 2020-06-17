@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Imageflow.Fluent;
 
 namespace Imageflow.Server
 {
@@ -31,6 +32,8 @@ namespace Imageflow.Server
         public bool UsePresetsExclusively { get; set; }
         
         public string DefaultCacheControlString { get; set; }
+        
+        public SecurityOptions JobSecurityOptions { get; set; }
         
         internal readonly List<UrlHandler<Action<UrlEventArgs>>> Rewrite = new List<UrlHandler<Action<UrlEventArgs>>>();
 
@@ -83,6 +86,12 @@ namespace Imageflow.Server
         public ImageflowMiddlewareOptions SetMapWebRoot(bool value)
         {
             MapWebRoot = value;
+            return this;
+        }
+        
+        public ImageflowMiddlewareOptions SetJobSecurityOptions(SecurityOptions securityOptions)
+        {
+            JobSecurityOptions = securityOptions;
             return this;
         }
         

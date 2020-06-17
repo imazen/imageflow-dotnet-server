@@ -16,6 +16,7 @@ namespace Imageflow.Server
     {
         public ImageJobInfo(HttpContext context, ImageflowMiddlewareOptions options, BlobProvider blobProvider)
         {
+            this.options = options;
             Authorized = ProcessRewritesAndAuthorization(context, options);
 
             if (!Authorized) return;
@@ -77,7 +78,7 @@ namespace Imageflow.Server
 
         private readonly List<BlobFetchCache> allBlobs;
         private readonly BlobFetchCache primaryBlob;
-
+        private readonly ImageflowMiddlewareOptions options;
 
         private bool ProcessRewritesAndAuthorization(HttpContext context, ImageflowMiddlewareOptions options)
         {
@@ -249,6 +250,7 @@ namespace Imageflow.Server
                     new StreamSource(blobs[0].OpenRead(), true),
                     new BytesDestination(), CommandString, watermarks)
                 .Finish()
+                .SetSecurityOptions(options.JobSecurityOptions)
                 .InProcessAsync();
 
             var bytes = jobResult.First.TryGetBytes().Value;
