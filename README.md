@@ -24,6 +24,11 @@ Imageflow .NET Server is considered production-ready for trusted image files.
 * Mapping arbitrary virtual paths to physical ones. 
 * Imageflow's [Querystring API](https://docs.imageflow.io/querystring/introduction.html) (compatible with ImageResizer)
 
+### Known Issues
+
+* Imageflow.Server.DiskCache does not work properly under Linux/Mac. 
+* Images with corrupted color profiles are not processed
+
 ## Basic Installation
 
 You can look at `examples/Imageflow.Server.ExampleMinimal` to see the result. 
