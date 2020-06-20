@@ -1,0 +1,7 @@
+﻿@{ ViewData["Title"] = "Home Page"; }
+
+<h1 class="display-4">Gallery</h1>
+<div style="line-height:3px">
+@foreach (var x in (List<string>)ViewData.Model)
+{<img width="3" height="3" src="@x" alt="" />}
+</div>
