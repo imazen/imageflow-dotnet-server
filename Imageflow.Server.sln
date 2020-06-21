@@ -36,6 +36,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imageflow.Server.Tests", "t
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imageflow.Server.ExampleMinimal", "examples\Imageflow.Server.ExampleMinimal\Imageflow.Server.ExampleMinimal.csproj", "{3A49829E-C85F-4BE2-8D6E-AFA129C5BB2C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imageflow.Server.SqliteCache", "src\Imageflow.Server.SqliteCache\Imageflow.Server.SqliteCache.csproj", "{F49EA90B-0673-4DC1-9F0A-DB147646D8A3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -90,6 +92,10 @@ Global
 		{3A49829E-C85F-4BE2-8D6E-AFA129C5BB2C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3A49829E-C85F-4BE2-8D6E-AFA129C5BB2C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3A49829E-C85F-4BE2-8D6E-AFA129C5BB2C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F49EA90B-0673-4DC1-9F0A-DB147646D8A3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F49EA90B-0673-4DC1-9F0A-DB147646D8A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F49EA90B-0673-4DC1-9F0A-DB147646D8A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F49EA90B-0673-4DC1-9F0A-DB147646D8A3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
