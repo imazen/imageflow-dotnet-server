@@ -136,7 +136,7 @@ namespace Imageflow.Server.SqliteCache
             await using var sumDiskSize = connection.CreateCommand();
             sumDiskSize.CommandText = "SELECT SUM(disksize) FROM blobs";
             var sizeReader = await sumDiskSize.ExecuteReaderAsync(cancellationToken);
-            if (await sizeReader.ReadAsync(cancellationToken))
+            if (await sizeReader.ReadAsync(cancellationToken) && sizeReader.GetValue(0) != DBNull.Value)
             {
                 CacheSize = sizeReader.GetInt64(0);
             }
