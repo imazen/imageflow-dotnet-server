@@ -15,6 +15,9 @@ namespace Imageflow.Server
 
         public bool AllowMemoryCaching { get; set; } = false;
 
+        public bool AllowSqliteCaching { get; set; } = false;
+
+
         public TimeSpan MemoryCacheSlidingExpiration { get; set; } = TimeSpan.FromHours(24);
         public TimeSpan DistributedCacheSlidingExpiration { get; set; } = TimeSpan.FromHours(24);
         public bool AllowDiskCaching { get; set; } = true;
@@ -126,6 +129,13 @@ namespace Imageflow.Server
             this.AllowMemoryCaching = value;
             return this;
         }
+        
+        public ImageflowMiddlewareOptions SetAllowSqliteCaching(bool value)
+        {
+            this.AllowSqliteCaching = value;
+            return this;
+        }
+        
         public ImageflowMiddlewareOptions SetMemoryCacheSlidingExpiration(TimeSpan value)
         {
             this.MemoryCacheSlidingExpiration = value;

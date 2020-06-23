@@ -9,6 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Imageflow.Server.Extensibility;
 using Imazen.Common.Extensibility.ClassicDiskCache;
 using Imazen.Common.Storage;
 using Microsoft.Extensions.Caching.Distributed;
@@ -24,12 +25,22 @@ namespace Imageflow.Server
         private readonly IMemoryCache memoryCache;
         private readonly IDistributedCache distributedCache;
         private readonly IClassicDiskCache diskCache;
+        private readonly ISqliteCache sqliteCache;
         private readonly BlobProvider blobProvider;
         private readonly DiagnosticsPage diagnosticsPage;
         private readonly ImageflowMiddlewareOptions options;
         
 
-        public ImageflowMiddleware(RequestDelegate next, IWebHostEnvironment env, IEnumerable<ILogger<ImageflowMiddleware>> logger, IEnumerable<IMemoryCache> memoryCache, IEnumerable<IDistributedCache> distributedCache,  IEnumerable<IClassicDiskCache> diskCache, IEnumerable<IBlobProvider> blobProviders, ImageflowMiddlewareOptions options)
+        public ImageflowMiddleware(
+            RequestDelegate next, 
+            IWebHostEnvironment env, 
+            IEnumerable<ILogger<ImageflowMiddleware>> logger, 
+            IEnumerable<IMemoryCache> memoryCache, 
+            IEnumerable<IDistributedCache> distributedCache, 
+            IEnumerable<ISqliteCache> sqliteCaches,
+            IEnumerable<IClassicDiskCache> diskCache, 
+            IEnumerable<IBlobProvider> blobProviders, 
+            ImageflowMiddlewareOptions options)
         {
             this.next = next;
             this.options = options;
@@ -38,6 +49,7 @@ namespace Imageflow.Server
             this.memoryCache = memoryCache.FirstOrDefault();
             this.diskCache = diskCache.FirstOrDefault();
             this.distributedCache = distributedCache.FirstOrDefault();
+            this.sqliteCache = sqliteCaches.FirstOrDefault();
             var providers = blobProviders.ToList();
             var mappedPaths = options.MappedPaths.ToList();
             if (options.MapWebRoot)
@@ -91,10 +103,11 @@ namespace Imageflow.Server
             var memoryCacheEnabled = memoryCache != null && options.AllowMemoryCaching && imageJobInfo.NeedsCaching();
             var diskCacheEnabled = diskCache != null && options.AllowDiskCaching && imageJobInfo.NeedsCaching();
             var distributedCacheEnabled = distributedCache != null && options.AllowDistributedCaching && imageJobInfo.NeedsCaching();
+            var sqliteCacheEnabled = sqliteCache != null && options.AllowSqliteCaching && imageJobInfo.NeedsCaching();
 
 
             string cacheKey = null;
-            if (memoryCacheEnabled || diskCacheEnabled || distributedCacheEnabled)
+            if (memoryCacheEnabled || diskCacheEnabled || distributedCacheEnabled | sqliteCacheEnabled)
             {
 
                 cacheKey = await imageJobInfo.GetFastCacheKey();
@@ -110,7 +123,11 @@ namespace Imageflow.Server
 
             try
             {
-                if (diskCacheEnabled)
+                if (sqliteCacheEnabled)
+                {
+                    await ProcessWithSqliteCache(context, cacheKey, imageJobInfo);
+                }
+                else if (diskCacheEnabled)
                 {
                     await ProcessWithDiskCache(context, cacheKey, imageJobInfo);
                 }
@@ -308,7 +325,51 @@ namespace Imageflow.Server
 
             await context.Response.Body.WriteAsync(imageBytes, 0, imageBytes.Length);
         }
-           
+        private async Task ProcessWithSqliteCache(HttpContext context, string cacheKey, ImageJobInfo info)
+        {
+            var cacheResult = await sqliteCache.GetOrCreate(cacheKey, async () =>
+            {
+                if (info.HasParams)
+                {
+                    logger?.LogInformation($"Sqlite Cache Miss: Processing image {info.FinalVirtualPath}?{info.CommandString}");
+
+                    var imageData = await info.ProcessUncached();
+                    var imageBytes = imageData.ResultBytes.Count != imageData.ResultBytes.Array?.Length
+                        ? imageData.ResultBytes.ToArray()
+                        : imageData.ResultBytes.Array;
+
+                    var contentType = imageData.ContentType;
+                    return new SqliteCacheEntry()
+                    {
+                        ContentType = contentType,
+                        Data = imageBytes
+                    };
+                }
+                else
+                {
+                    logger?.LogInformation($"Sqlite Cache Miss: Proxying image {info.FinalVirtualPath}?{info.CommandString}");
+
+                    var contentType = PathHelpers.ContentTypeForImageExtension(info.EstimatedFileExtension);
+                    await using var sourceStream = (await info.GetPrimaryBlob()).OpenRead();
+                    var ms = new MemoryStream((int)sourceStream.Length);
+                    await sourceStream.CopyToAsync(ms);
+                    return new SqliteCacheEntry()
+                    {
+                        ContentType = contentType,
+                        Data = ms.GetBuffer()
+                    };
+                }
+            });
+            
+
+            // write to stream
+            context.Response.ContentType = cacheResult.ContentType;
+            context.Response.ContentLength = cacheResult.Data.Length;
+            SetCachingHeaders(context, cacheKey);
+
+            await context.Response.Body.WriteAsync(cacheResult.Data, 0, cacheResult.Data.Length);
+        }
+        
         private async Task ProcessWithNoCache(HttpContext context, ImageJobInfo info)
         {
 
