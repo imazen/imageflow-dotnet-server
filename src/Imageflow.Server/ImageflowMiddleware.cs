@@ -168,6 +168,7 @@ namespace Imageflow.Server
                     await stream.WriteAsync(result.ResultBytes.Array, result.ResultBytes.Offset,
                         result.ResultBytes.Count,
                         CancellationToken.None);
+                    await stream.FlushAsync();
                 }
                 else
                 {
@@ -175,6 +176,7 @@ namespace Imageflow.Server
                     
                     await using var sourceStream = (await info.GetPrimaryBlob()).OpenRead();
                     await sourceStream.CopyToAsync(stream);
+                    await stream.FlushAsync();
                 }
             });
 

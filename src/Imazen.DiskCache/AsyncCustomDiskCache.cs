@@ -207,7 +207,7 @@ namespace Imazen.DiskCache {
 
 
         /// <summary>
-        /// Returns true if either (a) the file was written, or (b) the file already existed with a matching modified date.
+        /// Returns true if either (a) the file was written, or (b) the file already existed
         /// Returns false if the in-process lock failed. Throws an exception if any kind of file or processing exception occurs.
         /// </summary>
         /// <param name="result"></param>
