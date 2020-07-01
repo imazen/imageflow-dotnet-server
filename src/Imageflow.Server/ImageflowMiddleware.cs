@@ -350,13 +350,10 @@ namespace Imageflow.Server
                     logger?.LogInformation($"Sqlite Cache Miss: Proxying image {info.FinalVirtualPath}?{info.CommandString}");
 
                     var contentType = PathHelpers.ContentTypeForImageExtension(info.EstimatedFileExtension);
-                    await using var sourceStream = (await info.GetPrimaryBlob()).OpenRead();
-                    var ms = new MemoryStream((int)sourceStream.Length);
-                    await sourceStream.CopyToAsync(ms);
                     return new SqliteCacheEntry()
                     {
                         ContentType = contentType,
-                        Data = ms.GetBuffer()
+                        Data = await info.GetPrimaryBlobBytesAsync()
                     };
                 }
             });
