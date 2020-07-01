@@ -10,6 +10,8 @@ using Microsoft.Extensions.Hosting;
 using Imageflow.Server.DiskCache;
 using Imageflow.Server.Storage.AzureBlob;
 using Imageflow.Server.Storage.S3;
+using System;
+using Imageflow.Server.SqliteCache;
 
 namespace Imageflow.Server.Example
 {
@@ -44,6 +46,11 @@ namespace Imageflow.Server.Example
                         new BlobClientOptions())
                     .MapPrefix("/azure", "imageflow-demo" ));
 
+            var homeFolder = (Environment.OSVersion.Platform == PlatformID.Unix ||
+                   Environment.OSVersion.Platform == PlatformID.MacOSX)
+                    ? Environment.GetEnvironmentVariable("HOME")
+                    : Environment.ExpandEnvironmentVariables("%HOMEDRIVE%%HOMEPATH%");
+
             // You can add a distributed cache, such as redis, if you add it and and
             // call ImageflowMiddlewareOptions.SetAllowDistributedCaching(true)
             services.AddDistributedMemoryCache();
@@ -52,7 +59,9 @@ namespace Imageflow.Server.Example
             // You can add a disk cache and call ImageflowMiddlewareOptions.SetAllowDiskCaching(true)
             // If you're deploying to azure, provide a disk cache folder *not* inside ContentRootPath
             // to prevent the app from recycling whenever folders are created.
-            services.AddImageflowDiskCache(new DiskCacheOptions(Path.Combine(Env.ContentRootPath, "imageflow_cache")));
+            services.AddImageflowDiskCache(new DiskCacheOptions(Path.Combine(homeFolder, "imageflow_example_cache")));
+            services.AddImageflowSqliteCache(
+                new SqliteCacheOptions(Path.Combine(homeFolder, "imageflow_example_sqlite_cache")));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -77,7 +86,9 @@ namespace Imageflow.Server.Example
                 // Maps /folder to WebRootPath/folder
                 .MapPath("/folder", Path.Combine(Env.ContentRootPath, "folder"))
                 // Allow Disk Caching
-                .SetAllowDiskCaching(true)
+                .SetAllowDiskCaching(false)
+                // Allow Sqlite Caching
+                .SetAllowSqliteCaching(true)
                 // We can only have one type of caching enabled at a time
                 .SetAllowDistributedCaching(false)
                 // Disable memory caching even if the service is installed
