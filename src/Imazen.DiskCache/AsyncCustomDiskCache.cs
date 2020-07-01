@@ -155,7 +155,10 @@ namespace Imazen.DiskCache {
                                     
                                     swio.Start();
                                     //We want this to run synchronously, since it's in a background thread already.
-                                    if (!TryWriteFile(null, job.PhysicalPath, job.Key, delegate(Stream s) { ((MemoryStream)job.GetReadonlyStream()).CopyToAsync(s); return Task.FromResult(true); }, timeoutMs, true).Result)
+                                    if (!TryWriteFile(null, job.PhysicalPath, job.Key, 
+                                        delegate(Stream s) {
+                                            return ((MemoryStream)job.GetReadonlyStream()).CopyToAsync(s); 
+                                        }, timeoutMs, true).Result)
                                     {
                                         swio.Stop();
                                         //We failed to lock the file.
@@ -238,7 +241,6 @@ namespace Imazen.DiskCache {
                         //Create subdirectory if needed.
                         if (!Directory.Exists(Path.GetDirectoryName(physicalPath))) {
                             Directory.CreateDirectory(Path.GetDirectoryName(physicalPath));
-                            logger?.LogDebug("Creating missing parent directory {0}", Path.GetDirectoryName(physicalPath));
                         }
 
                         //Open stream 
@@ -265,6 +267,10 @@ namespace Imazen.DiskCache {
                                     await writeCallback(fs); //Can throw any number of exceptions.
                                     await fs.FlushAsync();
                                     fs.Flush(true);
+                                    if (fs.Position == 0)
+                                    {
+                                        throw new InvalidOperationException("Disk cache wrote zero bytes to file");
+                                    }
                                     finished = true;
                                 }
                             }
