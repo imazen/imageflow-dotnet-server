@@ -41,16 +41,19 @@ namespace Imageflow.Net.Server.Example.Controllers
             var imageUrl = "/images/fire-umbrella-small.jpg?width=300&height=300&mode=pad";
 
             var imageUrls = new List<string>(1000);
-            
-            for (var r = 0; r < 255; r+=4)
+
+            for (var j = 0; j < 3; j++)
             {
-                for (var g = 0; g < 255; g+=4)
+                for (var r = 0; r < 255; r += 16)
                 {
-                    for (var b = 0; b < 255; b+=4)
+                    for (var g = 0; g < 255; g += 16)
                     {
-                        for (var i = 0; i < 3; i++)
+                        for (var b = 0; b < 255; b += 16)
                         {
-                            imageUrls.Add($"{imageUrl}&bgcolor={r:x2}{g:x2}{b:x2}");
+                            for (var i = 0; i < 3; i++)
+                            {
+                                imageUrls.Add($"{imageUrl}&bgcolor={r:x2}{g:x2}{b:x2}");
+                            }
                         }
                     }
                 }

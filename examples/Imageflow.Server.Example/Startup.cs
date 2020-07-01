@@ -60,8 +60,8 @@ namespace Imageflow.Server.Example
             // If you're deploying to azure, provide a disk cache folder *not* inside ContentRootPath
             // to prevent the app from recycling whenever folders are created.
             services.AddImageflowDiskCache(new DiskCacheOptions(Path.Combine(homeFolder, "imageflow_example_cache")));
-            services.AddImageflowSqliteCache(
-                new SqliteCacheOptions(Path.Combine(homeFolder, "imageflow_example_sqlite_cache")));
+            //services.AddImageflowSqliteCache(
+            //    new SqliteCacheOptions(Path.Combine(homeFolder, "imageflow_example_sqlite_cache")));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -86,9 +86,9 @@ namespace Imageflow.Server.Example
                 // Maps /folder to WebRootPath/folder
                 .MapPath("/folder", Path.Combine(Env.ContentRootPath, "folder"))
                 // Allow Disk Caching
-                .SetAllowDiskCaching(false)
+                .SetAllowDiskCaching(true)
                 // Allow Sqlite Caching
-                .SetAllowSqliteCaching(true)
+                .SetAllowSqliteCaching(false)
                 // We can only have one type of caching enabled at a time
                 .SetAllowDistributedCaching(false)
                 // Disable memory caching even if the service is installed

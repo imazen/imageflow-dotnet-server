@@ -158,6 +158,7 @@ namespace Imageflow.Server
             context.Response.StatusCode = 403;
             context.Response.ContentType = "text/plain; charset=utf-8";
             var bytes = Encoding.UTF8.GetBytes(s);
+            context.Response.ContentLength = bytes.Length;
             await context.Response.Body.WriteAsync(bytes, 0, bytes.Length);
         }
         
@@ -168,6 +169,7 @@ namespace Imageflow.Server
             context.Response.StatusCode = 404;
             context.Response.ContentType = "text/plain; charset=utf-8";
             var bytes = Encoding.UTF8.GetBytes(s);
+            context.Response.ContentLength = bytes.Length;
             await context.Response.Body.WriteAsync(bytes, 0, bytes.Length);
         }
 
@@ -190,10 +192,7 @@ namespace Imageflow.Server
                 else
                 {
                     logger?.LogInformation($"DiskCache Miss: Proxying image {info.FinalVirtualPath}");
-                    
-                    await using var sourceStream = (await info.GetPrimaryBlob()).OpenRead();
-                    await sourceStream.CopyToAsync(stream);
-                    await stream.FlushAsync();
+                    await info.CopyPrimaryBlobToAsync(stream);
                 }
             });
 
@@ -202,8 +201,12 @@ namespace Imageflow.Server
 
             if (cacheResult.Data != null)
             {
+                if (cacheResult.Data.Length < 1)
+                {
+                    throw new InvalidOperationException("DiskCache returned cache entry with zero bytes");
+                }
                 context.Response.ContentType = PathHelpers.ContentTypeForImageExtension(info.EstimatedFileExtension);
-                context.Response.ContentLength = cacheResult.Data.Length;
+                context.Response.ContentLength = cacheResult.Data.Length; //ReadOnlyMemoryStream, so it supports seeking
                 SetCachingHeaders(context, cacheKey);
                 await cacheResult.Data.CopyToAsync(context.Response.Body);
             }
@@ -218,6 +221,10 @@ namespace Imageflow.Server
         private async Task ServeFileFromDisk(HttpContext context, string path, string etag, string contentType)
         {
             await using var readStream = File.OpenRead(path);
+            if (readStream.Length < 1)
+            {
+                throw new InvalidOperationException("DiskCache file entry has zero bytes");
+            }
             context.Response.ContentLength = readStream.Length;
             context.Response.ContentType = contentType;
             SetCachingHeaders(context, etag);
@@ -248,10 +255,7 @@ namespace Imageflow.Server
                     logger?.LogInformation($"Memory Cache Miss: Proxying image {info.FinalVirtualPath}?{info.CommandString}");
 
                     contentType = PathHelpers.ContentTypeForImageExtension(info.EstimatedFileExtension);
-                    await using var sourceStream = (await info.GetPrimaryBlob()).OpenRead();
-                    var ms = new MemoryStream((int)sourceStream.Length);
-                    await sourceStream.CopyToAsync(ms);
-                    imageBytes = new ArraySegment<byte>(ms.GetBuffer());
+                    imageBytes = new ArraySegment<byte>(await info.GetPrimaryBlobBytesAsync());
                 }
 
                 // Set cache options.
@@ -304,10 +308,7 @@ namespace Imageflow.Server
                     logger?.LogInformation($"Distributed Cache Miss: Proxying image {info.FinalVirtualPath}?{info.CommandString}");
 
                     contentType = PathHelpers.ContentTypeForImageExtension(info.EstimatedFileExtension);
-                    await using var sourceStream = (await info.GetPrimaryBlob()).OpenRead();
-                    var ms = new MemoryStream((int)sourceStream.Length);
-                    await sourceStream.CopyToAsync(ms);
-                    imageBytes = ms.GetBuffer();
+                    imageBytes = await info.GetPrimaryBlobBytesAsync();
                 }
 
                 // Set cache options.
@@ -350,13 +351,10 @@ namespace Imageflow.Server
                     logger?.LogInformation($"Sqlite Cache Miss: Proxying image {info.FinalVirtualPath}?{info.CommandString}");
 
                     var contentType = PathHelpers.ContentTypeForImageExtension(info.EstimatedFileExtension);
-                    await using var sourceStream = (await info.GetPrimaryBlob()).OpenRead();
-                    var ms = new MemoryStream((int)sourceStream.Length);
-                    await sourceStream.CopyToAsync(ms);
                     return new SqliteCacheEntry()
                     {
                         ContentType = contentType,
-                        Data = ms.GetBuffer()
+                        Data = await info.GetPrimaryBlobBytesAsync()
                     };
                 }
             });
@@ -406,10 +404,23 @@ namespace Imageflow.Server
 
                 var contentType = PathHelpers.ContentTypeForImageExtension(info.EstimatedFileExtension);
                 await using var sourceStream = (await info.GetPrimaryBlob()).OpenRead();
-                context.Response.ContentType = contentType;
-                context.Response.ContentLength = sourceStream.Length;
-                SetCachingHeaders(context, betterCacheKey);
-                await sourceStream.CopyToAsync(context.Response.Body);
+                if (sourceStream.CanSeek)
+                {
+                    if (sourceStream.Length == 0)
+                    {
+                        throw new InvalidOperationException("Source blob has zero bytes.");
+                    }
+                    context.Response.ContentType = contentType;
+                    context.Response.ContentLength = sourceStream.Length;
+                    SetCachingHeaders(context, betterCacheKey);
+                    await sourceStream.CopyToAsync(context.Response.Body);
+                }
+                else
+                {
+                    context.Response.ContentType = contentType;
+                    SetCachingHeaders(context, betterCacheKey);
+                    await sourceStream.CopyToAsync(context.Response.Body);
+                }
             }
             
 
