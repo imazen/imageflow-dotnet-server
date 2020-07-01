@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -7,8 +6,6 @@ using System.Threading.Tasks;
 using Imageflow.Fluent;
 using Imazen.Common.Storage;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Primitives;
-using Newtonsoft.Json;
 
 namespace Imageflow.Server
 {
@@ -184,6 +181,31 @@ namespace Imageflow.Server
             return PathHelpers.Base64Hash(string.Join('|',strings));
         }
 
+        internal async Task CopyPrimaryBlobToAsync(Stream stream)
+        {
+
+            await using var sourceStream = (await GetPrimaryBlob()).OpenRead();
+            var oldPosition = stream.Position;
+            await sourceStream.CopyToAsync(stream);
+            if (stream.Position - oldPosition == 0)
+            {
+                throw new InvalidOperationException("Source blob has zero bytes; will not proxy.");
+            }
+        }
+
+        internal async Task<byte[]> GetPrimaryBlobBytesAsync()
+        {
+            await using var sourceStream = (await GetPrimaryBlob()).OpenRead();
+            var ms = new MemoryStream((int)sourceStream.Length);
+            await sourceStream.CopyToAsync(ms);
+            var buffer = ms.ToArray();
+            if (buffer.Length == 0)
+            {
+                throw new InvalidOperationException("Source blob has length of zero bytes; will not proxy.");
+            }
+            return buffer;
+        }
+
         private string[] serializedWatermarkConfigs = null;
         private IEnumerable<string> SerializeWatermarkConfigs()
         {
@@ -253,13 +275,18 @@ namespace Imageflow.Server
                 .SetSecurityOptions(options.JobSecurityOptions)
                 .InProcessAsync();
 
-            var bytes = jobResult.First.TryGetBytes().Value;
+            var bytes = jobResult.First.TryGetBytes();
+
+            if (!bytes.HasValue || bytes.Value.Count < 1)
+            {
+                throw new InvalidOperationException("Image job returned zero bytes.");
+            }
 
             return new ImageData
             {
                 ContentType = jobResult.First.PreferredMimeType,
                 FileExtension = jobResult.First.PreferredExtension,
-                ResultBytes = bytes
+                ResultBytes = bytes.Value
             };
         }
     }
