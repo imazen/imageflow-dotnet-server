@@ -17,7 +17,7 @@ Imageflow .NET Server is considered production-ready for trusted image files.
 
 * Supports Windows, Mac, and Linux
 * Processes images located on disk, Azure Blob Storage or Amazon S3
-* Disk Caching (not yet production-ready)
+* Disk Caching
 * Memory Caching
 * Distributed Caching
 * Watermarking
