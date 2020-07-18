@@ -34,7 +34,7 @@ For examples on serving files from S3 or Azure, see the full example after this.
 
 1. Create a new ASP.NET Core 3.1 project using the Empty template. 
 2. Create a directory called "wwwroot" and add a file "image.jpg"
-3. Install both `Imageflow.Server` and all `Imageflow.NativeRuntime.*` packages for platforms you are targeting. 
+3. Install Imageflow.Server
     ```
     Install-Package Imageflow.Server
     ```
