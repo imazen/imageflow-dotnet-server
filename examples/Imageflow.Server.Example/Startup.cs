@@ -34,7 +34,6 @@ namespace Imageflow.Server.Example
             
             services.AddImageflowRemoteReaderService(new RemoteReaderServiceOptions { SigningKey = "ChangeMe"}
                 .AddPrefix("/remote/")
-                .AddPrefix("/remote.jpg.ashx/")
                 );
 
             // Make S3 containers available at /ri/ and /imageflow-resources/
