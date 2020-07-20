@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Imageflow.ServerHelpers\Imageflow.Server.Helpers.csproj" />
+    <ProjectReference Include="..\Imazen.Common\Imazen.Common.csproj" />
+  </ItemGroup>
+
+</Project>

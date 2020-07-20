@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Imageflow.Net.Server.Example.Models;
 using System.Linq;
+using Imageflow.Server.Storage.RemoteReader;
 
 namespace Imageflow.Net.Server.Example.Controllers
 {
@@ -29,11 +30,17 @@ namespace Imageflow.Net.Server.Example.Controllers
         public IActionResult Gallery()
         {
             int[] imageNumbers = new int[] { 3, 4, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23 };
+
             var imageUrls = 
                 imageNumbers.Select(i => $"/ri/{i}s.jpg")
                 .Concat(imageNumbers.Select(i => $"/ri/{i}.jpg"))
-                .Select(u => $"{u}?width=300&height=300&mode=pad&bgcolor=white").ToList();
-            return View(imageUrls);
+                .ToList();
+
+            var remoteUrls = imageNumbers
+                .Select(i => $"{Request.Scheme}://{Request.Host}/ri/{i}.jpg")
+                .Select(u => $"/remote/{RemoteReaderService.EncodeAndSignUrl(u, "ChangeMe")}").ToList();
+
+            return View(imageUrls.Concat(remoteUrls).ToList());
         }
         
         public IActionResult LoadTest()
