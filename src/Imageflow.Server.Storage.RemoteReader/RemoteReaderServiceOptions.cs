@@ -9,6 +9,7 @@ namespace Imageflow.Server.Storage.RemoteReader
         internal readonly List<string> _prefixes = new List<string>();
 
         public string SigningKey { get; set; }
+        public string UserAgent { get; set; } = "ImageFlow-DotNet-Server";
 
         public RemoteReaderServiceOptions AddPrefix(string prefix)
         {

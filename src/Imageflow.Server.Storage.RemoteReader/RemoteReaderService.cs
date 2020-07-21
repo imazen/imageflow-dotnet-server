@@ -28,6 +28,7 @@ namespace Imageflow.Server.Storage.RemoteReader
             prefixes.Sort((a, b) => a.Length.CompareTo(b.Length));
 
             _http = new HttpClient();
+            _http.DefaultRequestHeaders.Add("user-agent", _options.UserAgent);
         }
 
         /// <summary>
