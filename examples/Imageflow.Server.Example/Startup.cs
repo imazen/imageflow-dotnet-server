@@ -12,6 +12,7 @@ using Imageflow.Server.Storage.AzureBlob;
 using Imageflow.Server.Storage.S3;
 using System;
 using Imageflow.Server.SqliteCache;
+using Imageflow.Server.Storage.RemoteReader;
 
 namespace Imageflow.Server.Example
 {
@@ -31,6 +32,10 @@ namespace Imageflow.Server.Example
         {
             services.AddControllersWithViews();
             
+            services.AddImageflowRemoteReaderService(new RemoteReaderServiceOptions { SigningKey = "ChangeMe"}
+                .AddPrefix("/remote/")
+                );
+
             // Make S3 containers available at /ri/ and /imageflow-resources/
             // If you use credentials, do not check them into your repository
             // You can call AddImageflowS3Service multiple times for each unique access key
