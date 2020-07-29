@@ -61,7 +61,7 @@ namespace Imageflow.Server
         internal BlobProviderResult? GetFileResult(string virtualPath)
         {
             var mapping = pathMappings.FirstOrDefault(
-                m => virtualPath.StartsWith(m.VirtualPath, StringComparison.OrdinalIgnoreCase));
+                m => virtualPath.StartsWith(m.VirtualPath, m.IgnoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal));
             if (mapping.PhysicalPath == null || mapping.VirtualPath == null) return null;
 
             var relativePath = virtualPath
