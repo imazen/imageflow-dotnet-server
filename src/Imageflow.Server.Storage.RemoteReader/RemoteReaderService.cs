@@ -3,6 +3,7 @@ using Imazen.Common.Storage;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Security.Cryptography;
@@ -72,16 +73,20 @@ namespace Imageflow.Server.Storage.RemoteReader
         {
             HMACSHA256 hmac = new HMACSHA256(UTF8Encoding.UTF8.GetBytes(key));
             byte[] hash = hmac.ComputeHash(UTF8Encoding.UTF8.GetBytes(data));
-            //32-byte hash is a bit overkill. Truncation doesn't weaken the integrity of the algorithm.
+            //32-byte hash is a bit overkill. Truncation only marginally weakens the algorithm integrity.
             byte[] shorterHash = new byte[8];
             Array.Copy(hash, shorterHash, 8);
             return EncodingUtils.ToBase64U(shorterHash);
         }
         public static string EncodeAndSignUrl(string url, string key)
         {
+            var uri = new Uri(url);
+            var path = uri.AbsolutePath;
+            var extension = Path.GetExtension(path);
+            var sanitizedExtension = PathHelpers.SanitizeImageExtension(extension);
             var data = EncodingUtils.ToBase64U(url);
             var sig = SignData(data, key);
-            return $"{data}.{sig}.jpg";
+            return $"{data}.{sig}.{sanitizedExtension}";
         }
 
 

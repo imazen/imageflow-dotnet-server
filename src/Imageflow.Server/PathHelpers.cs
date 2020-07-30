@@ -8,7 +8,7 @@ using Microsoft.Extensions.Primitives;
 
 namespace Imageflow.Server
 {
-    internal static class PathHelpers
+    public static class PathHelpers
     {
         
         private static readonly string[] suffixes = new string[] {
@@ -45,7 +45,7 @@ namespace Imageflow.Server
             return suffixes.Any(suffix => path.Value.EndsWith(suffix, StringComparison.OrdinalIgnoreCase));
         }
 
-        internal static string SanitizeImageExtension(string extension)
+        public static string SanitizeImageExtension(string extension)
         {
             extension = extension.ToLowerInvariant().TrimStart('.');
             return extension switch
@@ -85,7 +85,7 @@ namespace Imageflow.Server
         }
 
 
-        public static Dictionary<string, string> ToQueryDictionary(IQueryCollection requestQuery)
+        internal static Dictionary<string, string> ToQueryDictionary(IQueryCollection requestQuery)
         {
             var dict = new Dictionary<string,string>(requestQuery.Count, StringComparer.OrdinalIgnoreCase);
             foreach (var pair in requestQuery)
@@ -96,7 +96,7 @@ namespace Imageflow.Server
             return dict;
         }
 
-        public static string SerializeCommandString(Dictionary<string, string> finalQuery)
+        internal static string SerializeCommandString(Dictionary<string, string> finalQuery)
         {
             var qs = QueryString.Create(finalQuery.Select(p => new KeyValuePair<string, StringValues>(p.Key, p.Value)));
             return qs.ToString()?.TrimStart('?') ?? "";
