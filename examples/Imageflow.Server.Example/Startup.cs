@@ -136,7 +136,14 @@ namespace Imageflow.Server.Example
                                 new ResampleHints()
                                     .SetResampleFilters(InterpolationFilter.Robidoux_Sharp, null)
                                     .SetSharpen(7, SharpenWhen.Downscaling))
-                            .SetMinCanvasSize(200, 150))));
+                            .SetMinCanvasSize(200, 150)))
+                .AddWatermarkingHandler("/", args =>
+                {
+                    if (args.Query.TryGetValue("water", out var value) && value == "mark")
+                    {
+                        args.AppliedWatermarks.Add(new NamedWatermark(null, "/images/imazen_400.png", new WatermarkOptions()));
+                    }
+                }));
             
             
             
