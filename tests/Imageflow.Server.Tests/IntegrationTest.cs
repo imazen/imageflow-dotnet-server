@@ -41,7 +41,14 @@ namespace Imageflow.Server.Tests
                                 .MapPath("/insensitive", Path.Combine(contentRoot.PhysicalPath, "images"), true)
                                 .MapPath("/sensitive", Path.Combine(contentRoot.PhysicalPath, "images"), false)
                                 .AddWatermark(new NamedWatermark("imazen", "/logo.png", new WatermarkOptions()))
-                                .AddWatermark(new NamedWatermark("broken", "/not_there.png", new WatermarkOptions())));
+                                .AddWatermark(new NamedWatermark("broken", "/not_there.png", new WatermarkOptions()))
+                                .AddWatermarkingHandler("/", args =>
+                                {
+                                    if (args.Query.TryGetValue("water", out var value) && value == "mark")
+                                    {
+                                        args.AppliedWatermarks.Add(new NamedWatermark(null, "/logo.png", new WatermarkOptions()));
+                                    }
+                                }));
                         });
                     });
 
@@ -64,6 +71,10 @@ namespace Imageflow.Server.Tests
                 
                 using var watermarkResponse = await client.GetAsync("/fire.jpg?watermark=imazen");
                 watermarkResponse.EnsureSuccessStatusCode();
+                
+                using var watermarkResponse2 = await client.GetAsync("/fire.jpg?water=mark");
+                watermarkResponse2.EnsureSuccessStatusCode();
+                
                 
                 using var response2 = await client.GetAsync("/fire.jpg?width=1");
                 response2.EnsureSuccessStatusCode();

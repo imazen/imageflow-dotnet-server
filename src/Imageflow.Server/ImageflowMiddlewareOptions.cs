@@ -44,6 +44,9 @@ namespace Imageflow.Server
 
         internal readonly List<UrlHandler<Func<UrlEventArgs, bool>>> PostRewriteAuthorization = new List<UrlHandler<Func<UrlEventArgs, bool>>>();
 
+        internal readonly List<UrlHandler<Action<WatermarkingEventArgs>>> Watermarking = new List<UrlHandler<Action<WatermarkingEventArgs>>>();
+
+
         internal readonly Dictionary<string, string> CommandDefaults = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         
         internal readonly Dictionary<string, PresetOptions> Presets = new Dictionary<string, PresetOptions>(StringComparer.OrdinalIgnoreCase);
@@ -86,6 +89,12 @@ namespace Imageflow.Server
             return this;
         }
 
+        public ImageflowMiddlewareOptions AddWatermarkingHandler(string pathPrefix, Action<WatermarkingEventArgs> handler)
+        {
+            Watermarking.Add(new UrlHandler<Action<WatermarkingEventArgs>>(pathPrefix, handler));
+            return this;
+        }
+        
         public ImageflowMiddlewareOptions SetMapWebRoot(bool value)
         {
             MapWebRoot = value;

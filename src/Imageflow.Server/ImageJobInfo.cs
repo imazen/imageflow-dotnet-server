@@ -17,7 +17,7 @@ namespace Imageflow.Server
             Authorized = ProcessRewritesAndAuthorization(context, options);
 
             if (!Authorized) return;
-      
+
             HasParams = PathHelpers.SupportedQuerystringKeys.Any(FinalQuery.ContainsKey);
 
 
@@ -28,35 +28,51 @@ namespace Imageflow.Server
             }
 
             EstimatedFileExtension = PathHelpers.SanitizeImageExtension(extension);
-            
+
             primaryBlob = new BlobFetchCache(FinalVirtualPath, blobProvider);
             allBlobs = new List<BlobFetchCache>(1) {primaryBlob};
+
+            appliedWatermarks = new List<NamedWatermark>();
             
             if (HasParams)
             {
                 CommandString = PathHelpers.SerializeCommandString(FinalQuery);
-                   
+
                 // Look up watermark names
                 if (FinalQuery.TryGetValue("watermark", out var watermarkValues))
                 {
                     var watermarkNames = watermarkValues.Split(",").Select(s => s.Trim(' '));
-                    
-                    appliedWatermarks = new List<NamedWatermark>();
                     foreach (var name in watermarkNames)
                     {
                         var watermark = options.NamedWatermarks.FirstOrDefault(w =>
                             w.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
                         if (watermark == null)
                         {
-                            throw new InvalidOperationException($"watermark {name} was referenced from the querystring but no watermark by that name is registered with the middleware");
+                            throw new InvalidOperationException(
+                                $"watermark {name} was referenced from the querystring but no watermark by that name is registered with the middleware");
                         }
-                        
+
                         appliedWatermarks.Add(watermark);
-                        allBlobs.Add(new BlobFetchCache(watermark.VirtualPath, blobProvider));
                     }
                 }
             }
-            
+
+            // After we've populated the defaults, run the event handlers for custom watermarking logic
+            var args = new WatermarkingEventArgs(context, FinalVirtualPath, FinalQuery, appliedWatermarks);
+            foreach (var handler in options.Watermarking)
+            {
+                var matches = string.IsNullOrEmpty(handler.PathPrefix) ||
+                              FinalVirtualPath.StartsWith(handler.PathPrefix, StringComparison.OrdinalIgnoreCase);
+                if (matches) handler.Handler(args);
+            }
+            appliedWatermarks = args.AppliedWatermarks;
+
+            // Add the watermark source files
+            foreach (var w in appliedWatermarks)
+            {
+                allBlobs.Add(new BlobFetchCache(w.VirtualPath, blobProvider));
+            }
+
             provider = blobProvider;
         }
 
