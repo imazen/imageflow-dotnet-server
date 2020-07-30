@@ -2,6 +2,16 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
+    <Title>Imageflow.Server.Storage.RemoteReader - Service for fetching source images from remote URLs.</Title>
+    <Authors>Imazen</Authors>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <Copyright>(c) 2020 Imazen LLC</Copyright>
+    <PackageProjectUrl>https://github.com/imazen/imageflow-dotnet-server</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/imazen/imageflow-dotnet-server.git</RepositoryUrl>
+    <PackageVersion>0.1</PackageVersion>
   </PropertyGroup>
 
   <ItemGroup>
