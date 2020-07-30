@@ -19,8 +19,13 @@ namespace Imageflow.Server.Storage.AzureBlob
 
         public AzureBlobServiceOptions MapPrefix(string urlPrefix, string container)
             => MapPrefix(urlPrefix, container, "");
-        
+
+        public AzureBlobServiceOptions MapPrefix(string urlPrefix, string container, bool ignorePrefixCase, bool lowercaseBlobPath)
+            => MapPrefix(urlPrefix, container, "", ignorePrefixCase, lowercaseBlobPath);
+            
         public AzureBlobServiceOptions MapPrefix(string urlPrefix, string container, string blobPrefix)
+            => MapPrefix(urlPrefix, container, blobPrefix, false, false);
+        public AzureBlobServiceOptions MapPrefix(string urlPrefix, string container, string blobPrefix, bool ignorePrefixCase, bool lowercaseBlobPath)
         {
             var prefix = urlPrefix.TrimStart('/').TrimEnd('/');
             if (prefix.Length == 0)
@@ -35,7 +40,11 @@ namespace Imageflow.Server.Storage.AzureBlob
 
             mappings.Add(new PrefixMapping()
             {
-                Container = container, BlobPrefix = blobPrefix, UrlPrefix = prefix
+                Container = container, 
+                BlobPrefix = blobPrefix, 
+                UrlPrefix = prefix, 
+                IgnorePrefixCase = ignorePrefixCase,
+                LowercaseBlobPath = lowercaseBlobPath
             });
             return this;
         }

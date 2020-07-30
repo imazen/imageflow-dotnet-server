@@ -111,10 +111,13 @@ namespace Imageflow.Server
 
 
         public ImageflowMiddlewareOptions MapPath(string virtualPath, string physicalPath)
+            => MapPath(virtualPath, physicalPath, false);
+        public ImageflowMiddlewareOptions MapPath(string virtualPath, string physicalPath, bool ignorePrefixCase)
         {
-            mappedPaths.Add(new PathMapping(virtualPath,physicalPath));
+            mappedPaths.Add(new PathMapping(virtualPath, physicalPath, ignorePrefixCase));
             return this;
         }
+        
         public ImageflowMiddlewareOptions AddWatermark(NamedWatermark watermark)
         {
             if (namedWatermarks.Any(w => w.Name.Equals(watermark.Name, StringComparison.OrdinalIgnoreCase)))

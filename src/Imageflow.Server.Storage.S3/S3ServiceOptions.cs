@@ -20,8 +20,13 @@ namespace Imageflow.Server.Storage.S3
 
         public S3ServiceOptions MapPrefix(string prefix, RegionEndpoint region, string bucket)
             => MapPrefix(prefix, region, bucket, "");
-        
+
+        public S3ServiceOptions MapPrefix(string prefix, RegionEndpoint region, string bucket, bool ignorePrefixCase,
+            bool lowercaseBlobPath)
+            => MapPrefix(prefix, region, bucket, "", ignorePrefixCase, lowercaseBlobPath);
         public S3ServiceOptions MapPrefix(string prefix, RegionEndpoint region, string bucket, string blobPrefix)
+            => MapPrefix(prefix, region, bucket, blobPrefix, false, false);
+        public S3ServiceOptions MapPrefix(string prefix, RegionEndpoint region, string bucket, string blobPrefix, bool ignorePrefixCase, bool lowercaseBlobPath)
         {
             prefix = prefix.TrimStart('/').TrimEnd('/');
             if (prefix.Length == 0)
@@ -32,7 +37,16 @@ namespace Imageflow.Server.Storage.S3
             prefix = '/' + prefix + '/';
             blobPrefix = blobPrefix.Trim('/');
 
-            mappings.Add(new PrefixMapping() {Bucket=bucket, Prefix=prefix, Region=region, BlobPrefix = blobPrefix});
+            mappings.Add(new PrefixMapping()
+            {
+                Bucket=bucket, 
+                Prefix=prefix, 
+                Region=region, 
+                BlobPrefix = blobPrefix,
+                IgnorePrefixCase = ignorePrefixCase,
+                LowercaseBlobPath = lowercaseBlobPath
+                
+            });
             return this;
         }
         

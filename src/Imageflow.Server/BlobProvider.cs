@@ -17,7 +17,7 @@ namespace Imageflow.Server
         public BlobProvider(IEnumerable<IBlobProvider> blobProviders, List<PathMapping> pathMappings)
         {
             this.pathMappings = pathMappings.ToList();
-            
+            this.pathMappings.Sort((a, b) => b.VirtualPath.Length.CompareTo(a.VirtualPath.Length));
             
             foreach (var provider in blobProviders)
             {
@@ -25,11 +25,15 @@ namespace Imageflow.Server
                 foreach (var prefix in provider.GetPrefixes())
                 {
                     var conflictingPrefix =
-                        blobPrefixes.FirstOrDefault(p => prefix.StartsWith(p) || p.StartsWith(prefix));
+                        blobPrefixes.FirstOrDefault(p => 
+                            prefix.StartsWith(p, StringComparison.OrdinalIgnoreCase) || 
+                            p.StartsWith(prefix,StringComparison.OrdinalIgnoreCase));
                     if (conflictingPrefix != null)
                     {
                         throw new InvalidOperationException($"Blob Provider failure: Prefix {{prefix}} conflicts with prefix {conflictingPrefix}");
                     }
+                    // We don't check for conflicts with PathMappings because / is a path mapping usually, 
+                    // and we simply prefer blobs over files if there are overlapping prefixes.
                     blobPrefixes.Add(prefix);
                 }
             }
@@ -41,7 +45,7 @@ namespace Imageflow.Server
         }
         internal BlobProviderResult? GetBlobResult(string virtualPath)
         {
-            if (blobPrefixes.Any(p => virtualPath.StartsWith(p, StringComparison.Ordinal)))
+            if (blobPrefixes.Any(p => virtualPath.StartsWith(p, StringComparison.OrdinalIgnoreCase)))
             {
                 foreach (var provider in blobProviders)
                 {
@@ -61,7 +65,8 @@ namespace Imageflow.Server
         internal BlobProviderResult? GetFileResult(string virtualPath)
         {
             var mapping = pathMappings.FirstOrDefault(
-                m => virtualPath.StartsWith(m.VirtualPath, StringComparison.Ordinal));
+                m => virtualPath.StartsWith(m.VirtualPath, 
+                    m.IgnorePrefixCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal));
             if (mapping.PhysicalPath == null || mapping.VirtualPath == null) return null;
 
             var relativePath = virtualPath

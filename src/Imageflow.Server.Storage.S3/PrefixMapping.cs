@@ -8,5 +8,7 @@ namespace Imageflow.Server.Storage.S3
         internal RegionEndpoint Region;
         internal string Bucket;
         internal string BlobPrefix;
+        internal bool IgnorePrefixCase;
+        internal bool LowercaseBlobPath; 
     }
 }

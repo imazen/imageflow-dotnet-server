@@ -38,6 +38,8 @@ namespace Imageflow.Server.Tests
                                 .SetMapWebRoot(false)
                                 // Maps / to ContentRootPath/images
                                 .MapPath("/", Path.Combine(contentRoot.PhysicalPath, "images"))
+                                .MapPath("/insensitive", Path.Combine(contentRoot.PhysicalPath, "images"), true)
+                                .MapPath("/sensitive", Path.Combine(contentRoot.PhysicalPath, "images"), false)
                                 .AddWatermark(new NamedWatermark("imazen", "/logo.png", new WatermarkOptions()))
                                 .AddWatermark(new NamedWatermark("broken", "/not_there.png", new WatermarkOptions())));
                         });
@@ -72,6 +74,18 @@ namespace Imageflow.Server.Tests
                 response3.EnsureSuccessStatusCode();
                 responseBytes = await response3.Content.ReadAsByteArrayAsync();
                 Assert.Equal(contentRoot.GetResourceBytes("TestFiles.fire-umbrella-small.jpg"), responseBytes);
+                
+                using var response4 = await client.GetAsync("/inSenSitive/fire.jpg?width=1");
+                response4.EnsureSuccessStatusCode();
+                
+                
+                
+                using var response5 = await client.GetAsync("/senSitive/fire.jpg?width=1");
+                Assert.Equal(HttpStatusCode.NotFound, response5.StatusCode);
+                
+                using var response6 = await client.GetAsync("/sensitive/fire.jpg?width=1");
+                response6.EnsureSuccessStatusCode();
+                
                 await host.StopAsync(CancellationToken.None);
             }
         }

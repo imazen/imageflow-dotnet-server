@@ -13,9 +13,7 @@ namespace Imageflow.Server.Storage.S3
 {
     public class S3Service : IBlobProvider
     {
-        private readonly Dictionary<string, PrefixMapping> mappings = new Dictionary<string, PrefixMapping>();
-        
-        private readonly List<string> prefixes = new List<string>();
+        private readonly List<PrefixMapping> mappings = new List<PrefixMapping>();
 
         private readonly AWSCredentials credentials;
         public S3Service(S3ServiceOptions options, ILogger<S3Service> logger)
@@ -32,36 +30,41 @@ namespace Imageflow.Server.Storage.S3
 
             foreach (var m in options.mappings)
             {
-                mappings.Add(m.Prefix, m);
-                prefixes.Add(m.Prefix);
+                mappings.Add(m);;
             }
             //TODO: verify this sorts longest first
-            prefixes.Sort((a,b) => a.Length.CompareTo(b.Length));
+            mappings.Sort((a,b) => b.Prefix.Length.CompareTo(a.Prefix.Length));
         }
 
         public IEnumerable<string> GetPrefixes()
         {
-            return prefixes;
+            return mappings.Select(m => m.Prefix);
         }
 
         public bool SupportsPath(string virtualPath)
         {
-            return prefixes.Any(s => virtualPath.StartsWith(s, StringComparison.Ordinal));
+            return mappings.Any(m => virtualPath.StartsWith(m.Prefix, 
+                m.IgnorePrefixCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal));
         }
 
         public async Task<IBlobData> Fetch(string virtualPath)
         {
-            var prefix =  prefixes.FirstOrDefault(s => virtualPath.StartsWith(s, StringComparison.Ordinal));
-            if (prefix == null)
+            var mapping =  mappings.FirstOrDefault(m => virtualPath.StartsWith(m.Prefix, 
+                m.IgnorePrefixCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal));
+            if (mapping.Prefix == null)
             {
                 return null;
             }
 
-            var mapping = mappings[prefix];
-            
+            var partialKey = virtualPath.Substring(mapping.Prefix.Length).TrimStart('/');
+            if (mapping.LowercaseBlobPath)
+            {
+                partialKey = partialKey.ToLowerInvariant();
+            }
+           
             var key = string.IsNullOrEmpty(mapping.BlobPrefix)
-                ? virtualPath.Substring(prefix.Length).TrimStart('/')
-                : mapping.BlobPrefix + "/" + virtualPath.Substring(prefix.Length).TrimStart('/');
+                ? partialKey
+                : mapping.BlobPrefix + "/" + partialKey;
 
             try {
                 using var client = new AmazonS3Client(credentials, mapping.Region);

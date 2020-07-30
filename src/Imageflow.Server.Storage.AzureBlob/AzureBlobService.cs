@@ -12,9 +12,7 @@ namespace Imageflow.Server.Storage.AzureBlob
 {
     public class AzureBlobService : IBlobProvider
     {
-        private readonly Dictionary<string, PrefixMapping> mappings = new Dictionary<string, PrefixMapping>();
-
-        private readonly List<string> prefixes = new List<string>();
+        private readonly List<PrefixMapping> mappings = new List<PrefixMapping>();
 
         private readonly Azure.Storage.Blobs.BlobServiceClient client;
 
@@ -23,37 +21,44 @@ namespace Imageflow.Server.Storage.AzureBlob
             client = new BlobServiceClient(options.ConnectionString, options.BlobClientOptions);
             foreach (var m in options.mappings)
             {
-                mappings.Add(m.UrlPrefix, m);
-                prefixes.Add(m.UrlPrefix);
+                mappings.Add(m);
             }
 
-            prefixes.Sort((a, b) => a.Length.CompareTo(b.Length));
+            mappings.Sort((a, b) => b.UrlPrefix.Length.CompareTo(a.UrlPrefix.Length));
         }
 
         public IEnumerable<string> GetPrefixes()
         {
-            return prefixes;
+            return mappings.Select(m => m.UrlPrefix);
         }
 
         public bool SupportsPath(string virtualPath)
         {
-            return prefixes.Any(s => virtualPath.StartsWith(s, StringComparison.Ordinal));
+            return mappings.Any(s => virtualPath.StartsWith(s.UrlPrefix, 
+                s.IgnorePrefixCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal));
         }
 
         public async Task<IBlobData> Fetch(string virtualPath)
         {
-            var prefix = prefixes.FirstOrDefault(s => virtualPath.StartsWith(s, StringComparison.Ordinal));
-            if (prefix == null)
+            var mapping = mappings.FirstOrDefault(s => virtualPath.StartsWith(s.UrlPrefix, 
+                s.IgnorePrefixCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal));
+            if (mapping.UrlPrefix == null)
             {
                 return null;
             }
 
-            var mapping = mappings[prefix];
-            
-            var key = string.IsNullOrEmpty(mapping.BlobPrefix)
-                    ? virtualPath.Substring(prefix.Length).TrimStart('/')
-                    : mapping.BlobPrefix + "/" + virtualPath.Substring(prefix.Length).TrimStart('/');
+            var partialKey = virtualPath.Substring(mapping.UrlPrefix.Length).TrimStart('/');
 
+            if (mapping.LowercaseBlobPath)
+            {
+                partialKey = partialKey.ToLowerInvariant();
+            }
+
+            var key = string.IsNullOrEmpty(mapping.BlobPrefix)
+                    ? partialKey
+                    : mapping.BlobPrefix + "/" + partialKey;
+
+            
             try
             {
                 var blobClient = client.GetBlobContainerClient(mapping.Container).GetBlobClient(key);

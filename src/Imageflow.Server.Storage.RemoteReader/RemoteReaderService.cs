@@ -26,7 +26,7 @@ namespace Imageflow.Server.Storage.RemoteReader
             _logger = logger;
 
             prefixes.AddRange(_options._prefixes);
-            prefixes.Sort((a, b) => a.Length.CompareTo(b.Length));
+            prefixes.Sort((a, b) => b.Length.CompareTo(a.Length));
 
             _http = new HttpClient();
             _http.DefaultRequestHeaders.Add("user-agent", _options.UserAgent);
@@ -66,7 +66,8 @@ namespace Imageflow.Server.Storage.RemoteReader
 
         public bool SupportsPath(string virtualPath)
         {
-            return prefixes.Any(s => virtualPath.StartsWith(s, StringComparison.Ordinal));
+            return prefixes.Any(s => virtualPath.StartsWith(s,
+                _options.IgnorePrefixCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal));
         }
 
         public static string SignData(string data, string key)
