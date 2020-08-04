@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography.Xml;
 using System.Threading.Tasks;
 using Imageflow.Fluent;
+using Imazen.Common.Helpers;
 using Imazen.Common.Storage;
 using Microsoft.AspNetCore.Http;
 
@@ -96,8 +98,15 @@ namespace Imageflow.Server
 
         private bool ProcessRewritesAndAuthorization(HttpContext context, ImageflowMiddlewareOptions options)
         {
+            if (!VerifySignature(context, options))
+            {
+                AuthorizedMessage = "Invalid request signature";
+                return false;
+            }
+                
             var path = context.Request.Path.Value;
             var args = new UrlEventArgs(context, context.Request.Path.Value, PathHelpers.ToQueryDictionary(context.Request.Query));
+
             foreach (var handler in options.PreRewriteAuthorization)
             {
                 var matches = string.IsNullOrEmpty(handler.PathPrefix) ||
@@ -177,8 +186,37 @@ namespace Imageflow.Server
             FinalQuery = args.Query;
             return true; 
         }
-        
-       
+
+        private bool VerifySignature(HttpContext context, ImageflowMiddlewareOptions options)
+        {
+            var pathAndQuery = context.Request.PathBase.HasValue
+                ? "/" + context.Request.PathBase.Value.TrimStart('/')
+                : "";
+            pathAndQuery += context.Request.Path.ToString() + context.Request.QueryString.ToString();
+
+            pathAndQuery = Signatures.NormalizePathAndQueryForSigning(pathAndQuery);
+            if (context.Request.Query.TryGetValue("signature", out var actualSignature))
+            {
+                foreach (var key in options.SigningKeys)
+                {
+                    var expectedSignature = Signatures.SignString(pathAndQuery, key, 16);
+                    if (expectedSignature == actualSignature) return true;
+                }
+
+                AuthorizedMessage = "Image signature does not match request, or used an invalid signing key.";
+                return false;
+
+            }
+
+            // A missing signature is only a problem if they are required
+            if (!options.RequireRequestSignature) return true;
+            
+            AuthorizedMessage = "Image requests must be signed. No &signature query key found. ";
+            return false;
+
+        }
+
+
         public bool PrimaryBlobMayExist()
         {
             return primaryBlob.GetBlobResult() != null;

@@ -115,6 +115,10 @@ namespace Imageflow.Server.Example
                     .SetCommand("width", "1024")
                     .SetCommand("height", "1024")
                     .SetCommand("mode", "max"))
+                //When set to true, this only allows urls with a &signature, returning 403 if missing/invalid. 
+                //Use Imazen.Common.Helpers.Signatures.SignRequest(string pathAndQuery, string signingKey) to generate
+                .SetRequireRequestSignature(false)
+                .AddRequestSigningKey("test key")
                 // It's a good idea to limit image sizes for security. Requests causing these to be exceeded will fail
                 // The last argument to FrameSizeLimit() is the maximum number of megapixels
                 .SetJobSecurityOptions(new SecurityOptions()

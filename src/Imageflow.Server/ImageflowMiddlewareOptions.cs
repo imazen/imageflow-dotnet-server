@@ -31,8 +31,10 @@ namespace Imageflow.Server
         public IReadOnlyCollection<PathMapping> MappedPaths => mappedPaths;
 
         public bool MapWebRoot { get; set; }
-        
+
         public bool UsePresetsExclusively { get; set; }
+
+        public bool RequireRequestSignature { get; set; }
         
         public string DefaultCacheControlString { get; set; }
         
@@ -51,6 +53,7 @@ namespace Imageflow.Server
         
         internal readonly Dictionary<string, PresetOptions> Presets = new Dictionary<string, PresetOptions>(StringComparer.OrdinalIgnoreCase);
 
+        internal readonly List<string> SigningKeys = new List<string>();
         /// <summary>
         /// Use this to add default command values if they are missing. Does not affect image requests with no querystring.
         /// Example: AddCommandDefault("down.colorspace", "srgb") reverts to ImageResizer's legacy behavior in scaling shadows and highlights.
@@ -73,6 +76,12 @@ namespace Imageflow.Server
             return this;
         }
         
+        public ImageflowMiddlewareOptions AddRequestSigningKey(string key)
+        {
+            SigningKeys.Add(key);
+            return this;
+        }
+        
         public ImageflowMiddlewareOptions AddRewriteHandler(string pathPrefix, Action<UrlEventArgs> handler)
         {
             Rewrite.Add(new UrlHandler<Action<UrlEventArgs>>(pathPrefix, handler));
@@ -92,6 +101,12 @@ namespace Imageflow.Server
         public ImageflowMiddlewareOptions AddWatermarkingHandler(string pathPrefix, Action<WatermarkingEventArgs> handler)
         {
             Watermarking.Add(new UrlHandler<Action<WatermarkingEventArgs>>(pathPrefix, handler));
+            return this;
+        }
+        
+        public ImageflowMiddlewareOptions SetRequireRequestSignature(bool value)
+        {
+            RequireRequestSignature = value;
             return this;
         }
         

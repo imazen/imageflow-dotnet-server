@@ -24,6 +24,7 @@ namespace Imageflow.Server.Tests
         {
             using (var contentRoot = new TempContentRoot()
                 .AddResource("images/fire.jpg", "TestFiles.fire-umbrella-small.jpg")
+                .AddResource("images/fire umbrella.jpg", "TestFiles.fire-umbrella-small.jpg")
                 .AddResource("images/logo.png", "TestFiles.imazen_400.png"))
             {
 
@@ -81,7 +82,7 @@ namespace Imageflow.Server.Tests
                 var responseBytes = await response2.Content.ReadAsByteArrayAsync();
                 Assert.True(responseBytes.Length < 1000);
                 
-                using var response3 = await client.GetAsync("/fire.jpg");
+                using var response3 = await client.GetAsync("/fire%20umbrella.jpg");
                 response3.EnsureSuccessStatusCode();
                 responseBytes = await response3.Content.ReadAsByteArrayAsync();
                 Assert.Equal(contentRoot.GetResourceBytes("TestFiles.fire-umbrella-small.jpg"), responseBytes);
@@ -260,7 +261,7 @@ namespace Imageflow.Server.Tests
                 await host.StopAsync(CancellationToken.None);
             }
         }
-        
+
         [Fact]
         public async void TestPresets()
         {
@@ -309,6 +310,57 @@ namespace Imageflow.Server.Tests
                 imageResults = await ImageJob.GetImageInfo(new BytesSource(responseBytes));
                 Assert.Equal(2,imageResults.ImageWidth);
                 Assert.Equal(1,imageResults.ImageHeight);
+                
+                await host.StopAsync(CancellationToken.None);
+            }
+        }
+        
+         [Fact]
+        public async void TestRequestSigning()
+        {
+            const string key = "test key";
+            using (var contentRoot = new TempContentRoot()
+                .AddResource("images/fire umbrella.jpg", "TestFiles.fire-umbrella-small.jpg"))
+            {
+
+                var hostBuilder = new HostBuilder()
+                    .ConfigureWebHost(webHost =>
+                    {
+                        // Add TestServer
+                        webHost.UseTestServer();
+                        webHost.Configure(app =>
+                        {
+                            app.UseImageflow(new ImageflowMiddlewareOptions()
+                                .SetMapWebRoot(false)
+                                // Maps / to ContentRootPath/images
+                                .MapPath("/", Path.Combine(contentRoot.PhysicalPath, "images"))
+                                .SetRequireRequestSignature(true)
+                                .AddRequestSigningKey(key)
+                                );
+                        });
+                    });
+                using var host = await hostBuilder.StartAsync();
+                using var client = host.GetTestClient();
+                
+                using var unsignedResponse = await client.GetAsync("/fire umbrella.jpg?width=1");
+                Assert.Equal(HttpStatusCode.Forbidden,unsignedResponse.StatusCode);
+
+                var signedUrl = Imazen.Common.Helpers.Signatures.SignRequest("/fire umbrella.jpg?width=1", key);
+                using var signedResponse = await client.GetAsync(signedUrl);
+                signedResponse.EnsureSuccessStatusCode();
+                
+                var signedEncodedUnmodifiedUrl = Imazen.Common.Helpers.Signatures.SignRequest("/fire%20umbrella.jpg", key);
+                using var signedEncodedUnmodifiedResponse = await client.GetAsync(signedEncodedUnmodifiedUrl);
+                signedEncodedUnmodifiedResponse.EnsureSuccessStatusCode();
+                
+                
+                var signedEncodedUrl = Imazen.Common.Helpers.Signatures.SignRequest("/fire%20umbrella.jpg?width=1", key);
+                using var signedEncodedResponse = await client.GetAsync(signedEncodedUrl);
+                signedEncodedResponse.EnsureSuccessStatusCode();
+                
+                var url5 = Imazen.Common.Helpers.Signatures.SignRequest("/fire umbrella.jpg?width=1&ke%20y=val%2fue&another key=another val/ue", key);
+                using var response5 = await client.GetAsync(url5);
+                response5.EnsureSuccessStatusCode();
                 
                 await host.StopAsync(CancellationToken.None);
             }
