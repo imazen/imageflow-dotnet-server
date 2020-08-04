@@ -86,7 +86,7 @@ namespace Imageflow.Server
 
             if (!imageJobInfo.Authorized)
             {
-                await NotAuthorized(context);
+                await NotAuthorized(context, imageJobInfo.AuthorizedMessage);
                 return;
             }
 
@@ -151,9 +151,13 @@ namespace Imageflow.Server
             }
         }
 
-        private async Task NotAuthorized(HttpContext context)
+        private async Task NotAuthorized(HttpContext context, string detail)
         {
             var s = "You are not authorized to access the given resource.";
+            if (!string.IsNullOrEmpty(detail))
+            {
+                s += "\r\n" + detail;
+            }
             
             context.Response.StatusCode = 403;
             context.Response.ContentType = "text/plain; charset=utf-8";

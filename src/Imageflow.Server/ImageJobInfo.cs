@@ -84,6 +84,7 @@ namespace Imageflow.Server
         public bool Authorized { get; }
         public string CommandString { get; } = "";
         public string EstimatedFileExtension { get; }
+        public string AuthorizedMessage { get; set; }
 
         private readonly BlobProvider provider;
 
@@ -110,6 +111,7 @@ namespace Imageflow.Server
                 
                 if (args.Query.Count > 1 || (firstKey != null && firstKey != "preset"))
                 {
+                    AuthorizedMessage = "Only presets are permitted in the querystring";
                     return false;
                 }
             }
