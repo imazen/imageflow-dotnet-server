@@ -24,8 +24,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Imageflow.Server", "src\Ima
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Imageflow.Server.DiskCache", "src\Imageflow.Server.DiskCache\Imageflow.Server.DiskCache.csproj", "{47AE7207-8AF6-43C2-88C0-BC6362840566}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Imageflow.Server.Helpers", "src\Imageflow.ServerHelpers\Imageflow.Server.Helpers.csproj", "{E6C1D691-72DC-46E8-8520-16A11ABCE593}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Imageflow.Server.Example", "examples\Imageflow.Server.Example\Imageflow.Server.Example.csproj", "{5EDA87AF-34CE-46BF-A847-C06E546E7CB9}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Imageflow.Server.Storage.S3", "src\Imageflow.Server.Storage.S3\Imageflow.Server.Storage.S3.csproj", "{AA748528-5F40-42A6-AA03-E1B87343BB38}"
@@ -70,10 +68,6 @@ Global
 		{47AE7207-8AF6-43C2-88C0-BC6362840566}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{47AE7207-8AF6-43C2-88C0-BC6362840566}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{47AE7207-8AF6-43C2-88C0-BC6362840566}.Release|Any CPU.Build.0 = Release|Any CPU
-		{E6C1D691-72DC-46E8-8520-16A11ABCE593}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E6C1D691-72DC-46E8-8520-16A11ABCE593}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E6C1D691-72DC-46E8-8520-16A11ABCE593}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E6C1D691-72DC-46E8-8520-16A11ABCE593}.Release|Any CPU.Build.0 = Release|Any CPU
 		{5EDA87AF-34CE-46BF-A847-C06E546E7CB9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{5EDA87AF-34CE-46BF-A847-C06E546E7CB9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5EDA87AF-34CE-46BF-A847-C06E546E7CB9}.Release|Any CPU.ActiveCfg = Release|Any CPU

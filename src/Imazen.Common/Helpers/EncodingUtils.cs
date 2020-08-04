@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Imageflow.Server.ServerHelpers
+namespace Imazen.Common.Helpers
 {
     public static class EncodingUtils
     {
