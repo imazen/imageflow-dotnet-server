@@ -88,7 +88,10 @@ namespace Imageflow.Server.SqliteCache
             
                 if (BytesWrittenSinceCheckpoint > 8096 * 1000)
                 {
+                    // We *want* to fire and forget
+#pragma warning disable CS4014
                     Task.Run(CheckpointDatabase);
+#pragma warning restore CS4014
                     BytesWrittenSinceCheckpoint = 0;
                 }
                 
