@@ -24,6 +24,7 @@ namespace Imageflow.Server.Tests
         {
             using (var contentRoot = new TempContentRoot()
                 .AddResource("images/fire.jpg", "TestFiles.fire-umbrella-small.jpg")
+                .AddResource("images/fire.jfif", "TestFiles.fire-umbrella-small.jpg")
                 .AddResource("images/fire umbrella.jpg", "TestFiles.fire-umbrella-small.jpg")
                 .AddResource("images/logo.png", "TestFiles.imazen_400.png"))
             {
@@ -97,6 +98,9 @@ namespace Imageflow.Server.Tests
                 
                 using var response6 = await client.GetAsync("/sensitive/fire.jpg?width=1");
                 response6.EnsureSuccessStatusCode();
+                
+                using var response7 = await client.GetAsync("/fire.jfif?width=1");
+                response7.EnsureSuccessStatusCode();
                 
                 await host.StopAsync(CancellationToken.None);
             }

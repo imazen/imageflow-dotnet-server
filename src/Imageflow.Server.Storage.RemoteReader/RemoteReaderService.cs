@@ -73,7 +73,7 @@ namespace Imageflow.Server.Storage.RemoteReader
             var uri = new Uri(url);
             var path = uri.AbsolutePath;
             var extension = Path.GetExtension(path);
-            var sanitizedExtension = PathHelpers.SanitizeImageExtension(extension);
+            var sanitizedExtension = PathHelpers.SanitizeImageExtension(extension)?? "jpg";
             var data = EncodingUtils.ToBase64U(url);
             var sig = Signatures.SignString(data, key,8);
             return $"{data}.{sig}.{sanitizedExtension}";

@@ -29,7 +29,7 @@ namespace Imageflow.Server
                 extension = newExtension;
             }
 
-            EstimatedFileExtension = PathHelpers.SanitizeImageExtension(extension);
+            EstimatedFileExtension = PathHelpers.SanitizeImageExtension(extension) ?? "jpg";
 
             primaryBlob = new BlobFetchCache(FinalVirtualPath, blobProvider);
             allBlobs = new List<BlobFetchCache>(1) {primaryBlob};
