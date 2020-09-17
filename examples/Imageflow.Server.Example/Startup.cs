@@ -51,6 +51,16 @@ namespace Imageflow.Server.Example
                         new BlobClientOptions())
                     .MapPrefix("/azure", "imageflow-demo" ));
 
+            services.AddImageflowCustomBlobService(new CustomBlobServiceOptions()
+            {
+                Prefix = "/customblobs/",
+                IgnorePrefixCase = true,
+                ConnectionString = "UseDevelopmentStorage=true;",
+                // Only allow 'mycontainer' to be accessed. /customblobs/mycontainer/key.jpg would be an example path.
+                ContainerKeyFilterFunction = (container, key) =>
+                    container == "mycontainer" ? Tuple.Create(container, key) : null
+            });
+
             var homeFolder = (Environment.OSVersion.Platform == PlatformID.Unix ||
                    Environment.OSVersion.Platform == PlatformID.MacOSX)
                     ? Environment.GetEnvironmentVariable("HOME")
