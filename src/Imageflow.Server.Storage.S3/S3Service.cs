@@ -66,8 +66,9 @@ namespace Imageflow.Server.Storage.S3
                 ? partialKey
                 : mapping.BlobPrefix + "/" + partialKey;
 
-            try {
-                using var client = new AmazonS3Client(credentials, mapping.Region);
+            try
+            {
+                using var client = new AmazonS3Client(credentials, mapping.Config);
                 var req = new Amazon.S3.Model.GetObjectRequest() { BucketName = mapping.Bucket, Key = key };
 
                 var s = await client.GetObjectAsync(req);
