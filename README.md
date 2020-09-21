@@ -3,7 +3,7 @@
 Imageflow.NET Server is image processing and optimizing middleware for ASP.NET Core 3.1+. 
 If you don't need an HTTP server, [try Imageflow.NET](https://github.com/imazen/imageflow-dotnet).
  
-Under the hood, it uses [Imageflow](https://imageflow.io), the fastest image handling library for web servers. 
+Under the hood, it uses [Imageflow](https://imageflow.io), the fastest correct image handling library for web servers. 
 Imageflow focuses on security, quality, and performance.
 
 For help migrating from ImageResizer, see [the migrating from ImageResizer](#migrating-from-imageresizer) section and open an issue or email `support@imazen.io` if you have any questions. 
@@ -66,6 +66,10 @@ Install-Package Imageflow.Server.DiskCache
 Install-Package Imageflow.Server.Storage.S3
 Install-Package Imageflow.Server.Storage.AzureBlob
 ```
+
+Note: Older versions of Windows may not have the C Runtime 
+installed ([Install 32-bit](https://aka.ms/vs/16/release/vc_redist.x86.exe) or [64-bit](https://aka.ms/vs/16/release/vc_redist.x64.exe)). 
+
 
 ```c#
 using System.IO;
@@ -215,10 +219,6 @@ namespace Imageflow.Server.Example
 }
 
 ```
-
-Note: You must install the [appropriate NativeRuntime(s)](https://www.nuget.org/packages?q=Imageflow+AND+NativeRuntime) in the project you are deploying - they have to copy imageflow.dll to the output folder. 
-
-[NativeRuntimes](https://www.nuget.org/packages?q=Imageflow+AND+NativeRuntime) that are suffixed with -haswell (2013, AVX2 support) require a CPU of that generation or later. 
 
 ## Migrating from ImageResizer
 
