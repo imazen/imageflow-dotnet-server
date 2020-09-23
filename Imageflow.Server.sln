@@ -40,6 +40,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Imageflow.Server.Storage.Re
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imageflow.Server.ExampleDocker", "examples\Imageflow.Server.ExampleDocker\Imageflow.Server.ExampleDocker.csproj", "{E3AF3896-73D4-4240-915D-871B0F9D07B5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imageflow.Server.ExampleDockerDiskCache", "examples\Imageflow.Server.ExampleDockerDiskCache\Imageflow.Server.ExampleDockerDiskCache.csproj", "{2AD8CC34-5302-4E17-B6D0-F5E47FA49E22}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -102,6 +104,10 @@ Global
 		{E3AF3896-73D4-4240-915D-871B0F9D07B5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E3AF3896-73D4-4240-915D-871B0F9D07B5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E3AF3896-73D4-4240-915D-871B0F9D07B5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2AD8CC34-5302-4E17-B6D0-F5E47FA49E22}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2AD8CC34-5302-4E17-B6D0-F5E47FA49E22}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2AD8CC34-5302-4E17-B6D0-F5E47FA49E22}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2AD8CC34-5302-4E17-B6D0-F5E47FA49E22}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
