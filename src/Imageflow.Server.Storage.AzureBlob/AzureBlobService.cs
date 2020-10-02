@@ -71,7 +71,7 @@ namespace Imageflow.Server.Storage.AzureBlob
             {
                 if (e.Status == 404)
                 {
-                    throw new BlobMissingException($"Azure blob \"{key}\" not found.", e);
+                    throw new BlobMissingException($"Azure blob \"{key}\" not found.\n({e.Message})", e);
                 }
 
                 throw;

@@ -76,9 +76,9 @@ namespace Imageflow.Server.Storage.S3
 
             } catch (AmazonS3Exception se) {
                 if (se.StatusCode == System.Net.HttpStatusCode.NotFound || "NoSuchKey".Equals(se.ErrorCode, StringComparison.OrdinalIgnoreCase)) 
-                    throw new BlobMissingException($"Amazon S3 blob \"{key}\" not found.", se);
+                    throw new BlobMissingException($"Amazon S3 blob \"{key}\" not found.\n({se.Message})", se);
                 if ( se.StatusCode == System.Net.HttpStatusCode.Forbidden || "AccessDenied".Equals(se.ErrorCode, StringComparison.OrdinalIgnoreCase)) 
-                    throw new BlobMissingException($"Amazon S3 blob \"{key}\" not accessible. The blob may not exist or you may not have permission to access it.", se);
+                    throw new BlobMissingException($"Amazon S3 blob \"{key}\" not accessible. The blob may not exist or you may not have permission to access it.\n({se.Message})", se);
                 throw;
             }
         }
