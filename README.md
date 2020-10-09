@@ -50,7 +50,7 @@ For examples on serving files from S3 or Azure, see the full example after this.
        endpoints.MapGet("/", async context =>
        {
            context.Response.ContentType = "text/html";
-           await context.Response.WriteAsync("<img src=\"fire-umbrella-small.jpg?width=450\" />");
+           await context.Response.WriteAsync("<img src=\"image.jpg?width=450\" />");
        });
    });
    ```
