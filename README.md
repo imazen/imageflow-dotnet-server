@@ -1,9 +1,10 @@
 [![.NET Core](https://github.com/imazen/imageflow-dotnet-server/workflows/.NET%20Core/badge.svg)](https://github.com/imazen/imageflow-dotnet-server/actions?query=workflow%3A%22.NET+Core%22) [![Build status](https://ci.appveyor.com/api/projects/status/5hm0ekhe455i56fp/branch/main?svg=true)](https://ci.appveyor.com/project/imazen/imageflow-dotnet-server/branch/main)
 
-Imageflow.NET Server is image processing and optimizing middleware for ASP.NET Core 3.1+. 
-If you don't need an HTTP server, [try Imageflow.NET](https://github.com/imazen/imageflow-dotnet). If you don't want to use .NET, try [Imageflow](https://imageflow.io), which has a server, command-line tool, and library with language bindings for Go, C, Rust, Node, Ruby and more. Imageflow focuses on security, quality, and performance. 
+#### Imageflow.NET Server is image processing and optimizing middleware for ASP.NET Core 3.1+. 
 
-Serving optimized and correctly sized images is the fastest way to a quicker, more profitable site or app. 60% of website bytes are from images<sup>[1]</sup>.
+If you don't need an HTTP server, [try Imageflow.NET](https://github.com/imazen/imageflow-dotnet). If you don't want to use .NET, try [Imageflow](https://imageflow.io), which has a server, command-line tool, and library with language bindings for Go, C, Rust, Node, Ruby and more. Imageflow is specifically designed for web servers and focuses on security, quality, and performance. 
+
+**Serving optimized and correctly sized images is the fastest way to a quicker, more profitable site or app. 60% of website bytes are from images<sup>[1]</sup>.**
 
 Imageflow.NET Server edits and optimizes images so quickly you can do it on-demand. No need to manually generate every size/format combination of every image.
 
