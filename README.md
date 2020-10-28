@@ -1,28 +1,54 @@
 [![.NET Core](https://github.com/imazen/imageflow-dotnet-server/workflows/.NET%20Core/badge.svg)](https://github.com/imazen/imageflow-dotnet-server/actions?query=workflow%3A%22.NET+Core%22) [![Build status](https://ci.appveyor.com/api/projects/status/5hm0ekhe455i56fp/branch/main?svg=true)](https://ci.appveyor.com/project/imazen/imageflow-dotnet-server/branch/main)
 
-Imageflow.NET Server is image processing and optimizing middleware for ASP.NET Core 3.1+. 
-If you don't need an HTTP server, [try Imageflow.NET](https://github.com/imazen/imageflow-dotnet).
- 
-Under the hood, it uses [Imageflow](https://imageflow.io), the fastest correct image handling library for web servers. 
-Imageflow focuses on security, quality, and performance.
+#### Imageflow.NET Server is image processing and optimizing middleware for ASP.NET Core 3.1+. 
 
-For help migrating from ImageResizer, see [the migrating from ImageResizer](#migrating-from-imageresizer) section and open an issue or email `support@imazen.io` if you have any questions. 
+If you don't need an HTTP server, [try Imageflow.NET](https://github.com/imazen/imageflow-dotnet). If you don't want to use .NET, try [Imageflow](https://imageflow.io), which has a server, command-line tool, and library with language bindings for Go, C, Rust, Node, Ruby and more. Imageflow is specifically designed for web servers and focuses on security, quality, and performance. 
 
-We offer commercial licenses at https://imageresizing.net/pricing, or you can use
-Imageflow, Imageflow.NET and Imageflow.NET Server under the terms of the AGPLv3. License keys are not yet required for commercial use, but we ask that you buy a license to help fund development of the Imageflow product suite. 
+**Serving optimized and correctly sized images is the fastest way to a quicker, more profitable site or app. 60% of website bytes are from images<sup>[1]</sup>.**
 
-Imageflow .NET Server is considered production-ready for trusted image files. 
+Imageflow.NET Server edits and optimizes images so quickly you can do it on-demand. No need to manually generate every size/format combination of every image.
+
+![Imageflow Server Diagram](https://www.imageflow.io/images/imageflow-responsive.svg)![Querystring animation](https://www.imageflow.io/images/edit-url.gif)
+
+
+<sup>[1]</sup>According to the HTTP Archive, 60% of the data transferred to fetch a web page is images composed of JPEGs, PNGs and GIFs.
+
+### What else can it do?
+
+* Automatically crop away whitespace
+* Sharpen
+* Fix white balance
+* Apply watermarks
+* Adjust contrast/saturation/brightness
+* Rotate & Flip images
+* Crop
+* Resize & Constrain
+* Produce highly optimized jpeg images to reduce download times
+* [More](https://docs.imageflow.io)
+
+All operations are designed to be fast enough for on-demand use.
 
 ### Features
 
 * Supports Windows, Mac, and Linux
+* Comes with [Dockerfiles](https://github.com/imazen/imageflow-dotnet-server/tree/main/examples/Imageflow.Server.ExampleDockerDiskCache) for cloud deployment.
 * Processes images located on disk, Azure Blob Storage or Amazon S3
 * Disk Caching
 * Memory Caching
 * Distributed Caching
-* Watermarking
 * Mapping arbitrary virtual paths to physical ones. 
 * Imageflow's [Querystring API](https://docs.imageflow.io/querystring/introduction.html) (compatible with ImageResizer)
+* Production-ready for trusted image files. 
+
+
+### License
+
+We offer commercial licenses at https://imageresizing.net/pricing, or you can use
+Imageflow, Imageflow.NET and Imageflow.NET Server under the terms of the AGPLv3. License keys are not yet required for commercial use, but we ask that you buy a license to help fund development of the Imageflow product suite. 
+
+### For users coming from ImageResizer
+
+For help migrating from ImageResizer, see [the migrating from ImageResizer](#migrating-from-imageresizer) section and open an issue or email `support@imazen.io` if you have any questions. 
 
 ## Basic Installation
 
