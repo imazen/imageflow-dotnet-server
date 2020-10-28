@@ -58,10 +58,10 @@ namespace Imageflow.Server
                 "gif" => "gif",
                 "webp" => "webp",
                 "jpeg" => "jpg",
-                ".jfif" => "jpg",
-                ".jif" => "jpg",
-                ".jfi" => "jpg",
-                ".jpe" => "jpg",
+                "jfif" => "jpg",
+                "jif" => "jpg",
+                "jfi" => "jpg",
+                "jpe" => "jpg",
                 _ => null 
             };
         }
