@@ -209,30 +209,25 @@ namespace Imageflow.Server
                 {
                     throw new InvalidOperationException("DiskCache returned cache entry with zero bytes");
                 }
-                context.Response.ContentType = PathHelpers.ContentTypeForImageExtension(info.EstimatedFileExtension);
-                context.Response.ContentLength = cacheResult.Data.Length; //ReadOnlyMemoryStream, so it supports seeking
                 SetCachingHeaders(context, cacheKey);
-                await cacheResult.Data.CopyToAsync(context.Response.Body);
+                await MagicBytes.ProxyToStream(cacheResult.Data, context.Response);
             }
             else
             {
                 logger?.LogInformation("Serving {0}?{1} from disk cache {2}", info.FinalVirtualPath, info.CommandString, cacheResult.RelativePath);
-                await ServeFileFromDisk(context, cacheResult.PhysicalPath, cacheKey,
-                    PathHelpers.ContentTypeForImageExtension(info.EstimatedFileExtension));
+                await ServeFileFromDisk(context, cacheResult.PhysicalPath, cacheKey);
             }
         }
 
-        private async Task ServeFileFromDisk(HttpContext context, string path, string etag, string contentType)
+        private async Task ServeFileFromDisk(HttpContext context, string path, string etag)
         {
             await using var readStream = File.OpenRead(path);
             if (readStream.Length < 1)
             {
                 throw new InvalidOperationException("DiskCache file entry has zero bytes");
             }
-            context.Response.ContentLength = readStream.Length;
-            context.Response.ContentType = contentType;
             SetCachingHeaders(context, etag);
-            await readStream.CopyToAsync(context.Response.Body);
+            await MagicBytes.ProxyToStream(readStream, context.Response);
         }
 
         private async Task ProcessWithMemoryCache(HttpContext context, string cacheKey, ImageJobInfo info)
@@ -257,9 +252,10 @@ namespace Imageflow.Server
                 else
                 {
                     logger?.LogInformation($"Memory Cache Miss: Proxying image {info.FinalVirtualPath}?{info.CommandString}");
-
-                    contentType = PathHelpers.ContentTypeForImageExtension(info.EstimatedFileExtension);
-                    imageBytes = new ArraySegment<byte>(await info.GetPrimaryBlobBytesAsync());
+                    
+                    var imageBytesArray = await info.GetPrimaryBlobBytesAsync();
+                    contentType = MagicBytes.GetContentTypeFromBytes(imageBytesArray);
+                    imageBytes = new ArraySegment<byte>(imageBytesArray);
                 }
 
                 // Set cache options.
@@ -310,9 +306,9 @@ namespace Imageflow.Server
                 else
                 {
                     logger?.LogInformation($"Distributed Cache Miss: Proxying image {info.FinalVirtualPath}?{info.CommandString}");
-
-                    contentType = PathHelpers.ContentTypeForImageExtension(info.EstimatedFileExtension);
+                    
                     imageBytes = await info.GetPrimaryBlobBytesAsync();
+                    contentType = MagicBytes.GetContentTypeFromBytes(imageBytes);
                 }
 
                 // Set cache options.
@@ -354,11 +350,11 @@ namespace Imageflow.Server
                 {
                     logger?.LogInformation($"Sqlite Cache Miss: Proxying image {info.FinalVirtualPath}?{info.CommandString}");
 
-                    var contentType = PathHelpers.ContentTypeForImageExtension(info.EstimatedFileExtension);
+                    var data = await info.GetPrimaryBlobBytesAsync();
                     return new SqliteCacheEntry()
                     {
-                        ContentType = contentType,
-                        Data = await info.GetPrimaryBlobBytesAsync()
+                        ContentType = MagicBytes.GetContentTypeFromBytes(data),
+                        Data = data
                     };
                 }
             });
@@ -406,25 +402,9 @@ namespace Imageflow.Server
             {
                 logger?.LogInformation($"Proxying image {info.FinalVirtualPath} with params {info.CommandString}");
 
-                var contentType = PathHelpers.ContentTypeForImageExtension(info.EstimatedFileExtension);
                 await using var sourceStream = (await info.GetPrimaryBlob()).OpenRead();
-                if (sourceStream.CanSeek)
-                {
-                    if (sourceStream.Length == 0)
-                    {
-                        throw new InvalidOperationException("Source blob has zero bytes.");
-                    }
-                    context.Response.ContentType = contentType;
-                    context.Response.ContentLength = sourceStream.Length;
-                    SetCachingHeaders(context, betterCacheKey);
-                    await sourceStream.CopyToAsync(context.Response.Body);
-                }
-                else
-                {
-                    context.Response.ContentType = contentType;
-                    SetCachingHeaders(context, betterCacheKey);
-                    await sourceStream.CopyToAsync(context.Response.Body);
-                }
+                SetCachingHeaders(context, betterCacheKey);
+                await MagicBytes.ProxyToStream(sourceStream, context.Response);
             }
             
 

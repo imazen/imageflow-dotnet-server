@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Runtime.CompilerServices;
@@ -26,7 +27,9 @@ namespace Imageflow.Server.Tests
                 .AddResource("images/fire.jpg", "TestFiles.fire-umbrella-small.jpg")
                 .AddResource("images/fire.jfif", "TestFiles.fire-umbrella-small.jpg")
                 .AddResource("images/fire umbrella.jpg", "TestFiles.fire-umbrella-small.jpg")
-                .AddResource("images/logo.png", "TestFiles.imazen_400.png"))
+                .AddResource("images/logo.png", "TestFiles.imazen_400.png")
+                .AddResource("images/wrong.webp", "TestFiles.imazen_400.png")
+                .AddResource("images/wrong.jpg", "TestFiles.imazen_400.png"))
             {
 
                 var hostBuilder = new HostBuilder()
@@ -76,6 +79,15 @@ namespace Imageflow.Server.Tests
                 
                 using var watermarkResponse2 = await client.GetAsync("/fire.jpg?water=mark");
                 watermarkResponse2.EnsureSuccessStatusCode();
+
+                using var wrongImageExtension1 = await client.GetAsync("/wrong.webp");
+                wrongImageExtension1.EnsureSuccessStatusCode();
+                Assert.Equal("image/png", wrongImageExtension1.Content.Headers.ContentType.MediaType);
+                
+                using var wrongImageExtension2 = await client.GetAsync("/wrong.jpg");
+                wrongImageExtension2.EnsureSuccessStatusCode();
+                Assert.Equal("image/png", wrongImageExtension2.Content.Headers.ContentType.MediaType);
+
                 
                 
                 using var response2 = await client.GetAsync("/fire.jpg?width=1");
@@ -101,6 +113,9 @@ namespace Imageflow.Server.Tests
                 
                 using var response7 = await client.GetAsync("/fire.jfif?width=1");
                 response7.EnsureSuccessStatusCode();
+                var responseBytes7 = await response7.Content.ReadAsByteArrayAsync();
+                Assert.True(responseBytes7.Length < 1000);
+                
                 
                 await host.StopAsync(CancellationToken.None);
             }
@@ -111,7 +126,9 @@ namespace Imageflow.Server.Tests
         {
             using (var contentRoot = new TempContentRoot()
                 .AddResource("images/fire.jpg", "TestFiles.fire-umbrella-small.jpg")
-                .AddResource("images/logo.png", "TestFiles.imazen_400.png"))
+                .AddResource("images/logo.png", "TestFiles.imazen_400.png")
+                .AddResource("images/wrong.webp", "TestFiles.imazen_400.png")
+                .AddResource("images/wrong.jpg", "TestFiles.imazen_400.png"))
             {
 
                 var diskCacheDir = Path.Combine(contentRoot.PhysicalPath, "diskcache");
@@ -154,6 +171,16 @@ namespace Imageflow.Server.Tests
                 responseBytes = await response3.Content.ReadAsByteArrayAsync();
                 Assert.Equal(contentRoot.GetResourceBytes("TestFiles.fire-umbrella-small.jpg"), responseBytes);
 
+                using var wrongImageExtension1 = await client.GetAsync("/wrong.webp");
+                wrongImageExtension1.EnsureSuccessStatusCode();
+                Assert.Equal("image/png", wrongImageExtension1.Content.Headers.ContentType.MediaType);
+                
+                using var wrongImageExtension2 = await client.GetAsync("/wrong.jpg");
+                wrongImageExtension2.EnsureSuccessStatusCode();
+                Assert.Equal("image/png", wrongImageExtension2.Content.Headers.ContentType.MediaType);
+
+
+                
                 await host.StopAsync(CancellationToken.None);
                 
                 var cacheFiles = Directory.GetFiles(diskCacheDir, "*.jpg", SearchOption.AllDirectories);

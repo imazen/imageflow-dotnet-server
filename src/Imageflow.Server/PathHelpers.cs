@@ -66,19 +66,6 @@ namespace Imageflow.Server
             };
         }
 
-        internal static string ContentTypeForImageExtension(string extension)
-        {
-            return extension switch
-            {
-                "png" => "image/png",
-                "gif" => "image/gif",
-                "jpg" => "image/jpeg",
-                "webp" => "image/webp",
-                _ => "application/octet-stream"
-            };
-        }
-        
-
         internal static string Base64Hash(string data)
         {
             using var sha2 = SHA256.Create();
