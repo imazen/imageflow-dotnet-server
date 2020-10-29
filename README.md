@@ -182,6 +182,8 @@ namespace Imageflow.Server.Example
                 .SetAllowMemoryCaching(false)
                 // Cache publicly (including on shared proxies and CDNs) for 30 days
                 .SetDefaultCacheControlString("public, max-age=2592000")
+                // Allows extensionless images to be served within the given directory(ies)
+                .HandleExtensionlessRequestsUnder("/customblobs/", StringComparison.OrdinalIgnoreCase)                
                 // Force all paths under "/gallery" to be watermarked
                 .AddRewriteHandler("/gallery", args =>
                 {

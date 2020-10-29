@@ -54,6 +54,8 @@ namespace Imageflow.Server
         internal readonly Dictionary<string, PresetOptions> Presets = new Dictionary<string, PresetOptions>(StringComparer.OrdinalIgnoreCase);
 
         internal readonly List<string> SigningKeys = new List<string>();
+        
+        internal readonly List<ExtensionlessPath> ExtensionlessPaths = new List<ExtensionlessPath>();
         /// <summary>
         /// Use this to add default command values if they are missing. Does not affect image requests with no querystring.
         /// Example: AddCommandDefault("down.colorspace", "srgb") reverts to ImageResizer's legacy behavior in scaling shadows and highlights.
@@ -73,6 +75,12 @@ namespace Imageflow.Server
         {
             if (Presets.ContainsKey(preset.Name)) throw new ArgumentOutOfRangeException(nameof(preset), "A preset by this name has already been added");
             Presets[preset.Name] = preset;
+            return this;
+        }
+
+        public ImageflowMiddlewareOptions HandleExtensionlessRequestsUnder(string prefix, StringComparison prefixComparison = StringComparison.Ordinal)
+        {
+            ExtensionlessPaths.Add(new ExtensionlessPath() { Prefix = prefix, PrefixComparison = prefixComparison});
             return this;
         }
         

@@ -13,6 +13,36 @@ namespace Imageflow.Server
 {
     internal class ImageJobInfo
     {
+        public static bool ShouldHandleRequest(HttpContext context, ImageflowMiddlewareOptions options,
+            BlobProvider blobProvider)
+        {
+            // If the path is empty or null we don't handle it
+            var pathValue = context.Request.Path;
+            if (pathValue == null || !pathValue.HasValue)
+                return false;
+
+            var path = pathValue.Value;
+            if (path == null)
+                return false;
+
+            // We handle image request extensions
+            if (PathHelpers.IsImagePath(path))
+            {
+                return true;
+            }
+
+            // Don't do string parsing unless there are actually prefixes configured
+            if (options.ExtensionlessPaths.Count == 0) return false;
+            
+            // If there's no extension, then we can see if it's one of the prefixes we should handle
+            var extension = Path.GetExtension(path);
+            // If there's a non-image extension, we shouldn't handle the request
+            if (!string.IsNullOrEmpty(extension)) return false;
+
+            // Return true if any of the prefixes match
+            return options.ExtensionlessPaths
+                .Any(extensionlessPath => path.StartsWith(extensionlessPath.Prefix, extensionlessPath.PrefixComparison));
+        }
         public ImageJobInfo(HttpContext context, ImageflowMiddlewareOptions options, BlobProvider blobProvider)
         {
             this.options = options;
@@ -210,7 +240,7 @@ namespace Imageflow.Server
 
             // A missing signature is only a problem if they are required
             if (!options.RequireRequestSignature) return true;
-            
+
             AuthorizedMessage = "Image requests must be signed. No &signature query key found. ";
             return false;
 
@@ -219,6 +249,7 @@ namespace Imageflow.Server
 
         public bool PrimaryBlobMayExist()
         {
+            // Just returns a lambda for performing the actual fetch, does not actually call .Fetch() on providers
             return primaryBlob.GetBlobResult() != null;
         }
 

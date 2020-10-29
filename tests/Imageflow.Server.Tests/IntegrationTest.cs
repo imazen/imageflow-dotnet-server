@@ -29,7 +29,8 @@ namespace Imageflow.Server.Tests
                 .AddResource("images/fire umbrella.jpg", "TestFiles.fire-umbrella-small.jpg")
                 .AddResource("images/logo.png", "TestFiles.imazen_400.png")
                 .AddResource("images/wrong.webp", "TestFiles.imazen_400.png")
-                .AddResource("images/wrong.jpg", "TestFiles.imazen_400.png"))
+                .AddResource("images/wrong.jpg", "TestFiles.imazen_400.png")
+                .AddResource("images/extensionless/file", "TestFiles.imazen_400.png"))
             {
 
                 var hostBuilder = new HostBuilder()
@@ -45,6 +46,7 @@ namespace Imageflow.Server.Tests
                                 .MapPath("/", Path.Combine(contentRoot.PhysicalPath, "images"))
                                 .MapPath("/insensitive", Path.Combine(contentRoot.PhysicalPath, "images"), true)
                                 .MapPath("/sensitive", Path.Combine(contentRoot.PhysicalPath, "images"), false)
+                                .HandleExtensionlessRequestsUnder("/extensionless/")
                                 .AddWatermark(new NamedWatermark("imazen", "/logo.png", new WatermarkOptions()))
                                 .AddWatermark(new NamedWatermark("broken", "/not_there.png", new WatermarkOptions()))
                                 .AddWatermarkingHandler("/", args =>
@@ -88,7 +90,10 @@ namespace Imageflow.Server.Tests
                 wrongImageExtension2.EnsureSuccessStatusCode();
                 Assert.Equal("image/png", wrongImageExtension2.Content.Headers.ContentType.MediaType);
 
-                
+                using var extensionlessRequest = await client.GetAsync("/extensionless/file");
+                extensionlessRequest.EnsureSuccessStatusCode();
+                Assert.Equal("image/png", extensionlessRequest.Content.Headers.ContentType.MediaType);
+
                 
                 using var response2 = await client.GetAsync("/fire.jpg?width=1");
                 response2.EnsureSuccessStatusCode();
@@ -128,7 +133,8 @@ namespace Imageflow.Server.Tests
                 .AddResource("images/fire.jpg", "TestFiles.fire-umbrella-small.jpg")
                 .AddResource("images/logo.png", "TestFiles.imazen_400.png")
                 .AddResource("images/wrong.webp", "TestFiles.imazen_400.png")
-                .AddResource("images/wrong.jpg", "TestFiles.imazen_400.png"))
+                .AddResource("images/wrong.jpg", "TestFiles.imazen_400.png")
+                .AddResource("images/extensionless/file", "TestFiles.imazen_400.png"))
             {
 
                 var diskCacheDir = Path.Combine(contentRoot.PhysicalPath, "diskcache");
@@ -147,6 +153,7 @@ namespace Imageflow.Server.Tests
                             app.UseImageflow(new ImageflowMiddlewareOptions()
                                 .SetMapWebRoot(false)
                                 .SetAllowDiskCaching(true)
+                                .HandleExtensionlessRequestsUnder("/extensionless/")
                                 // Maps / to ContentRootPath/images
                                 .MapPath("/", Path.Combine(contentRoot.PhysicalPath, "images")));
                         });
@@ -179,6 +186,9 @@ namespace Imageflow.Server.Tests
                 wrongImageExtension2.EnsureSuccessStatusCode();
                 Assert.Equal("image/png", wrongImageExtension2.Content.Headers.ContentType.MediaType);
 
+                using var extensionlessRequest = await client.GetAsync("/extensionless/file");
+                extensionlessRequest.EnsureSuccessStatusCode();
+                Assert.Equal("image/png", extensionlessRequest.Content.Headers.ContentType.MediaType);
 
                 
                 await host.StopAsync(CancellationToken.None);
@@ -383,8 +393,12 @@ namespace Imageflow.Server.Tests
                 var signedEncodedUnmodifiedUrl = Imazen.Common.Helpers.Signatures.SignRequest("/fire%20umbrella.jpg", key);
                 using var signedEncodedUnmodifiedResponse = await client.GetAsync(signedEncodedUnmodifiedUrl);
                 signedEncodedUnmodifiedResponse.EnsureSuccessStatusCode();
-                
-                
+
+                // var unsignedUnmodifiedUrl = "/fire%20umbrella.jpg";
+                // using var unsignedUnmodifiedResponse = await client.GetAsync(unsignedUnmodifiedUrl);
+                // unsignedUnmodifiedResponse.EnsureSuccessStatusCode();
+                //
+                //
                 var signedEncodedUrl = Imazen.Common.Helpers.Signatures.SignRequest("/fire%20umbrella.jpg?width=1", key);
                 using var signedEncodedResponse = await client.GetAsync(signedEncodedUrl);
                 signedEncodedResponse.EnsureSuccessStatusCode();

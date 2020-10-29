@@ -74,14 +74,15 @@ namespace Imageflow.Server
                 return;
             }
 
-            // We only handle requests with an image extension, period. 
-            if (!PathHelpers.IsImagePath(path))
+            // We only handle requests with an image extension or if we configured a path prefix for which to handle
+            // extensionless requests
+            
+            if (!ImageJobInfo.ShouldHandleRequest(context, options, blobProvider))
             {
                 await next.Invoke(context);
                 return;
             }
-
-
+            
             var imageJobInfo = new ImageJobInfo(context, options, blobProvider);
 
             if (!imageJobInfo.Authorized)

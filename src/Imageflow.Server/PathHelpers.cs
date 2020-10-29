@@ -41,12 +41,9 @@ namespace Imageflow.Server
         public static IEnumerable<string> AcceptedImageExtensions => suffixes;
         public static IEnumerable<string> SupportedQuerystringKeys => querystringKeys;
 
-        internal static bool IsImagePath(PathString path)
+        internal static bool IsImagePath(string path)
         {
-            if (path == null || !path.HasValue)
-                return false;
-
-            return suffixes.Any(suffix => path.Value.EndsWith(suffix, StringComparison.OrdinalIgnoreCase));
+            return suffixes.Any(suffix => path.EndsWith(suffix, StringComparison.OrdinalIgnoreCase));
         }
 
         public static string SanitizeImageExtension(string extension)
