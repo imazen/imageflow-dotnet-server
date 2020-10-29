@@ -163,7 +163,7 @@ namespace Imazen.DiskCache {
                                     {
                                         swio.Stop();
                                         //We failed to lock the file.
-                                        logger?.LogWarning("Failed to flush async write, timeout exceeded after {1}ms - {0}",  result.RelativePath, swio.ElapsedMilliseconds);
+                                        logger?.LogWarning("Failed to flush async write, timeout exceeded after {0}ms - {1}",  swio.ElapsedMilliseconds, result.RelativePath);
 
                                     } else {
                                         swio.Stop();
@@ -202,7 +202,12 @@ namespace Imazen.DiskCache {
             }
             if (logger != null) {
                 sw.Stop();
-                logger.LogTrace("{0}ms: {3}{1} for {2}, Key: {4}", sw.ElapsedMilliseconds.ToString(NumberFormatInfo.InvariantInfo).PadLeft(4), result.Result.ToString(), result.RelativePath, asynchronous ? (asyncFailed ? "AsyncHttpMode, fell back to sync write  " : "AsyncHttpMode+AsyncWrites ") : "AsyncHttpMode", keyBasis);
+                logger.LogTrace("{0}ms: {1}{2} for {3}, Key: {4}", 
+                    sw.ElapsedMilliseconds.ToString(NumberFormatInfo.InvariantInfo).PadLeft(4), 
+                    asynchronous ? (asyncFailed ? "AsyncHttpMode, fell back to sync write  " : "AsyncHttpMode+AsyncWrites ") : "AsyncHttpMode",
+                    result.Result.ToString(), 
+                    result.RelativePath,  
+                    keyBasis);
             }
             //Fire event
             if (CacheResultReturned != null) CacheResultReturned(this, result);

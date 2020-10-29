@@ -253,7 +253,7 @@ namespace Imazen.DiskCache {
                 FlushAccessedDate(item);
 
             if (logger != null) sw.Stop();
-            logger?.LogTrace("{2}ms: Executing task {0} {1} ({3} tasks remaining)", item.Task.ToString(), item.RelativePath, sw.ElapsedMilliseconds.ToString(NumberFormatInfo.InvariantInfo).PadLeft(4), queue.Count.ToString(NumberFormatInfo.InvariantInfo));
+            logger?.LogTrace("{0}ms: Executing task {1} {2} ({3} tasks remaining)",  sw.ElapsedMilliseconds.ToString(NumberFormatInfo.InvariantInfo).PadLeft(4), item.Task.ToString(), item.RelativePath, queue.Count.ToString(NumberFormatInfo.InvariantInfo));
 
 
         }
