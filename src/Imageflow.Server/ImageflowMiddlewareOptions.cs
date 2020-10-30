@@ -33,11 +33,10 @@ namespace Imageflow.Server
         public bool MapWebRoot { get; set; }
 
         public bool UsePresetsExclusively { get; set; }
-
-        public bool RequireRequestSignature { get; set; }
         
         public string DefaultCacheControlString { get; set; }
         
+        public RequestSignatureOptions RequestSignatureOptions { get; set; }
         public SecurityOptions JobSecurityOptions { get; set; }
         
         internal readonly List<UrlHandler<Action<UrlEventArgs>>> Rewrite = new List<UrlHandler<Action<UrlEventArgs>>>();
@@ -52,8 +51,6 @@ namespace Imageflow.Server
         internal readonly Dictionary<string, string> CommandDefaults = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         
         internal readonly Dictionary<string, PresetOptions> Presets = new Dictionary<string, PresetOptions>(StringComparer.OrdinalIgnoreCase);
-
-        internal readonly List<string> SigningKeys = new List<string>();
         
         internal readonly List<ExtensionlessPath> ExtensionlessPaths = new List<ExtensionlessPath>();
         /// <summary>
@@ -84,9 +81,9 @@ namespace Imageflow.Server
             return this;
         }
         
-        public ImageflowMiddlewareOptions AddRequestSigningKey(string key)
+        public ImageflowMiddlewareOptions SetRequestSignatureOptions(RequestSignatureOptions options)
         {
-            SigningKeys.Add(key);
+            RequestSignatureOptions = options;
             return this;
         }
         
@@ -109,12 +106,6 @@ namespace Imageflow.Server
         public ImageflowMiddlewareOptions AddWatermarkingHandler(string pathPrefix, Action<WatermarkingEventArgs> handler)
         {
             Watermarking.Add(new UrlHandler<Action<WatermarkingEventArgs>>(pathPrefix, handler));
-            return this;
-        }
-        
-        public ImageflowMiddlewareOptions SetRequireRequestSignature(bool value)
-        {
-            RequireRequestSignature = value;
             return this;
         }
         

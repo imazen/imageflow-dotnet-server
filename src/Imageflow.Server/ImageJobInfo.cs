@@ -219,15 +219,22 @@ namespace Imageflow.Server
 
         private bool VerifySignature(HttpContext context, ImageflowMiddlewareOptions options)
         {
+            if (options.RequestSignatureOptions == null) return true;
+
+            var (requirement, signingKeys) = options.RequestSignatureOptions
+                .GetRequirementForPath(context.Request.Path.Value);
+
+            var queryString = context.Request.QueryString.ToString();
+
             var pathAndQuery = context.Request.PathBase.HasValue
                 ? "/" + context.Request.PathBase.Value.TrimStart('/')
                 : "";
-            pathAndQuery += context.Request.Path.ToString() + context.Request.QueryString.ToString();
+            pathAndQuery += context.Request.Path.ToString() + queryString;
 
             pathAndQuery = Signatures.NormalizePathAndQueryForSigning(pathAndQuery);
             if (context.Request.Query.TryGetValue("signature", out var actualSignature))
             {
-                foreach (var key in options.SigningKeys)
+                foreach (var key in signingKeys)
                 {
                     var expectedSignature = Signatures.SignString(pathAndQuery, key, 16);
                     if (expectedSignature == actualSignature) return true;
@@ -238,9 +245,17 @@ namespace Imageflow.Server
 
             }
 
-            // A missing signature is only a problem if they are required
-            if (!options.RequireRequestSignature) return true;
-
+            if (requirement == SignatureRequired.Never)
+            {
+                return true;
+            }
+            if (requirement == SignatureRequired.ForQuerystringRequests)
+            {
+                if (queryString.Length <= 0) return true;
+                
+                AuthorizedMessage = "Image processing requests must be signed. No &signature query key found. ";
+                return false;
+            }
             AuthorizedMessage = "Image requests must be signed. No &signature query key found. ";
             return false;
 

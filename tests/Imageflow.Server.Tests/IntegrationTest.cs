@@ -361,7 +361,9 @@ namespace Imageflow.Server.Tests
         {
             const string key = "test key";
             using (var contentRoot = new TempContentRoot()
-                .AddResource("images/fire umbrella.jpg", "TestFiles.fire-umbrella-small.jpg"))
+                .AddResource("images/fire umbrella.jpg", "TestFiles.fire-umbrella-small.jpg")
+                .AddResource("images/query/umbrella.jpg", "TestFiles.fire-umbrella-small.jpg")
+                .AddResource("images/never/umbrella.jpg", "TestFiles.fire-umbrella-small.jpg"))
             {
 
                 var hostBuilder = new HostBuilder()
@@ -375,8 +377,13 @@ namespace Imageflow.Server.Tests
                                 .SetMapWebRoot(false)
                                 // Maps / to ContentRootPath/images
                                 .MapPath("/", Path.Combine(contentRoot.PhysicalPath, "images"))
-                                .SetRequireRequestSignature(true)
-                                .AddRequestSigningKey(key)
+                                .SetRequestSignatureOptions(
+                                    new RequestSignatureOptions(SignatureRequired.ForAllRequests, 
+                                            new []{key})
+                                        .ForPrefix("/query/", StringComparison.Ordinal, 
+                                            SignatureRequired.ForQuerystringRequests, new []{key})
+                                        .ForPrefix("/never/", StringComparison.Ordinal, SignatureRequired.Never,
+                                            new string[]{}))
                                 );
                         });
                     });
@@ -394,11 +401,21 @@ namespace Imageflow.Server.Tests
                 using var signedEncodedUnmodifiedResponse = await client.GetAsync(signedEncodedUnmodifiedUrl);
                 signedEncodedUnmodifiedResponse.EnsureSuccessStatusCode();
 
-                // var unsignedUnmodifiedUrl = "/fire%20umbrella.jpg";
-                // using var unsignedUnmodifiedResponse = await client.GetAsync(unsignedUnmodifiedUrl);
-                // unsignedUnmodifiedResponse.EnsureSuccessStatusCode();
-                //
-                //
+                var unsignedUnmodifiedUrl = "/query/umbrella.jpg";
+                using var unsignedUnmodifiedResponse = await client.GetAsync(unsignedUnmodifiedUrl);
+                unsignedUnmodifiedResponse.EnsureSuccessStatusCode();
+                
+                using var unsignedResponse2 = await client.GetAsync("/query/umbrella.jpg?width=1");
+                Assert.Equal(HttpStatusCode.Forbidden,unsignedResponse2.StatusCode);
+
+                var unsignedUnmodifiedUrl2 = "/never/umbrella.jpg";
+                using var unsignedUnmodifiedResponse2 = await client.GetAsync(unsignedUnmodifiedUrl2);
+                unsignedUnmodifiedResponse2.EnsureSuccessStatusCode();
+                
+                var unsignedModifiedUrl = "/never/umbrella.jpg?width=1";
+                using var unsignedModifiedResponse = await client.GetAsync(unsignedModifiedUrl);
+                unsignedModifiedResponse.EnsureSuccessStatusCode();
+                
                 var signedEncodedUrl = Imazen.Common.Helpers.Signatures.SignRequest("/fire%20umbrella.jpg?width=1", key);
                 using var signedEncodedResponse = await client.GetAsync(signedEncodedUrl);
                 signedEncodedResponse.EnsureSuccessStatusCode();
