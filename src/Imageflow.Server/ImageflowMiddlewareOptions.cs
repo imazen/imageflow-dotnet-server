@@ -12,6 +12,11 @@ namespace Imageflow.Server
         public ImageflowMiddlewareOptions()
         {
         }
+        
+        internal string LicenseKey { get; set; } 
+        internal EnforceLicenseWith EnforcementMethod { get; set; }
+        
+        public string MyOpenSourceProjectUrl { get; set; }
 
         public bool AllowMemoryCaching { get; set; } = false;
 
@@ -78,6 +83,36 @@ namespace Imageflow.Server
         public ImageflowMiddlewareOptions HandleExtensionlessRequestsUnder(string prefix, StringComparison prefixComparison = StringComparison.Ordinal)
         {
             ExtensionlessPaths.Add(new ExtensionlessPath() { Prefix = prefix, PrefixComparison = prefixComparison});
+            return this;
+        }
+
+        /// <summary>
+        /// Use this if you are complying with the AGPL v3 and open-sourcing your project.
+        /// Provide the URL to your version control system or source code download page.
+        /// Use .SetLicenseKey() instead if you are not open-sourcing your project.
+        /// </summary>
+        /// <param name="myOpenSourceProjectUrl">Provide the URL to your version control
+        /// system or source code download page.</param>
+        /// <returns></returns>
+        public ImageflowMiddlewareOptions SetMyOpenSourceProjectUrl(string myOpenSourceProjectUrl)
+        {
+            MyOpenSourceProjectUrl = myOpenSourceProjectUrl;
+            return this;
+        }
+        
+        /// <summary>
+        /// If you do not call this, Imageflow.Server will watermark image requests with a red dot. 
+        ///
+        /// If you are open-sourcing your project and complying with the AGPL v3, you can call
+        /// .SetMyOpenSourceProjectUrl() instead.
+        /// </summary>
+        /// <param name="licenseKey"></param>
+        /// <param name="enforcementMethod"></param>
+        /// <returns></returns>
+        public ImageflowMiddlewareOptions SetLicenseKey(EnforceLicenseWith enforcementMethod, string licenseKey)
+        {
+            EnforcementMethod = enforcementMethod;
+            LicenseKey = licenseKey;
             return this;
         }
         
