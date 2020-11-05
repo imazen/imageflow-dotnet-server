@@ -42,6 +42,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imageflow.Server.ExampleDoc
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imageflow.Server.ExampleDockerDiskCache", "examples\Imageflow.Server.ExampleDockerDiskCache\Imageflow.Server.ExampleDockerDiskCache.csproj", "{2AD8CC34-5302-4E17-B6D0-F5E47FA49E22}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imazen.Common.Tests", "tests\Imazen.Common.Tests\Imazen.Common.Tests.csproj", "{8ADC01E1-1965-41EF-BA97-2E5DD2302293}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -108,6 +110,10 @@ Global
 		{2AD8CC34-5302-4E17-B6D0-F5E47FA49E22}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2AD8CC34-5302-4E17-B6D0-F5E47FA49E22}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2AD8CC34-5302-4E17-B6D0-F5E47FA49E22}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8ADC01E1-1965-41EF-BA97-2E5DD2302293}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8ADC01E1-1965-41EF-BA97-2E5DD2302293}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8ADC01E1-1965-41EF-BA97-2E5DD2302293}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8ADC01E1-1965-41EF-BA97-2E5DD2302293}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
