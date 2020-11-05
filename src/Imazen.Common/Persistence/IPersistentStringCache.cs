@@ -9,7 +9,7 @@ namespace Imazen.Common.Persistence
     /// <summary>
     /// The result of the cache write
     /// </summary>
-    public enum StringCachePutResult
+    internal enum StringCachePutResult
     {
         /// <summary>
         /// The in-memory copy is exactly the same; write skipped
@@ -28,7 +28,7 @@ namespace Imazen.Common.Persistence
     /// <summary>
     ///  Implementations must not be tied or reliant on a specific Config instance
     /// </summary>
-    public interface IPersistentStringCache
+    internal interface IPersistentStringCache
     {
         StringCachePutResult TryPut(string key, string value);
         string Get(string key);

@@ -124,7 +124,7 @@ namespace Imazen.Common.Persistence
     /// <summary>
     /// Not for you. Don't use this. It creates a separate file for every key. Wraps a singleton
     /// </summary>
-    public class PersistentGlobalStringCache : IPersistentStringCache, IIssueProvider
+    internal class PersistentGlobalStringCache : IPersistentStringCache, IIssueProvider
     {
         private static WriteThroughCache processCache;
 
