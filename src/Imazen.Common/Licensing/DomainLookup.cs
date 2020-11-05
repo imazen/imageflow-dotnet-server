@@ -1,14 +1,12 @@
-﻿﻿using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using ImageResizer.Configuration;
-using ImageResizer.Configuration.Issues;
-using ImageResizer.ExtensionMethods;
-using ImageResizer.Plugins.Licensing;
+using Imazen.Common.ExtensionMethods;
+using Imazen.Common.Issues;
 
-namespace ImageResizer.Plugins.LicenseVerifier
+namespace Imazen.Common.Licensing
 {
     class DomainLookup
     {
@@ -38,7 +36,7 @@ namespace ImageResizer.Plugins.LicenseVerifier
 
         public int KnownDomainCount => suffixSearchList.Count;
 
-        public DomainLookup(Config c, IIssueReceiver sink, IEnumerable<ILicenseChain> licenseChains)
+        public DomainLookup(ILicenseConfig c, IIssueReceiver sink, IEnumerable<ILicenseChain> licenseChains)
         {
             // What domains are mentioned in which licenses?
             var chainsByDomain = GetChainsByDomain(licenseChains);
@@ -79,18 +77,12 @@ namespace ImageResizer.Plugins.LicenseVerifier
 
 
         Dictionary<string, string>
-            GetDomainMappings(Config c, IIssueReceiver sink,
+            GetDomainMappings(ILicenseConfig c, IIssueReceiver sink,
                               IReadOnlyCollection<string> knownDomains) //c.configurationSectionIssue
         {
             var mappings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            var fromWebConfig = c.getNode("licenses")?.childrenByName("maphost")
-                .Select(n => new KeyValuePair<string, string>(
-                    n.Attrs["from"]?.Trim().ToLowerInvariant(), 
-                    n.Attrs["to"]?.Trim().ToLowerInvariant()))
-                ?? Enumerable.Empty<KeyValuePair<string, string>>();
-            var fromPluginsConfig = c.Plugins.GetLicensedDomainMappings();
-
-            foreach (var pair in fromWebConfig.Concat(fromPluginsConfig)) {
+            
+            foreach (var pair in c.GetDomainMappings()) {
                 var from = pair.Key;
                 var to = pair.Value;
                 if (string.IsNullOrEmpty(from) || string.IsNullOrEmpty(to)) {

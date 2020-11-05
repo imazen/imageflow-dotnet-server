@@ -1,4 +1,4 @@
-﻿﻿using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,11 +6,10 @@ using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using ImageResizer.Configuration.Issues;
-using ImageResizer.Configuration.Performance;
-using ImageResizer.Plugins.Licensing;
+using Imazen.Common.Instrumentation.Support;
+using Imazen.Common.Issues;
 
-namespace ImageResizer.Plugins.LicenseVerifier
+namespace Imazen.Common.Licensing
 {
     class LicenseFetcher
     {

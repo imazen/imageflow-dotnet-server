@@ -1,14 +1,13 @@
-﻿﻿using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using ImageResizer.Configuration.Issues;
-using ImageResizer.Configuration.Performance;
-using ImageResizer.Plugins.Licensing;
-using static ImageResizer.Plugins.LicenseVerifier.LicenseFetcher;
+using Imazen.Common.Instrumentation;
+using Imazen.Common.Instrumentation.Support;
+using Imazen.Common.Issues;
 
-namespace ImageResizer.Plugins.LicenseVerifier
+namespace Imazen.Common.Licensing
 {
     /// <summary>
     ///     A chain of licenses can consist of
@@ -76,7 +75,7 @@ namespace ImageResizer.Plugins.LicenseVerifier
         public DateTimeOffset? LastTimeout { get; private set; }
         string Secret { get; set; }
 
-        public string CacheKey => Id + "_" + Fnv1a32.HashToInt(Secret).ToString("x");
+        public string CacheKey => Id + "_" + LicenseFetcher.Fnv1a32.HashToInt(Secret).ToString("x");
 
 
         // Actually needs an issue receiver? (or should *it* track?) And an HttpClient and Cache

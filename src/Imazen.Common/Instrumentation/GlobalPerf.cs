@@ -1,15 +1,13 @@
-﻿﻿using ImageResizer.Configuration.Issues;
-using ImageResizer.Plugins;
-using ImageResizer.Util;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Linq;
+using Imazen.Common.Instrumentation.Support;
+using Imazen.Common.Issues;
 
 
-namespace ImageResizer.Configuration.Performance
+namespace Imazen.Common.Instrumentation
 {
 
     // https://github.com/jawa-the-hutt/lz-string-csharp/blob/master/src/LZString.cs
@@ -20,12 +18,11 @@ namespace ImageResizer.Configuration.Performance
 
         public static GlobalPerf Singleton { get; } = new GlobalPerf();
 
-        Lazy<ProcessInfo> Process { get; } = new Lazy<ProcessInfo>();
+        Lazy<BasicProcessInfo> Process { get; } = new Lazy<BasicProcessInfo>();
         Lazy<HardwareInfo> Hardware { get; }
-        Lazy<PluginInfo> Plugins { get; } = new Lazy<PluginInfo>();
 
-        System.Web.HttpModuleCollection httpModules;
-
+        private static ICollection<IInfoProvider> _lastInfoProviders = null;
+            
         NamedInterval[] Intervals { get; } = {
             new NamedInterval { Unit="second", Name="Per Second", TicksDuration =  Stopwatch.Frequency},
             new NamedInterval { Unit="minute", Name="Per Minute", TicksDuration =  Stopwatch.Frequency * 60},
@@ -95,8 +92,12 @@ namespace ImageResizer.Configuration.Performance
         }
 
 
+        public void SetInfoProviders(ICollection<IInfoProvider> providers)
+        {
+            _lastInfoProviders = providers;
+        }
 
-        internal void JobComplete(ImageBuilder builder, ImageJob job)
+        public void JobComplete(IImageJobInstrumentation job)
         {
 
             var timestamp = Stopwatch.GetTimestamp();
@@ -113,18 +114,22 @@ namespace ImageResizer.Configuration.Performance
                 {
                     counters.Increment(prefix + "4x4");
                 }
+
                 if (s_w % 8 == 0 && s_h % 8 == 0)
                 {
                     counters.Increment(prefix + "8x8");
                 }
+
                 if (s_w % 8 == 0)
                 {
                     counters.Increment(prefix + "8x");
                 }
+
                 if (s_h % 8 == 0)
                 {
                     counters.Increment(prefix + "x8");
                 }
+
                 if (s_w % 16 == 0 && s_h % 16 == 0)
                 {
                     counters.Increment(prefix + "16x16");
@@ -132,7 +137,7 @@ namespace ImageResizer.Configuration.Performance
 
             }
 
-    
+
 
             //(builder.SettingsModifier as PipelineConfig).GetImageBuilder
 
@@ -148,6 +153,7 @@ namespace ImageResizer.Configuration.Performance
 
                 sourceAspectRatios.Report(s_w * 100 / s_h);
             }
+
             if (wrotePixels > 0)
             {
                 outputMegapixels.Report(wrotePixels);
@@ -157,6 +163,7 @@ namespace ImageResizer.Configuration.Performance
                 outputHeights.Report(f_h);
                 outputAspectRatios.Report(f_w * 100 / f_h);
             }
+
             if (readPixels > 0 && wrotePixels > 0)
             {
                 scalingRatios.Report(s_w * 100 / f_w);
@@ -167,31 +174,22 @@ namespace ImageResizer.Configuration.Performance
             decodedPixels.Record(timestamp, readPixels);
             encodedPixels.Record(timestamp, wrotePixels);
 
-           
+
             job_times.Report(job.TotalTicks);
             decode_times.Report(job.DecodeTicks);
             encode_times.Report(job.EncodeTicks);
             job_other_time.Report(job.TotalTicks - job.DecodeTicks - job.EncodeTicks);
 
-            if (job.SourcePathData != null)
+            if (job.SourceFileExtension != null)
             {
-                var ext = PathUtils.GetExtension(job.SourcePathData).ToLowerInvariant().TrimStart('.');
+                var ext = job.SourceFileExtension.ToLowerInvariant().TrimStart('.');
                 counters.Increment("source_file_ext_" + ext);
             }
-            
-            var plugins = builder.EncoderProvider as PluginConfig;
-            if (plugins != null) Plugins.Value.Notify(plugins);
 
-            PostJobQuery(job.Instructions);
+            PostJobQuery(job.FinalCommandKeys);
 
-            if (System.Web.HttpContext.Current?.Request != null)
-            {
-                NoticeDomains(System.Web.HttpContext.Current.Request);
-            }
-            if (httpModules == null)
-            {
-                httpModules = System.Web.HttpContext.Current?.ApplicationInstance?.Modules;
-            }
+            NoticeDomains(job.ImageDomain, job.PageDomain);
+
         }
 
 
@@ -215,22 +213,20 @@ namespace ImageResizer.Configuration.Performance
                     Enumerable.Empty<string>();
         }
 
-        private void NoticeDomains(System.Web.HttpRequest request)
+        private void NoticeDomains(string imageDomain, string pageDomain)
         {
-            var image_domain = request?.Url?.DnsSafeHost;
-            var page_domain = request?.UrlReferrer?.DnsSafeHost;
-            if (image_domain != null) {
-                CountLimitedUniqueValuesIgnoreCase("image_domains", image_domain, 45, "_other_");
+            if (imageDomain != null) {
+                CountLimitedUniqueValuesIgnoreCase("image_domains", imageDomain, 45, "_other_");
             }
-            if (page_domain != null)
+            if (pageDomain != null)
             {
-                CountLimitedUniqueValuesIgnoreCase("page_domains", page_domain, 45, "_other_");
+                CountLimitedUniqueValuesIgnoreCase("page_domains", pageDomain, 45, "_other_");
             }
         }
 
-        private void PostJobQuery(Instructions q)
+        private void PostJobQuery(IEnumerable<string> querystringKeys)
         {
-            foreach (var key in q.AllKeys)
+            foreach (var key in querystringKeys)
             {
                 if (key != null)
                 {
@@ -239,9 +235,9 @@ namespace ImageResizer.Configuration.Performance
             }
         }
 
-        internal void PreRewriteQuery(NameValueCollection q)
+        public void PreRewriteQuery(IEnumerable<string> querystringKeys)
         {
-            foreach (var key in q.AllKeys)
+            foreach (var key in querystringKeys)
             {
                 if (key != null)
                 {
@@ -255,7 +251,7 @@ namespace ImageResizer.Configuration.Performance
             
         }
 
-        public static void BlobRead(Config c, long ticks, long bytes)
+        public static void BlobRead(long ticks, long bytes)
         {
             Singleton.blobReadEvents.Record(Stopwatch.GetTimestamp(), 1);
             Singleton.blobReadBytes.Record(Stopwatch.GetTimestamp(), bytes);
@@ -267,21 +263,17 @@ namespace ImageResizer.Configuration.Performance
             var q = new QueryAccumulator().Object;
             var timeThis = Stopwatch.StartNew();
             // Increment when we break the schema (or, as in v4, reduce the frequency)
-            q.Add("reporting_version", 4);
-
-            Process.Value.SetModules(httpModules);
+            q.Add("reporting_version", 100);
+            
             Process.Value.Add(q);
             Hardware.Value.Add(q);
-            Plugins.Value.Add(q);
-
-            foreach(var plugin in Config.Current.Plugins.GetAll<IPluginInfo>())
+            if (_lastInfoProviders != null)
             {
-                foreach(var pair in plugin.GetInfoPairs())
+                foreach (var provider in _lastInfoProviders)
                 {
-                    q.Add(pair.Key, pair.Value);
+                    provider?.Add(q);
                 }
             }
-
             //Add counters
             foreach(var pair in counters.GetCounts()){
                 q.Add(pair.Key, pair.Value.ToString());

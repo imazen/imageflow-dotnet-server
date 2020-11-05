@@ -1,18 +1,20 @@
-﻿﻿using ImageResizer.Util;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading;
+using Imazen.Common.Helpers;
+
 // ReSharper disable LoopVariableIsNeverChangedInsideLoop
 
-namespace ImageResizer.Configuration.Performance
+namespace Imazen.Common.Instrumentation.Support
 {
 
     class Utilities
     {
+        
         public static string Sha256hex(string input)
         {
             var hash = System.Security.Cryptography.SHA256.Create().ComputeHash(System.Text.Encoding.UTF8.GetBytes(input));
@@ -22,13 +24,13 @@ namespace ImageResizer.Configuration.Performance
         public static string Sha256Base64(string input)
         {
             var hash = System.Security.Cryptography.SHA256.Create().ComputeHash(System.Text.Encoding.UTF8.GetBytes(input));
-            return PathUtils.ToBase64U(hash);
+            return EncodingUtils.ToBase64U(hash);
         }
 
         public static string Sha256TruncatedBase64(string input, int bytes)
         {
             var hash = System.Security.Cryptography.SHA256.Create().ComputeHash(System.Text.Encoding.UTF8.GetBytes(input));
-            return PathUtils.ToBase64U(hash.Take(bytes).ToArray());
+            return EncodingUtils.ToBase64U(hash.Take(bytes).ToArray());
         }
 
         /// Returns the original value
@@ -118,11 +120,11 @@ namespace ImageResizer.Configuration.Performance
         }
 
 
-        public static string GetShortCommit(this Assembly a) =>
-            GetFirstAttribute<CommitAttribute>(a)?.Value.Take(8).IntoString();
-
-        public static string GetEditionCode(this Assembly a) =>
-            GetFirstAttribute<EditionAttribute>(a)?.Value;
+        // public static string GetShortCommit(this Assembly a) =>
+        //     GetFirstAttribute<CommitAttribute>(a)?.Value.Take(8).IntoString();
+        //
+        // public static string GetEditionCode(this Assembly a) =>
+        //     GetFirstAttribute<EditionAttribute>(a)?.Value;
 
         public static string GetInformationalVersion(this Assembly a)
         {

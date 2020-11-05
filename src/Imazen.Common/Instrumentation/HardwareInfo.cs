@@ -1,16 +1,13 @@
-﻿﻿using ImageResizer.Configuration.Issues;
+﻿
 using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
 using System.Net.NetworkInformation;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
-using System.Web.Hosting;
+using Imazen.Common.Instrumentation.Support;
+using Imazen.Common.Issues;
 
-namespace ImageResizer.Configuration.Performance
+namespace Imazen.Common.Instrumentation
 {
     /// <summary>
     /// Collects digest(mac addresses), processor count, bitness, network/fixed/other drive count, 
@@ -51,7 +48,7 @@ namespace ImageResizer.Configuration.Performance
             LogicalCores = Environment.ProcessorCount;
             OperatingSystem64Bit = Environment.Is64BitOperatingSystem;
 
-            var appDriveRoot = Path.GetPathRoot(HostingEnvironment.ApplicationPhysicalPath ?? Environment.CurrentDirectory);
+            var appDriveRoot = Path.GetPathRoot(Environment.CurrentDirectory);
      
             var allDrives = DriveInfo.GetDrives();
             NetworkDrives = allDrives.Count(d => d.DriveType == DriveType.Network);

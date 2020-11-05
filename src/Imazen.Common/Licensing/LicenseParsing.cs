@@ -1,14 +1,13 @@
-﻿﻿using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Security.Cryptography;
 using System.Text;
-using ImageResizer.Plugins.Licensing;
 using static System.String;
 
-namespace ImageResizer.Plugins.LicenseVerifier
+namespace Imazen.Common.Licensing
 {
     class LicenseBlob : ILicenseBlob
     {
@@ -37,6 +36,13 @@ namespace ImageResizer.Plugins.LicenseVerifier
             // b.Comments = parts.Take(parts.Count - 2);
             return b;
         }
+        
+        public static string TryRedact(string license)
+        {
+            var segments = license.Split(':');
+            return segments.Count() > 1 ? string.Join(":",
+                segments.Take(segments.Count() - 2).Concat(new[] { "****redacted****", segments.Last() })) : license;
+        }
 
         public override string ToString() => Original;
     }
@@ -58,6 +64,9 @@ namespace ImageResizer.Plugins.LicenseVerifier
                     Issued = DateTimeOffset.Parse(value);
                 } else if (string.Equals(key, "expires", StringComparison.InvariantCultureIgnoreCase)) {
                     Expires = DateTimeOffset.Parse(value);
+                } else if (string.Equals(key, "imageflowexpires", StringComparison.InvariantCultureIgnoreCase)) {
+                    ImageflowExpires = DateTimeOffset.Parse(value);
+                    
                 } else if (string.Equals(key, "subscriptionexpirationdate",
                     StringComparison.InvariantCultureIgnoreCase)) {
                     SubscriptionExpirationDate = DateTimeOffset.Parse(value);
@@ -79,6 +88,7 @@ namespace ImageResizer.Plugins.LicenseVerifier
         public string Id { get; }
         public DateTimeOffset? Issued { get; }
         public DateTimeOffset? Expires { get; }
+        public DateTimeOffset? ImageflowExpires { get; }
         public DateTimeOffset? SubscriptionExpirationDate { get; }
         public IReadOnlyDictionary<string, string> Pairs { get; }
 
@@ -197,8 +207,9 @@ namespace ImageResizer.Plugins.LicenseVerifier
         public static bool DataMatches(this ILicenseDetails me, ILicenseDetails other)
         {
             return me != null && other != null && me.Id == other.Id && me.Issued == other.Issued &&
-                   me.Expires == other.Expires
-                   && me.SubscriptionExpirationDate == other.SubscriptionExpirationDate &&
+                   me.Expires == other.Expires &&
+                   me.ImageflowExpires == other.ImageflowExpires 
+                && me.SubscriptionExpirationDate == other.SubscriptionExpirationDate &&
                    me.Pairs.All(pair => other.Get(pair.Key) == pair.Value);
         }
     }

@@ -1,14 +1,15 @@
-﻿﻿using System;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Net;
-using System.Net.Http;
 using System.Reflection;
-using System.Threading;
-using System.Threading.Tasks;
-using ImageResizer.Configuration;
+using Imazen.Common.ExtensionMethods;
+using Imazen.Common.Licensing;
+using Imazen.Common.Persistence;
+using Imazen.Common.Tests.Licensing;
 using Moq;
-using Moq.Protected;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -34,16 +35,13 @@ namespace ImageResizer.Plugins.LicenseVerifier.Tests
 
             // Populate cache
             {
-                var mgr = new LicenseManagerSingleton(ImazenPublicKeys.Test, clock) {
-                    Cache = cache
-                };
+                var mgr = new LicenseManagerSingleton(ImazenPublicKeys.Test, clock, cache);
                 MockHttpHelpers.MockRemoteLicense(mgr, HttpStatusCode.OK, LicenseStrings.EliteSubscriptionRemote,
                     null);
 
-                var conf = new Config();
-                conf.Plugins.LicenseScope = LicenseAccess.Local;
-                conf.Plugins.Install(new LicensedPlugin(mgr, clock, "R_Elite", "R4Elite"));
-                conf.Plugins.AddLicense(LicenseStrings.EliteSubscriptionPlaceholder);
+                var conf = new MockConfig(mgr, clock, new []{"R_Elite", "R4Elite"}, new List<KeyValuePair<string, string>>());
+                
+                conf.AddLicense(LicenseStrings.EliteSubscriptionPlaceholder);
                 
                 mgr.WaitForTasks();
 
@@ -56,17 +54,14 @@ namespace ImageResizer.Plugins.LicenseVerifier.Tests
 
             // Use cache
             {
-                var mgr = new LicenseManagerSingleton(ImazenPublicKeys.Test, clock) {
-                    Cache = cache
-                };
+                var mgr = new LicenseManagerSingleton(ImazenPublicKeys.Test, clock, cache);
                 mgr.SkipHeartbeatsIfDiskCacheIsFresh = 0;
                 MockHttpHelpers.MockRemoteLicenseException(mgr, WebExceptionStatus.NameResolutionFailure);
 
-                var conf = new Config();
+                var conf = new MockConfig(mgr, clock, new []{"R_Elite", "R4Elite"}, new List<KeyValuePair<string, string>>());
                 try {
-                    conf.Plugins.LicenseScope = LicenseAccess.Local;
-                    conf.Plugins.Install(new LicensedPlugin(mgr, clock, "R_Elite", "R4Elite"));
-                    conf.Plugins.AddLicense(LicenseStrings.EliteSubscriptionPlaceholder);
+                    
+                    conf.AddLicense(LicenseStrings.EliteSubscriptionPlaceholder);
 
                     mgr.Heartbeat();
                     mgr.WaitForTasks();
@@ -75,12 +70,11 @@ namespace ImageResizer.Plugins.LicenseVerifier.Tests
                     Assert.True(result.LicensedForRequestUrl(new Uri("http://anydomain")));
 
 
-                    Assert.NotNull(conf.GetDiagnosticsPage());
                     Assert.NotNull(conf.GetLicensesPage());
 
-                    Assert.Equal(1, mgr.GetIssues().Count());
+                    Assert.Single(mgr.GetIssues());
                 } catch {
-                    output.WriteLine(conf.GetDiagnosticsPage());
+                    output.WriteLine(conf.GetLicensesPage());
                     throw;
                 }
             }
@@ -100,17 +94,12 @@ namespace ImageResizer.Plugins.LicenseVerifier.Tests
 
             // Populate cache
             {
-                var mgr = new LicenseManagerSingleton(ImazenPublicKeys.Test, clock)
-                {
-                    Cache = cache
-                };
+                var mgr = new LicenseManagerSingleton(ImazenPublicKeys.Test, clock, cache);
                 MockHttpHelpers.MockRemoteLicense(mgr, HttpStatusCode.OK, LicenseStrings.EliteSubscriptionRemote,
                     null);
 
-                var conf = new Config();
-                conf.Plugins.LicenseScope = LicenseAccess.Local;
-                conf.Plugins.Install(new LicensedPlugin(mgr, clock, "R_Elite", "R4Elite"));
-                conf.Plugins.AddLicense(LicenseStrings.EliteSubscriptionPlaceholder);
+                var conf = new MockConfig(mgr, clock, new []{"R_Elite", "R4Elite"}, Enumerable.Empty<KeyValuePair<string, string>>());
+                conf.AddLicense(LicenseStrings.EliteSubscriptionPlaceholder);
 
                 Assert.Equal(1, mgr.WaitForTasks());
 
@@ -123,16 +112,11 @@ namespace ImageResizer.Plugins.LicenseVerifier.Tests
 
             // Use cache
             {
-                var mgr = new LicenseManagerSingleton(ImazenPublicKeys.Test, clock)
-                {
-                    Cache = cache
-                };
+                var mgr = new LicenseManagerSingleton(ImazenPublicKeys.Test, clock, cache);
 
-                var conf = new Config();
-
-                conf.Plugins.LicenseScope = LicenseAccess.Local;
-                conf.Plugins.Install(new LicensedPlugin(mgr, clock, "R_Elite", "R4Elite"));
-                conf.Plugins.AddLicense(LicenseStrings.EliteSubscriptionPlaceholder);
+                var conf = new MockConfig(mgr, clock, new []{"R_Elite", "R4Elite"}, new List<KeyValuePair<string, string>>());
+                
+                conf.AddLicense(LicenseStrings.EliteSubscriptionPlaceholder);
 
                 mgr.Heartbeat();
                 Assert.Equal(0, mgr.WaitForTasks());
@@ -141,10 +125,9 @@ namespace ImageResizer.Plugins.LicenseVerifier.Tests
                 Assert.True(result.LicensedForRequestUrl(new Uri("http://anydomain")));
 
 
-                Assert.NotNull(conf.GetDiagnosticsPage());
                 Assert.NotNull(conf.GetLicensesPage());
 
-                Assert.Equal(0, mgr.GetIssues().Count());
+                Assert.Empty(mgr.GetIssues());
 
                 MockHttpHelpers.MockRemoteLicenseException(mgr, WebExceptionStatus.NameResolutionFailure);
 
@@ -157,7 +140,7 @@ namespace ImageResizer.Plugins.LicenseVerifier.Tests
 
                 result = new Computation(conf, ImazenPublicKeys.Test, mgr, mgr, clock, true);
                 Assert.True(result.LicensedForRequestUrl(new Uri("http://anydomain")));
-                Assert.Equal(1, mgr.GetIssues().Count());
+                Assert.Single(mgr.GetIssues());
 
 
             }
@@ -170,26 +153,28 @@ namespace ImageResizer.Plugins.LicenseVerifier.Tests
             // We don't want to test the singleton
 
             var unique_prefix = "test_cache_" + Guid.NewGuid() + "__";
-            var cacheType = Type.GetType("ImageResizer.Plugins.WriteThroughCache, ImageResizer");
-            Debug.Assert(cacheType != null, "cacheType != null");
-            var cacheCtor = cacheType.GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null,
-                new[] {typeof(string)}, null);
-            var cacheInstance = cacheCtor.Invoke(new object[] {unique_prefix});
 
+            var cacheInstance = new WriteThroughCache(unique_prefix, new string[] { Path.GetTempPath() });
 
-            var c = new PersistentGlobalStringCache();
+            var c = new PersistentGlobalStringCache(unique_prefix, new string[] { Path.GetTempPath() });
             var cacheField = typeof(PersistentGlobalStringCache)
                 .GetField("cache", BindingFlags.NonPublic | BindingFlags.Instance);
-            Debug.Assert(cacheField != null, "cacheField != null");
             cacheField.SetValue(c, cacheInstance);
 
-            Assert.Equal(StringCachePutResult.WriteComplete, c.TryPut("a", "b"));
-            Assert.Equal(StringCachePutResult.Duplicate, c.TryPut("a", "b"));
-            Assert.Equal("b", c.Get("a"));
-            Assert.Equal(null, c.Get("404"));
-            Assert.Equal(StringCachePutResult.WriteComplete, c.TryPut("a", null));
-            Assert.NotNull(Config.Current.GetDiagnosticsPage());
-            Assert.NotNull(Config.Current.GetLicensesPage());
+            try
+            {
+                Assert.Equal(StringCachePutResult.WriteComplete, c.TryPut("a", "b"));
+                Assert.Equal(StringCachePutResult.Duplicate, c.TryPut("a", "b"));
+                Assert.Equal("b", c.Get("a"));
+                Assert.Null(c.Get("404"));
+                Assert.Equal(StringCachePutResult.WriteComplete, c.TryPut("a", null));
+
+            }
+            catch
+            {
+                output.WriteLine(c.GetIssues().Delimited("\r\n"));
+                throw;
+            }
         }
 
 
@@ -197,21 +182,18 @@ namespace ImageResizer.Plugins.LicenseVerifier.Tests
         public void Test_Offline_License_Failure()
         {
             var clock = new OffsetClock("2017-04-25", "2017-04-25");
-            var mgr = new LicenseManagerSingleton(ImazenPublicKeys.Test, clock) {
-                Cache = new StringCacheMem()
-            };
-            var conf = new Config();
+            var mgr = new LicenseManagerSingleton(ImazenPublicKeys.Test, clock, new StringCacheMem());
+            
+            var conf = new MockConfig(mgr, clock, new []{"R4Creative"}, new List<KeyValuePair<string, string>>());
 
-            conf.Plugins.LicenseScope = LicenseAccess.Local;
-            conf.Plugins.Install(new LicensedPlugin(mgr, clock, "R4Creative"));
-
+            
             Assert.Empty(mgr.GetIssues());
             Assert.Null(mgr.GetAllLicenses().FirstOrDefault());
 
             var result = new Computation(conf, ImazenPublicKeys.Test, mgr, mgr, clock, true);
 
             Assert.False(result.LicensedForRequestUrl(new Uri("http://acme.com")));
-            conf.Plugins.AddLicense(LicenseStrings.Offlinev4DomainAcmeComCreative);
+            conf.AddLicense(LicenseStrings.Offlinev4DomainAcmeComCreative);
 
             Assert.NotNull(mgr.GetAllLicenses().First());
 
@@ -219,7 +201,6 @@ namespace ImageResizer.Plugins.LicenseVerifier.Tests
             Assert.True(result.LicensedForRequestUrl(new Uri("http://acme.com")));
 
             Assert.Empty(mgr.GetIssues());
-            Assert.NotNull(conf.GetDiagnosticsPage());
             Assert.NotNull(conf.GetLicensesPage());
         }
 
@@ -228,20 +209,20 @@ namespace ImageResizer.Plugins.LicenseVerifier.Tests
         public void Test_Offline_License_Success()
         {
             var clock = new OffsetClock("2017-04-25", "2017-04-25");
-            var mgr = new LicenseManagerSingleton(ImazenPublicKeys.Test, clock) {
-                Cache = new StringCacheMem()
-            };
-            var conf = new Config(new ResizerSection(
-                @"<resizer><licenses>
-      <maphost from='localhost' to='acme.com' />
-      <license>" + LicenseStrings.Offlinev4DomainAcmeComCreative + "</license></licenses></resizer>"));
-
-            conf.Plugins.LicenseScope = LicenseAccess.Local;
-            conf.Plugins.Install(new LicensedPlugin(mgr, clock, "R4Creative"));
-
+            var mgr = new LicenseManagerSingleton(ImazenPublicKeys.Test, clock, new StringCacheMem());
+            
+            var conf = new MockConfig(mgr, clock, new []{"R4Creative"}, new List<KeyValuePair<string, string>>()
+            {
+                new KeyValuePair<string, string>("localhost", "acme.com")
+            });
+            conf.AddLicense(LicenseStrings.Offlinev4DomainAcmeComCreative);
+            
             Assert.Equal(0, mgr.WaitForTasks());
             Assert.Empty(mgr.GetIssues());
 
+            Assert.Single(mgr.GetAllLicenses());
+            
+            
             Assert.NotNull(mgr.GetAllLicenses().First());
 
             var result = new Computation(conf, ImazenPublicKeys.Test, mgr, mgr, clock, true);
@@ -252,7 +233,6 @@ namespace ImageResizer.Plugins.LicenseVerifier.Tests
             Assert.False(result.LicensedForRequestUrl(new Uri("http://other.com")));
             Assert.Equal(0, mgr.WaitForTasks());
             Assert.Empty(mgr.GetIssues());
-            Assert.NotNull(conf.GetDiagnosticsPage());
             Assert.NotNull(conf.GetLicensesPage());
         }
 
@@ -264,19 +244,16 @@ namespace ImageResizer.Plugins.LicenseVerifier.Tests
                 return;
             }
             var clock = new OffsetClock("2017-04-25", "2017-04-25");
-            var mgr = new LicenseManagerSingleton(ImazenPublicKeys.Test, clock) {
-                Cache = new StringCacheMem()
-            };
+            var mgr = new LicenseManagerSingleton(ImazenPublicKeys.Test, clock, new StringCacheMem());
             Uri invokedUri = null;
             var httpHandler = MockHttpHelpers.MockRemoteLicense(mgr, HttpStatusCode.OK, LicenseStrings.EliteSubscriptionRemote,
                 (r, c) => { invokedUri = r.RequestUri; });
-            var conf = new Config();
+            var conf = new MockConfig(mgr, clock, new []{"R_Elite"}, new List<KeyValuePair<string, string>>());
             try {
-                conf.Plugins.LicenseScope = LicenseAccess.Local;
-                conf.Plugins.Install(new LicensedPlugin(mgr, clock, "R_Elite"));
-                conf.Plugins.AddLicense(LicenseStrings.EliteSubscriptionPlaceholder);
+                
+                conf.AddLicense(LicenseStrings.EliteSubscriptionPlaceholder);
 
-                Assert.Equal(1, mgr.GetAllLicenses().Count());
+                Assert.Single(mgr.GetAllLicenses());
                 Assert.True(mgr.GetAllLicenses().First().IsRemote);
                 mgr.Heartbeat();
 
@@ -296,10 +273,9 @@ namespace ImageResizer.Plugins.LicenseVerifier.Tests
                 Assert.True(result.LicensedForRequestUrl(new Uri("http://anydomain")));
                 Assert.Equal(0, mgr.WaitForTasks());
                 Assert.Empty(mgr.GetIssues());
-                Assert.NotNull(conf.GetDiagnosticsPage());
                 Assert.NotNull(conf.GetLicensesPage());
             } catch {
-                output.WriteLine(conf.GetDiagnosticsPage());
+                output.WriteLine(conf.GetLicensesPage());
                 throw;
             }
         }
@@ -320,8 +296,8 @@ namespace ImageResizer.Plugins.LicenseVerifier.Tests
 
         //    var httpHandler = MockRemoteLicense(mgr, HttpStatusCode.Forbidden, "", null);
 
-        //    Config conf = new Config();
-        //    conf.Plugins.LicenseScope = LicenseAccess.Local;
+        //    Config conf = new MockConfig();
+        //    
         //    conf.Plugins.Install(new LicensedPlugin(mgr, "R4Elite"));
         //    conf.Plugins.AddLicense(LicenseStrings.EliteSubscriptionPlaceholder);
 

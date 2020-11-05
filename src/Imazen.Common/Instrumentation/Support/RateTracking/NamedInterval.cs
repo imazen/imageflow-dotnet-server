@@ -1,7 +1,7 @@
-﻿﻿using System;
+﻿using System;
 using System.Diagnostics;
 
-namespace ImageResizer.Configuration.Performance
+namespace Imazen.Common.Instrumentation.Support
 {
     /// <summary>
     /// A time duration over which to sample information - like 1 second, 1 minute, 5 minutes, etc.

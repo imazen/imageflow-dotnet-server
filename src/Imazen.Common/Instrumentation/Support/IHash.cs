@@ -1,4 +1,4 @@
-﻿﻿namespace ImageResizer.Configuration.Performance
+﻿namespace Imazen.Common.Instrumentation.Support
 {
     interface IHash
     {

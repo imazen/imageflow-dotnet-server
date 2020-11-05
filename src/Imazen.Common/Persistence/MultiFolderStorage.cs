@@ -1,4 +1,4 @@
-﻿﻿using ImageResizer.Configuration.Issues;
+﻿using Imazen.Common.Issues;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -10,7 +10,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace ImageResizer.Plugins
+namespace Imazen.Common.Persistence
 {
     enum FolderOptions
     {
@@ -20,7 +20,7 @@ namespace ImageResizer.Plugins
 
     // TODO: use a friendlier ACL when creating directories and files?
 
-    // Does make files written world-readable (but not writable)
+    // Original version made files written world-readable (but not writable)
     class MultiFolderStorage
     {
         IIssueReceiver sink;
@@ -127,13 +127,14 @@ namespace ImageResizer.Plugins
 
                                 File.WriteAllText(path, value, UTF8Encoding.UTF8);
 
+                                // TODO: Original version made license files world readable. 
                                 // Make world readable
-                                var sec = File.GetAccessControl(path);
-                                SecurityIdentifier everyone = new SecurityIdentifier(WellKnownSidType.WorldSid, null);
-                                sec.AddAccessRule(
-                                    new FileSystemAccessRule(everyone,
-                                    FileSystemRights.Read, InheritanceFlags.None, PropagationFlags.None, AccessControlType.Allow));
-                                File.SetAccessControl(path, sec);
+                                // var sec = File.GetAccessControl(path);
+                                // SecurityIdentifier everyone = new SecurityIdentifier(WellKnownSidType.WorldSid, null);
+                                // sec.AddAccessRule(
+                                //     new FileSystemAccessRule(everyone,
+                                //     FileSystemRights.Read, InheritanceFlags.None, PropagationFlags.None, AccessControlType.Allow));
+                                // File.SetAccessControl(path, sec);
 
                                 successfulWrites++;
                             }

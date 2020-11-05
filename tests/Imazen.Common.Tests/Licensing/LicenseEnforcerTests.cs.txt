@@ -1,4 +1,5 @@
-﻿﻿using System;
+﻿using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
@@ -14,9 +15,38 @@ using Xunit;
 using Xunit.Abstractions;
 using System.Drawing;
 using System.Text;
+using Imazen.Common.Licensing;
 
 namespace ImageResizer.Plugins.LicenseVerifier.Tests
 {
+    class EmptyLicenseEnforcedPlugin : ILicensedPlugin, IPlugin
+    {
+        readonly string[] codes;
+
+        public IEnumerable<string> LicenseFeatureCodes => codes;
+        
+        public LicenseEnforcer<EmptyLicenseEnforcedPlugin> EnforcerPlugin { get; private set; }
+
+        public EmptyLicenseEnforcedPlugin(LicenseEnforcer<EmptyLicenseEnforcedPlugin> enforcer, params string[] codes)
+        {
+            EnforcerPlugin = enforcer;
+            this.codes = codes;
+        }
+        
+        public IPlugin Install(Config c)
+        {
+            c.Plugins.add_plugin(this);
+            EnforcerPlugin = c.Plugins.GetOrInstall(EnforcerPlugin);
+            return this;
+        }
+
+        public bool Uninstall(Config c)
+        {
+            c.Plugins.remove_plugin(this);
+            return true;
+        }
+    }
+
     public class LicenseEnforcerTests
     {
         public LicenseEnforcerTests(ITestOutputHelper output) { this.output = output; }
@@ -105,7 +135,7 @@ namespace ImageResizer.Plugins.LicenseVerifier.Tests
 
             conf.Plugins.LicenseScope = LicenseAccess.Local;
             conf.Plugins.AddLicense(LicenseStrings.Offlinev4DomainAcmeComCreative);
-            conf.Plugins.LicenseError = LicenseErrorAction.Exception;
+            conf.Plugins.LicenseError = LicenseErrorAction.Http402;
             conf.Plugins.AddLicensedDomainMapping("localhost", "acme.com");
             conf.Plugins.Install(new Gradient());
             conf.Plugins.Install(new EmptyLicenseEnforcedPlugin(new LicenseEnforcer<EmptyLicenseEnforcedPlugin>(mgr, mgr, request.Get).EnableEnforcement(), "R4Creative"));
@@ -213,7 +243,7 @@ namespace ImageResizer.Plugins.LicenseVerifier.Tests
 
 
                 // We don't raise exceptions outside of http requests, unless there are absolutely no valid licenses
-                conf.Plugins.LicenseError = LicenseErrorAction.Exception;
+                conf.Plugins.LicenseError = LicenseErrorAction.Http402;
                 // There are no valid licences
                 request.Url = null;
                 Assert.Throws<LicenseException>(() => IsWatermarking(conf, mgr));
@@ -242,7 +272,7 @@ namespace ImageResizer.Plugins.LicenseVerifier.Tests
                 var conf = new Config();
                 conf.Plugins.LicenseScope = LicenseAccess.Local;
                 conf.Plugins.AddLicense(set.Placeholder);
-                conf.Plugins.LicenseError = LicenseErrorAction.Exception;
+                conf.Plugins.LicenseError = LicenseErrorAction.Http402;
                 conf.Plugins.Install(new Gradient());
                 conf.Plugins.Install(new EmptyLicenseEnforcedPlugin(new LicenseEnforcer<EmptyLicenseEnforcedPlugin>(mgr, mgr, request.Get).EnableEnforcement(), "R_Performance"));
 
@@ -255,7 +285,7 @@ namespace ImageResizer.Plugins.LicenseVerifier.Tests
                 conf.Plugins.LicenseError = LicenseErrorAction.Watermark;
                 Assert.False(IsWatermarking(conf, mgr));
 
-                conf.Plugins.LicenseError = LicenseErrorAction.Exception;
+                conf.Plugins.LicenseError = LicenseErrorAction.Http402;
 
                 //We should not raise an exception on our domains
                 request.Url = new Uri("http://acme.com");

@@ -1,15 +1,15 @@
-﻿﻿using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ImageResizer.Configuration.Performance
+namespace Imazen.Common.Instrumentation
 {
-    class CpuInfo
+    class WindowsCpuInfo
     {
-        public CpuInfo() { }
+        public WindowsCpuInfo() { }
 
         public static byte[] Invoke(int level)
         {

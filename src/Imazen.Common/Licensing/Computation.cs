@@ -1,4 +1,4 @@
-﻿﻿// Copyright (c) Imazen LLC.
+﻿// Copyright (c) Imazen LLC.
 // No part of this project, including this file, may be copied, modified,
 // propagated, or distributed except as permitted in COPYRIGHT.txt.
 // Licensed under the GNU Affero General Public License, Version 3.0.
@@ -11,13 +11,12 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
-using ImageResizer.Configuration;
-using ImageResizer.Configuration.Issues;
-using ImageResizer.ExtensionMethods;
-using ImageResizer.Plugins.Basic;
-using ImageResizer.Plugins.Licensing;
+using Imazen.Common.Extensibility.Diagnostics;
+using Imazen.Common.ExtensionMethods;
+using Imazen.Common.Issues;
+using Imazen.Common.Licensing;
 
-namespace ImageResizer.Plugins.LicenseVerifier
+namespace Imazen.Common.Licensing
 {
     /// <summary>
     ///     Computes an (expiring) boolean result for whether the software is licensed for the functionality installed on the
@@ -52,15 +51,18 @@ namespace ImageResizer.Plugins.LicenseVerifier
         public DateTimeOffset? ComputationExpires { get; }
         LicenseAccess Scope { get; }
         LicenseErrorAction LicenseError { get; }
-        public Computation(Config c, IReadOnlyCollection<RSADecryptPublic> trustedKeys,
+
+        private ILicenseConfig LicenseConfig { get; }
+        public Computation(ILicenseConfig c, IReadOnlyCollection<RSADecryptPublic> trustedKeys,
                            IIssueReceiver permanentIssueSink,
                            ILicenseManager mgr, ILicenseClock clock, bool enforcementEnabled) : base("Computation")
         {
             permanentIssues = permanentIssueSink;
             EnforcementEnabled = enforcementEnabled;
             this.clock = clock;
-            Scope = c.Plugins.LicenseScope;
-            LicenseError = c.Plugins.LicenseError;
+            LicenseConfig = c;
+            Scope = c.LicenseScope;
+            LicenseError = c.LicenseError;
             this.mgr = mgr;
             if (mgr.FirstHeartbeat == null) {
                 throw new ArgumentException("ILicenseManager.Heartbeat() must be called before Computation.new");
@@ -68,15 +70,13 @@ namespace ImageResizer.Plugins.LicenseVerifier
 
             // What features are installed on this instance?
             // For a license to be OK, it must have one of each of this nested list;
-            IEnumerable<IEnumerable<string>> pluginFeaturesUsed =
-                c.Plugins.GetAll<ILicensedPlugin>().Select(p => p.LicenseFeatureCodes).ToList();
+            IEnumerable<IEnumerable<string>> pluginFeaturesUsed = c.GetFeaturesUsed();
 
             // Create or fetch all relevant license chains; ignore the empty/invalid ones, they're logged to the manager instance
-            chains = c.Plugins.GetAll<ILicenseProvider>()
-                      .SelectMany(p => p.GetLicenses())
-                      .Select(str => mgr.GetOrAdd(str, c.Plugins.LicenseScope))
+            chains = c.GetLicenses()
+                      .Select(str => mgr.GetOrAdd(str, c.LicenseScope))
                       .Where(x => x != null && x.Licenses().Any())
-                      .Concat(Scope.HasFlag(LicenseAccess.ProcessReadonly)
+                      .Concat(c.LicenseScope.HasFlag(LicenseAccess.ProcessReadonly)
                           ? mgr.GetSharedLicenses()
                           : Enumerable.Empty<ILicenseChain>())
                       .Distinct()
@@ -105,7 +105,7 @@ namespace ImageResizer.Plugins.LicenseVerifier
 
             // This computation expires when we cross an expires, issued date, or NetworkGracePeriod expiration
             ComputationExpires = chains.SelectMany(chain => chain.Licenses())
-                                       .SelectMany(b => new[] {b.Fields.Expires, b.Fields.Issued})
+                                       .SelectMany(b => new[] {b.Fields.Expires, b.Fields.ImageflowExpires, b.Fields.Issued})
                                        .Concat(gracePeriods)
                                        .Where(date => date != null)
                                        .OrderBy(d => d)
@@ -138,8 +138,17 @@ namespace ImageResizer.Plugins.LicenseVerifier
         }
 
 
-        bool IsLicenseExpired(ILicenseDetails details) => details.Expires != null &&
-                                                          details.Expires < clock.GetUtcNow();
+        bool IsLicenseExpired(ILicenseDetails details)
+        {
+            if (LicenseConfig.IsImageflow)
+            {
+                return details.ImageflowExpires != null &&
+                       details.ImageflowExpires < clock.GetUtcNow();
+            } else {
+                return details.Expires != null &&
+                       details.Expires < clock.GetUtcNow();
+            }
+        }
 
         bool HasLicenseBegun(ILicenseDetails details) => details.Issued != null &&
                                                          details.Issued < clock.GetUtcNow();
@@ -198,7 +207,7 @@ namespace ImageResizer.Plugins.LicenseVerifier
 
             if (IsBuildDateNewer(details.SubscriptionExpirationDate)) {
                 permanentIssues.AcceptIssue(new Issue(
-                    $"License {details.Id} covers ImageResizer versions prior to {details.SubscriptionExpirationDate?.ToString("D")}, but you are using a build dated {GetBuildDate()?.ToString("D")}",
+                    $"License {details.Id} covers product versions prior to {details.SubscriptionExpirationDate?.ToString("D")}, but you are using a build dated {GetBuildDate()?.ToString("D")}",
                     b.ToRedactedString(),
                     IssueSeverity.Error));
                 return false;
@@ -303,7 +312,7 @@ namespace ImageResizer.Plugins.LicenseVerifier
         public string LicenseStatusSummary()
         {
             if (EverythingDenied) {
-                return "License error. Contact support@imageresizing.net";
+                return "License error. Contact support@imazen.io";
             }
             if (AllDomainsLicensed) {
                 return "License valid for all domains";
@@ -339,29 +348,25 @@ namespace ImageResizer.Plugins.LicenseVerifier
                                     .Select(s => $"License {c.Id}: {s}"));
 
         string RestrictionsAndMessages() => GetMessages().Delimited("\r\n");
-
-        string EnforcementMethodMessage => LicenseError == LicenseErrorAction.Exception
-                ? $"You are using <licenses licenseError='{LicenseError}'>. If there is a licensing error, an exception will be thrown (with HTTP status code 402). This can also be set to '{LicenseErrorAction.Watermark}'."
-                : $"You are using <licenses licenseError='{LicenseError}'>. If there is a licensing error, an red dot will be drawn on the bottom-right corner of each image. This can be set to '{LicenseErrorAction.Exception}' instead (valuable if you are storing results)."
-            ;
         
 
         string SalesMessage() { 
-            if (mgr.GetAllLicenses().All(l => !l.IsRemote && l.Id.Contains("."))) {
+            if (LicenseConfig.IsImageResizer && 
+                mgr.GetAllLicenses().All(l => !l.IsRemote && l.Id.Contains("."))) {
                 return "Need to change domains? Get a discounted upgrade to a floating license: https://imageresizing.net/licenses/convert";
             }
 
             if (!chains.Any()) {
-                return "To get a license, visit https://imageresizing.net/licenses";
+                return $"To get a license, visit {LicenseConfig.LicensePurchaseUrl}";
             }
 
             // Missing feature codes (could be edition OR version, i.e, R4Performance vs R_Performance
             if (KnownDomainStatus.Values.Contains(false))
             {
-                return "To upgrade your license, visit https://imageresizing.net/licenses";
+                return $"To upgrade your license, visit {LicenseConfig.LicensePurchaseUrl}";
             }
 
-            if (!EnforcementEnabled)
+            if (!EnforcementEnabled && LicenseConfig.IsImageResizer)
             {
                 return @"Having trouble with NuGet caching a DRM-enabled version of ImageResizer?
 A universal license key would fix that. See if your purchase is eligible for a free key: https://imageresizing.net/licenses/convert";
@@ -373,12 +378,17 @@ A universal license key would fix that. See if your purchase is eligible for a f
     
 
 
+        // TODO: Overhaul for Imageflow
+        string EnforcementMethodMessage => LicenseError == LicenseErrorAction.Http402
+            ? $"You are using <licenses licenseError='{LicenseError}'>. If there is a licensing error, an exception will be thrown (with HTTP status code 402). This can also be set to '{LicenseErrorAction.Watermark}'."
+            : $"You are using <licenses licenseError='{LicenseError}'>. If there is a licensing error, an red dot will be drawn on the bottom-right corner of each image. This can be set to '{LicenseErrorAction.Http402}' instead (valuable if you are storing results)."
+        ;
 
         string GetHeader(bool includeSales, bool includeScope)
         {
 
             var summary = includeScope
-                ? $"License status for active features (for {Scope}):\r\n{LicenseStatusSummary()}"
+                ? $"License status for active features (for {LicenseConfig.LicenseScope.ToString()}):\r\n{LicenseStatusSummary()}"
                 : LicenseStatusSummary();
             var restrictionsAndMessages = RestrictionsAndMessages();
 
@@ -390,7 +400,7 @@ A universal license key would fix that. See if your purchase is eligible for a f
 
 
 
-            if (!EnforcementEnabled)
+            if (!EnforcementEnabled && LicenseConfig.IsImageResizer)
             {
                 return $@"{hr}
 You are using a DRM-disabled version of ImageResizer. License enforcement is OFF.

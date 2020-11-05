@@ -1,4 +1,4 @@
-﻿﻿using ImageResizer.Util;
+﻿using ImageResizer.Util;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -10,16 +10,12 @@ using Microsoft.Win32;
 using System.Web;
 using System.Reflection;
 using System.Security;
+using Imazen.Common.Instrumentation.Support;
 
 namespace ImageResizer.Configuration.Performance
 {
     class ProcessInfo
     {
-        public static Guid ProcessGuid { get; } = Guid.NewGuid();
-
-        public static int ProcessId { get; } = System.Diagnostics.Process.GetCurrentProcess().Id;
-
-        public bool Process64Bit { get; } = Environment.Is64BitProcess;
 
         public string DotNetVersionInstalled { get; } = Get45PlusFromRegistry();
 
@@ -38,19 +34,12 @@ namespace ImageResizer.Configuration.Performance
         public void Add(IInfoAccumulator query)
         {
             var q = query.WithPrefix("proc_");
-            q.Add("64", Process64Bit);
-            q.Add("guid", ProcessGuid);
             q.Add("sys_dotnet", DotNetVersionInstalled);
             q.Add("iis", IisVer);
             q.Add("integrated_pipeline", IntegratedPipeline);
-            q.Add("id_hash", Utilities.Sha256TruncatedBase64(ProcessId.ToString(), 6));
-
             q.Add("asyncmodule", Config.Current.Pipeline.UsingAsyncMode);
             q.Add("default_commands", Config.Current.get("pipeline.defaultCommands", null));
-            q.Add("working_set_mb", Environment.WorkingSet / 1000000);
             q.Add("git_commit", Assembly.GetAssembly(this.GetType()).GetShortCommit());
-            q.Add("info_version", Assembly.GetAssembly(this.GetType()).GetInformationalVersion());
-            q.Add("file_version", Assembly.GetAssembly(this.GetType()).GetFileVersion());
 
             if (HostingEnvironment.ApplicationPhysicalPath != null)
             {

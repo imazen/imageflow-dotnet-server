@@ -1,19 +1,17 @@
-﻿﻿using ImageResizer.Configuration;
-using ImageResizer.Configuration.Issues;
+﻿
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Imazen.Common.Issues;
+using Imazen.Common.Persistence;
 
-namespace ImageResizer.Plugins.Licensing
+namespace Imazen.Common.Licensing
 {
-    public delegate void LicenseManagerEvent(ILicenseManager mgr);
+    internal delegate void LicenseManagerEvent(ILicenseManager mgr);
 
     /// <summary>
     /// When multiple paid plugins and license keys are involved, this interface allows the deduplication of effort and centralized license access.
     /// </summary>
-    public interface ILicenseManager : IIssueProvider
+    internal interface ILicenseManager : IIssueProvider
     {
         /// <summary>
         /// Persistent cache 
@@ -34,13 +32,13 @@ namespace ImageResizer.Plugins.Licensing
         /// The license manager will add a handler to notice license changes on this config. It will also process current licenses on the config.
         /// </summary>
         /// <param name="c"></param>
-        void MonitorLicenses(Config c);
+        void MonitorLicenses(ILicenseConfig c);
 
         /// <summary>
         /// Subscribes itself to heartbeat events on the config
         /// </summary>
         /// <param name="c"></param>
-        void MonitorHeartbeat(Config c);
+        void MonitorHeartbeat(ILicenseConfig c);
 
         /// <summary>
         /// Register a license key (if it isn't already), and return the initial chain (or null, if the license is invalid)
@@ -142,6 +140,7 @@ namespace ImageResizer.Plugins.Licensing
         string Get(string key);
         DateTimeOffset? Issued { get; }
         DateTimeOffset? Expires { get; }
+        DateTimeOffset? ImageflowExpires { get; }
         DateTimeOffset? SubscriptionExpirationDate { get; }
     }
 

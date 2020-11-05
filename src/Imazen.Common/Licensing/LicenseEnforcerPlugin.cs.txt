@@ -1,4 +1,4 @@
-﻿﻿// Copyright (c) Imazen LLC.
+﻿// Copyright (c) Imazen LLC.
 // No part of this project, including this file, may be copied, modified,
 // propagated, or distributed except as permitted in COPYRIGHT.txt.
 // Licensed under the GNU Affero General Public License, Version 3.0.
@@ -6,16 +6,19 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Drawing;
 using System.Linq;
 using System.Web;
 using ImageResizer.Configuration;
 using ImageResizer.Configuration.Issues;
 using ImageResizer.Plugins.Basic;
+using ImageResizer.Plugins.LicenseVerifier;
 using ImageResizer.Plugins.Licensing;
 using ImageResizer.Resizing;
+using Imazen.Common.Issues;
 
-namespace ImageResizer.Plugins.LicenseVerifier
+namespace Imazen.Common.Licensing
 {
     /// <summary>
     ///     Responsible for displaying a red dot when licensing has failed
@@ -140,7 +143,7 @@ namespace ImageResizer.Plugins.LicenseVerifier
                 return false;
             }
 
-            if (c.Plugins.LicenseError == LicenseErrorAction.Exception) {
+            if (c.Plugins.LicenseError == LicenseErrorAction.Http402) {
 
                 if (requestUrl == null && Result.LicensedForSomething()) {
                     return false;
@@ -165,7 +168,7 @@ namespace ImageResizer.Plugins.LicenseVerifier
         protected override void PreLoadImage(ref object source, ref string path, ref bool disposeSource,
                                              ref ResizeSettings settings)
         {
-            if (c.Plugins.LicenseError == LicenseErrorAction.Exception) {
+            if (c.Plugins.LicenseError == LicenseErrorAction.Http402) {
                 ShouldWatermark(); // Fail early
             }
         }

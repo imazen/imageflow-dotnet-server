@@ -1,4 +1,4 @@
-﻿﻿using System;
+﻿using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
@@ -6,19 +6,15 @@ using System.Net.Http;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using ImageResizer.Configuration;
 using Moq;
 using Moq.Protected;
-using Xunit;
-using Xunit.Abstractions;
-using ImageResizer.Configuration;
-using ImageResizer.Configuration.Issues;
-using ImageResizer.Plugins.Basic;
-using ImageResizer.Plugins.Licensing;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using Imazen.Common.Issues;
+using Imazen.Common.Licensing;
+using Imazen.Common.Persistence;
 
-namespace ImageResizer.Plugins.LicenseVerifier.Tests
+namespace Imazen.Common.Tests.Licensing
 {
 
 
@@ -111,42 +107,35 @@ namespace ImageResizer.Plugins.LicenseVerifier.Tests
     }
 
 
-    class LicensedPlugin : ILicensedPlugin, IPlugin, IDiagnosticsProviderFactory, IIssueProvider
+    class MockConfig : ILicenseConfig
     {
-        Config c;
         Computation cache;
         readonly string[] codes;
 
-        readonly ILicenseManager mgr;
+        readonly LicenseManagerSingleton mgr;
         ILicenseClock Clock { get; } = new RealClock();
 
+        // ReSharper disable once MemberInitializerValueIgnored
+        private readonly IEnumerable<KeyValuePair<string, string>> domainMappings = new List<KeyValuePair<string, string>>();
         Computation Result
         {
             get {
                 if (cache?.ComputationExpires != null && cache.ComputationExpires.Value < Clock.GetUtcNow()) {
                     cache = null;
                 }
-                return cache = cache ?? new Computation(c, ImazenPublicKeys.All, c.configurationSectionIssues, mgr,
-                                   Clock, true);
+                return cache ??= new Computation(this, ImazenPublicKeys.All, mgr, mgr,
+                    Clock, true);
             }
         }
-
-        public LicensedPlugin(ILicenseManager mgr, ILicenseClock clock, params string[] codes)
+        
+        public MockConfig(LicenseManagerSingleton mgr, ILicenseClock clock, string[] codes, IEnumerable<KeyValuePair<string, string>> domainMappings)
         {
             this.codes = codes;
             this.mgr = mgr;
             Clock = clock ?? Clock;
-        }
-
-
-        public IEnumerable<string> LicenseFeatureCodes => codes;
-
-        public IPlugin Install(Config c)
-        {
-            this.c = c;
-
-            mgr.MonitorLicenses(c);
-            mgr.MonitorHeartbeat(c);
+            
+            mgr.MonitorLicenses(this);
+            mgr.MonitorHeartbeat(this);
 
             // Ensure our cache is appropriately invalidated
             cache = null;
@@ -156,20 +145,47 @@ namespace ImageResizer.Plugins.LicenseVerifier.Tests
             if (Result == null) {
                 throw new ApplicationException("Failed to populate license result");
             }
+            this.domainMappings = domainMappings;
 
-            c.Plugins.add_plugin(this);
-            return this;
         }
-
-        public bool Uninstall(Config c)
+        public IEnumerable<KeyValuePair<string, string>> GetDomainMappings()
         {
-            c.Plugins.remove_plugin(this);
-            return true;
+            return domainMappings;
+        }
+        
+        public IEnumerable<IEnumerable<string>> GetFeaturesUsed()
+        {
+            return Enumerable.Repeat<IEnumerable<string>>(codes, 1);
         }
 
+        private List<string> licenses = new List<string>();
+        public IEnumerable<string> GetLicenses()
+        {
+            return licenses;
+        }
+
+        public LicenseAccess LicenseScope { get; } = LicenseAccess.Local;
+        public LicenseErrorAction LicenseError { get; } = LicenseErrorAction.Http402;
+        public event LicenseConfigEvent LicensingChange;
+        public event LicenseConfigEvent Heartbeat;
+        public bool IsImageflow { get; } = false;
+        public bool IsImageResizer { get; } = true;
+        public string LicensePurchaseUrl { get; }  = "https://imageresizing.net/licenses";
+
+        public void AddLicense(string license)
+        {
+            licenses.Add(license);
+            LicensingChange?.Invoke(this, this);
+            cache = null;
+        }
+
+        public string GetLicensesPage()
+        {
+            return Result.ProvidePublicText();
+        }
+        
         public IEnumerable<IIssue> GetIssues() => mgr.GetIssues().Concat(Result?.GetIssues() ?? Enumerable.Empty<IIssue>());
 
-        public object GetDiagnosticsProvider() => Result;
     }
     class RequestUrlProvider
     {
@@ -177,34 +193,7 @@ namespace ImageResizer.Plugins.LicenseVerifier.Tests
         public Uri Get() => Url;
     }
 
-    class EmptyLicenseEnforcedPlugin : ILicensedPlugin, IPlugin
-    {
-        readonly string[] codes;
-
-        public IEnumerable<string> LicenseFeatureCodes => codes;
-        
-        public LicenseEnforcer<EmptyLicenseEnforcedPlugin> EnforcerPlugin { get; private set; }
-
-        public EmptyLicenseEnforcedPlugin(LicenseEnforcer<EmptyLicenseEnforcedPlugin> enforcer, params string[] codes)
-        {
-            EnforcerPlugin = enforcer;
-            this.codes = codes;
-        }
-        
-        public IPlugin Install(Config c)
-        {
-            c.Plugins.add_plugin(this);
-            EnforcerPlugin = c.Plugins.GetOrInstall(EnforcerPlugin);
-            return this;
-        }
-
-        public bool Uninstall(Config c)
-        {
-            c.Plugins.remove_plugin(this);
-            return true;
-        }
-    }
-
+ 
     static class MockHttpHelpers
     {
         public static Mock<HttpMessageHandler> MockRemoteLicense(LicenseManagerSingleton mgr, HttpStatusCode code, string value,

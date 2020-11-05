@@ -1,11 +1,9 @@
-﻿﻿using System;
+﻿using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using ImageResizer.Plugins.Licensing;
-using ImageResizer.Util;
 
-namespace ImageResizer.Plugins.LicenseVerifier
+namespace Imazen.Common.Licensing
 {
     class RealClock : ILicenseClock
     {

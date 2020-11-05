@@ -1,15 +1,14 @@
-﻿﻿using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
-using ImageResizer.Configuration;
-using ImageResizer.Configuration.Issues;
-using ImageResizer.Plugins.Basic;
-using ImageResizer.Plugins.Licensing;
+using ImageResizer.Plugins;
+using Imazen.Common.Issues;
+ using Imazen.Common.Persistence;
 
-namespace ImageResizer.Plugins.LicenseVerifier
+ namespace Imazen.Common.Licensing
 {
     /// <summary>
     ///     A license manager can serve as a per-process (per app-domain, at least) hub for license fetching
@@ -109,16 +108,20 @@ namespace ImageResizer.Plugins.LicenseVerifier
         /// </summary>
         public IReadOnlyCollection<RSADecryptPublic> TrustedKeys { get; }
 
-        public static ILicenseManager Singleton
+        private static readonly object SingletonLock = new object();
+        private static ILicenseManager _singleton = null;
+        public static ILicenseManager GetOrCreateSingleton(string keyPrefix, string[] candidateCacheFolders)
         {
-            get {
-                return (ILicenseManager) CommonStaticStorage.GetOrAdd("licenseManager",
-                    k => new LicenseManagerSingleton(ImazenPublicKeys.Production, new RealClock()));
+            lock (SingletonLock)
+            {
+                return _singleton ?? (_singleton = new LicenseManagerSingleton(
+                    ImazenPublicKeys.Production,
+                    new RealClock(),
+                    new PersistentGlobalStringCache(keyPrefix, candidateCacheFolders)));
             }
         }
 
 
-        internal LicenseManagerSingleton(IReadOnlyCollection<RSADecryptPublic> trustedKeys, ILicenseClock clock): this(trustedKeys,clock, new PersistentGlobalStringCache()) { }
         internal LicenseManagerSingleton(IReadOnlyCollection<RSADecryptPublic> trustedKeys, ILicenseClock clock, IPersistentStringCache cache)
         {
             TrustedKeys = trustedKeys;
@@ -163,18 +166,18 @@ namespace ImageResizer.Plugins.LicenseVerifier
             }
         }
 
-        public void MonitorHeartbeat(Config c)
+        public void MonitorHeartbeat(ILicenseConfig c)
         {
-            c.Pipeline.Heartbeat -= Pipeline_Heartbeat;
-            c.Pipeline.Heartbeat += Pipeline_Heartbeat;
-            Pipeline_Heartbeat(c.Pipeline, c);
+            c.Heartbeat -= Pipeline_Heartbeat;
+            c.Heartbeat += Pipeline_Heartbeat;
+            Pipeline_Heartbeat(c, c);
         }
 
-        public void MonitorLicenses(Config c)
+        public void MonitorLicenses(ILicenseConfig c)
         {
-            c.Plugins.LicensePluginsChange -= Plugins_LicensePluginsChange;
-            c.Plugins.LicensePluginsChange += Plugins_LicensePluginsChange;
-            Plugins_LicensePluginsChange(null, c);
+            c.LicensingChange -= Plugins_LicensingChange;
+            c.LicensingChange += Plugins_LicensingChange;
+            Plugins_LicensingChange(c, c);
         }
 
         /// <summary>
@@ -200,8 +203,7 @@ namespace ImageResizer.Plugins.LicenseVerifier
 
         public IEnumerable<IIssue> GetIssues()
         {
-            var cache = Cache as IIssueProvider;
-            return cache == null ? sink.GetIssues() : sink.GetIssues().Concat(cache.GetIssues());
+            return !(Cache is IIssueProvider cache) ? sink.GetIssues() : sink.GetIssues().Concat(cache.GetIssues());
         }
 
         /// <summary>
@@ -245,12 +247,12 @@ namespace ImageResizer.Plugins.LicenseVerifier
         /// </summary>
         event LicenseManagerEvent LicenseChange;
 
-        void Pipeline_Heartbeat(IPipelineConfig sender, Config c) { Heartbeat(); }
+        void Pipeline_Heartbeat(object sender, ILicenseConfig c) { Heartbeat(); }
 
-        void Plugins_LicensePluginsChange(object sender, Config c)
+        void Plugins_LicensingChange(object sender, ILicenseConfig c)
         {
-            foreach (var licenseString in c.Plugins.GetAll<ILicenseProvider>().SelectMany(p => p.GetLicenses())) {
-                GetOrAdd(licenseString, c.Plugins.LicenseScope);
+            foreach (var licenseString in c.GetLicenses()) {
+                GetOrAdd(licenseString, c.LicenseScope);
             }
             Heartbeat();
         }
@@ -311,7 +313,7 @@ namespace ImageResizer.Plugins.LicenseVerifier
                 blob = LicenseBlob.Deserialize(license);
             } catch (Exception ex) {
                 AcceptIssue(new Issue("Failed to parse license (from " + licenseSource + "):",
-                    WebConfigLicenseReader.TryRedact(license) + "\n" + ex, IssueSeverity.Error));
+                    LicenseBlob.TryRedact(license) + "\n" + ex, IssueSeverity.Error));
                 return null;
             }
             if (!blob.VerifySignature(TrustedKeys, null)) {
@@ -323,7 +325,7 @@ namespace ImageResizer.Plugins.LicenseVerifier
             if (locallySourced && blob.Fields.MustBeFetched()) {
                 sink.AcceptIssue(new Issue(
                     "This license cannot be installed directly; it must be fetched from a license server",
-                    WebConfigLicenseReader.TryRedact(license), IssueSeverity.Error));
+                    LicenseBlob.TryRedact(license), IssueSeverity.Error));
                 return null;
             }
             return blob;

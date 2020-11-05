@@ -1,7 +1,7 @@
-﻿﻿using System;
+﻿using System;
 using System.Diagnostics;
 
-namespace ImageResizer.Configuration.Performance
+namespace Imazen.Common.Instrumentation.Support
 {
 
     /// <summary>

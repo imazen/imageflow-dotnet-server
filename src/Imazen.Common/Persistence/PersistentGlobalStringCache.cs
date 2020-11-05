@@ -1,17 +1,13 @@
-﻿﻿using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-using ImageResizer.Configuration;
-using System.IO;
 using System.Collections.Concurrent;
-using ImageResizer.Configuration.Issues;
+using Imazen.Common.Issues;
 using System.Security.Cryptography;
 using System.Globalization;
-using System.Threading;
 
-namespace ImageResizer.Plugins
+namespace Imazen.Common.Persistence
 {
     /// <summary>
     /// Provides a disk-persisted (hopefully, if it can successfully write/read) cache for a tiny number of keys. (one file per key/value). 
@@ -30,23 +26,25 @@ namespace ImageResizer.Plugins
         IIssueReceiver sink;
         MultiFolderStorage store;
         ConcurrentDictionary<string, string> cache = new ConcurrentDictionary<string, string>();
-
-        internal WriteThroughCache() : this(null) { }
-
-        internal WriteThroughCache(string keyPrefix)
+        
+        /// <summary>
+        /// Here's how the original version calculated candidateFolders.
+        ///
+        /// <code>
+        /// var appPath = System.Web.Hosting.HostingEnvironment.ApplicationPhysicalPath;
+        /// var candidates = ((appPath != null) ? 
+        ///    new string[] { Path.Combine(appPath, "imagecache"),
+        ///        Path.Combine(appPath, "App_Data"), Path.GetTempPath() } 
+        ///    : new string[] { Path.GetTempPath() }).ToArray();
+        /// </code>
+        /// </summary>
+        /// <param name="keyPrefix"></param>
+        /// <param name="candidateFolders"></param>
+        internal WriteThroughCache(string keyPrefix, string[] candidateFolders)
         {
-            this.prefix = keyPrefix ?? prefix;
-
-
+            prefix = keyPrefix ?? prefix;
             sink = new IssueSink(sinkSource);
-
-            var appPath = System.Web.Hosting.HostingEnvironment.ApplicationPhysicalPath;
-            var candidates = ((appPath != null) ? 
-                new string[] { Path.Combine(appPath, "imagecache"),
-                    Path.Combine(appPath, "App_Data"), Path.GetTempPath() } 
-                : new string[] { Path.GetTempPath() }).ToArray();
-
-            store = new MultiFolderStorage(sinkSource, dataKind, sink, candidates, FolderOptions.Default);
+            store = new MultiFolderStorage(sinkSource, dataKind, sink, candidateFolders, FolderOptions.Default);
         }
         
         string hashToBase16(string data)
@@ -128,12 +126,14 @@ namespace ImageResizer.Plugins
     /// </summary>
     public class PersistentGlobalStringCache : IPersistentStringCache, IIssueProvider
     {
-        static WriteThroughCache processCache = new WriteThroughCache();
+        private static WriteThroughCache processCache;
 
 
         WriteThroughCache cache;
-        public PersistentGlobalStringCache()
+        public PersistentGlobalStringCache(string keyPrefix, string[] candidateFolders)
         {
+            if (processCache == null)
+                processCache = new WriteThroughCache(keyPrefix, candidateFolders);
             cache = processCache;
         }
 

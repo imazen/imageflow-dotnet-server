@@ -1,4 +1,4 @@
-﻿﻿using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace ImageResizer.Configuration.Performance
+namespace Imazen.Common.Instrumentation.Support
 {
     /// <summary>
     /// Min/Max/Avg values for an interval

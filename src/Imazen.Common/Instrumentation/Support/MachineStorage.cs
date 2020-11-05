@@ -1,13 +1,11 @@
-﻿﻿using ImageResizer.Configuration.Issues;
-using ImageResizer.Plugins;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Imazen.Common.Issues;
+using Imazen.Common.Persistence;
 
-namespace ImageResizer.Configuration.Performance
+namespace Imazen.Common.Instrumentation.Support
 {
     class MachineStorage: IIssueProvider
     {

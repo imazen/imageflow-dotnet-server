@@ -1,14 +1,14 @@
-﻿﻿using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using ImageResizer.Configuration.Performance;
 using Xunit;
 using Xunit.Abstractions;
 using System.Threading;
 using System.Threading.Tasks;
+using Imazen.Common.Instrumentation.Support;
 
-namespace ImageResizer.Plugins.LicenseVerifier.Tests
+namespace Imazen.Common.Tests.Licensing
 {
     public class DataStructureTests
     {

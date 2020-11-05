@@ -1,8 +1,9 @@
-﻿﻿using System.Numerics;
+﻿using System.Numerics;
 using System.Text;
+using Imazen.Common.Licensing;
 using Xunit;
 
-namespace ImageResizer.Plugins.LicenseVerifier.Tests
+namespace Imazen.Common.Tests.Licensing
 {
     public class LicenseVerifierTests
     {

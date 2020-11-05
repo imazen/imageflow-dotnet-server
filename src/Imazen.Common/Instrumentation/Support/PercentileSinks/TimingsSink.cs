@@ -1,7 +1,7 @@
-﻿﻿using System;
+﻿using System;
 using System.Collections.Generic;
 
-namespace ImageResizer.Configuration.Performance
+namespace Imazen.Common.Instrumentation.Support
 {
     /// <summary>
     /// Lifetime timing percentiles

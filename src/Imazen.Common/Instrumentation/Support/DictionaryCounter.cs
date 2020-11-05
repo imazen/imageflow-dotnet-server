@@ -1,4 +1,4 @@
-﻿﻿using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace ImageResizer.Configuration.Performance
+namespace Imazen.Common.Instrumentation.Support
 {
     class DictionaryCounter<T>
     {
@@ -105,9 +105,7 @@ namespace ImageResizer.Configuration.Performance
                     }
                 }
             }
-
-            // TODO: remove
-            throw new Exception();
+            
             // When 
             return otherCount;
         }

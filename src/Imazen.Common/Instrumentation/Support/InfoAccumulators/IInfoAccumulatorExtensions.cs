@@ -1,18 +1,17 @@
-﻿﻿using ImageResizer.Util;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+using Imazen.Common.Helpers;
 
-namespace ImageResizer.Configuration.Performance
+namespace Imazen.Common.Instrumentation.Support
 {
     public static class InfoAccumulatorExtensions
     {
 
         public static void Add(this IInfoAccumulator a, string key, Guid value)
         {
-            a.AddString(key, PathUtils.ToBase64U(value.ToByteArray()));
+            a.AddString(key, EncodingUtils.ToBase64U(value.ToByteArray()));
         }
 
         public static void Add(this IInfoAccumulator a, IEnumerable<KeyValuePair<string, string>> items)
