@@ -2,7 +2,8 @@
 
     <PropertyGroup>
         <TargetFramework>netcoreapp3.1</TargetFramework>
-        <Title>Imageflow.Server.Storage.AzureBlob - Service for fetching source images from Azure Blob Storage.</Title>
+        <Title>Imageflow.Server.Storage.AzureBlob - Plugin for fetching source images from Azure Blob Storage.</Title>
+        <Description>Imageflow.Server plugin for fetching source images from Azure Blob Storage.</Description>
         <Authors>Imazen</Authors>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <EmbedUntrackedSources>true</EmbedUntrackedSources>

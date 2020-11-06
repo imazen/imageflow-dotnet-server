@@ -3,7 +3,8 @@
     <PropertyGroup>
         <TargetFramework>netcoreapp3.1</TargetFramework>
         <PackageVersion>0.1.0</PackageVersion>
-        <Title>Imageflow.Server.DiskCache - Service for caching processed images to disk.</Title>
+        <Title>Imageflow.Server.DiskCache - Plugin for caching processed images to disk.</Title>
+        <Description>Imageflow.Server plugin for caching processed images to disk.</Description>
         <Authors>Imazen</Authors>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <EmbedUntrackedSources>true</EmbedUntrackedSources>

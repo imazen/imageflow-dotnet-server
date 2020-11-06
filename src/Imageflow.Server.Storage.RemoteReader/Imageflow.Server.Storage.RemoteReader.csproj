@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-    <Title>Imageflow.Server.Storage.RemoteReader - Service for fetching source images from remote URLs.</Title>
-    <Description>Imageflow.Server plug-in Service for fetching source images from remote URLs.</Description>
+    <Title>Imageflow.Server.Storage.RemoteReader - Plugin for fetching source images from remote URLs.</Title>
+    <Description>Imageflow.Server plugin for fetching source images from remote URLs.</Description>
     <Authors>Imazen</Authors>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>

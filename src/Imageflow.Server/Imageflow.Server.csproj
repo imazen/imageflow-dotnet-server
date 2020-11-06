@@ -5,6 +5,7 @@
     <RootNamespace>Imageflow.Server</RootNamespace>
     <PackageVersion>0.1</PackageVersion>
     <Title>Imageflow .NET Server - Middleware for fetching, processing, and caching images on-demand.</Title>
+    <Description>Imageflow.Server - Middleware for fetching, processing, and caching images on-demand</Description>
     <Authors>Imazen</Authors>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
