@@ -426,13 +426,13 @@ DRM-enabled assemblies (if present) would see <licenses licenseError='{LicenseEr
             var sb = new StringBuilder();
             if (chains.Count > 0)
             {
-                sb.AppendLine("Licenses for this Config instance:\n");
+                sb.AppendLine("Licenses for this instance:\n");
                 sb.AppendLine(string.Join("\n", chains.Select(stringifyChain)));
             }
             var others = mgr.GetAllLicenses().Except(chains).Select(stringifyChain).ToList();
             if (others.Any())
             {
-                sb.AppendLine("Licenses only used by other Config instances in this process:\n");
+                sb.AppendLine("Licenses only used by other instances in this process:\n");
                 sb.AppendLine(string.Join("\n", others));
             }
             sb.AppendLine();

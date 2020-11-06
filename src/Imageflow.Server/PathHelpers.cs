@@ -30,7 +30,7 @@ namespace Imageflow.Server
             "quality", "zoom", "dpr", "crop", "cropxunits", "cropyunits",
             "w", "h", "width", "height", "maxwidth", "maxheight", "format", "thumbnail",
             "autorotate", "srotate", "rotate", "ignoreicc",
-            "stretch", "webp.lossless", "webp.quality",
+            "stretch", "webp.lossless", "webp.quality", 
             "frame", "page", "subsampling", "colors", "f.sharpen", "f.sharpen_when", "down.colorspace",
             "404", "bgcolor", "paddingcolor", "bordercolor", "preset", "floatspace", "jpeg_idct_downscale_linear", "watermark",
             "s.invert", "s.sepia", "s.grayscale", "s.alpha", "s.brightness", "s.contrast", "s.saturation", "trim.threshold",

@@ -13,7 +13,7 @@ using Moq;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace ImageResizer.Plugins.LicenseVerifier.Tests
+namespace Imazen.Common.Tests.Licensing
 {
     public class LicenseManagerTests
     {

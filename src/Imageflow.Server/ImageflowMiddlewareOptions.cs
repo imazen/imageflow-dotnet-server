@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Imageflow.Fluent;
+using Imazen.Common.Licensing;
 
 namespace Imageflow.Server
 {
@@ -13,10 +14,12 @@ namespace Imageflow.Server
         {
         }
         
-        internal string LicenseKey { get; set; } 
-        internal EnforceLicenseWith EnforcementMethod { get; set; }
+        internal string LicenseKey { get; set; }
+        internal EnforceLicenseWith EnforcementMethod { get; set; } = EnforceLicenseWith.Http422Error;
         
-        public string MyOpenSourceProjectUrl { get; set; }
+        internal Licensing Licensing { get; set; }
+
+        public string MyOpenSourceProjectUrl { get; set; } = "https://i-need-a-license.com";
 
         public bool AllowMemoryCaching { get; set; } = false;
 

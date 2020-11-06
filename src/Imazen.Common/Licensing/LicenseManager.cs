@@ -109,8 +109,8 @@ using Imazen.Common.Issues;
         public IReadOnlyCollection<RSADecryptPublic> TrustedKeys { get; }
 
         private static readonly object SingletonLock = new object();
-        private static ILicenseManager _singleton = null;
-        public static ILicenseManager GetOrCreateSingleton(string keyPrefix, string[] candidateCacheFolders)
+        private static LicenseManagerSingleton _singleton = null;
+        public static LicenseManagerSingleton GetOrCreateSingleton(string keyPrefix, string[] candidateCacheFolders)
         {
             lock (SingletonLock)
             {

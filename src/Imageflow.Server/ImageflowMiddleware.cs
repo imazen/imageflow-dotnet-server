@@ -11,6 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Imageflow.Server.Extensibility;
 using Imazen.Common.Extensibility.ClassicDiskCache;
+using Imazen.Common.Licensing;
 using Imazen.Common.Storage;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Net.Http.Headers;
@@ -28,8 +29,8 @@ namespace Imageflow.Server
         private readonly ISqliteCache sqliteCache;
         private readonly BlobProvider blobProvider;
         private readonly DiagnosticsPage diagnosticsPage;
+        private readonly LicensePage licensePage;
         private readonly ImageflowMiddlewareOptions options;
-        
 
         public ImageflowMiddleware(
             RequestDelegate next, 
@@ -43,6 +44,8 @@ namespace Imageflow.Server
             ImageflowMiddlewareOptions options)
         {
             this.next = next;
+            options.Licensing ??= new Licensing(LicenseManagerSingleton.GetOrCreateSingleton(
+                "imageflow_", new[] {env.ContentRootPath, Path.GetTempPath()}));
             this.options = options;
             this.env = env;
             this.logger = logger.FirstOrDefault();
@@ -58,9 +61,11 @@ namespace Imageflow.Server
                     throw new InvalidOperationException("Cannot call MapWebRoot if env.WebRootPath is null");
                 mappedPaths.Add(new PathMapping("/", this.env.WebRootPath));
             }
+            options.Licensing.Initialize(this.options);
 
             blobProvider = new BlobProvider(providers, mappedPaths);
             diagnosticsPage = new DiagnosticsPage(env, this.logger, this.memoryCache, this.distributedCache, this.diskCache, providers);
+            licensePage = new LicensePage(options);
         }
 
         public async Task Invoke(HttpContext context)
@@ -71,6 +76,12 @@ namespace Imageflow.Server
             if (diagnosticsPage.MatchesPath(path.Value))
             {
                 await diagnosticsPage.Invoke(context);
+                return;
+            }
+            // Delegate to licenses page if requested
+            if (licensePage.MatchesPath(path.Value))
+            {
+                await licensePage.Invoke(context);
                 return;
             }
 
@@ -89,6 +100,20 @@ namespace Imageflow.Server
             {
                 await NotAuthorized(context, imageJobInfo.AuthorizedMessage);
                 return;
+            }
+
+            if (imageJobInfo.LicenseError)
+            {
+                if (options.EnforcementMethod == EnforceLicenseWith.Http422Error)
+                {
+                    await StringResponse(context, 422, options.Licensing.InvalidLicenseMessage);
+                    return;
+                }
+                if (options.EnforcementMethod == EnforceLicenseWith.Http402Error)
+                {
+                    await StringResponse(context, 402, options.Licensing.InvalidLicenseMessage);
+                    return;
+                }
             }
 
             // If the file is definitely missing hand to the next middleware
@@ -159,25 +184,23 @@ namespace Imageflow.Server
             {
                 s += "\r\n" + detail;
             }
-            
-            context.Response.StatusCode = 403;
-            context.Response.ContentType = "text/plain; charset=utf-8";
-            var bytes = Encoding.UTF8.GetBytes(s);
-            context.Response.ContentLength = bytes.Length;
-            await context.Response.Body.WriteAsync(bytes, 0, bytes.Length);
+
+            await StringResponse(context, 403, s);
         }
         
         private async Task NotFound(HttpContext context, BlobMissingException e)
         {
             var s = "The specified resource does not exist.\r\n" + e.Message;
-            
-            context.Response.StatusCode = 404;
+            await StringResponse(context, 404, s);
+        }
+        private async Task StringResponse(HttpContext context, int statusCode, string contents)
+        {
+            context.Response.StatusCode = statusCode;
             context.Response.ContentType = "text/plain; charset=utf-8";
-            var bytes = Encoding.UTF8.GetBytes(s);
+            var bytes = Encoding.UTF8.GetBytes(contents);
             context.Response.ContentLength = bytes.Length;
             await context.Response.Body.WriteAsync(bytes, 0, bytes.Length);
         }
-
 
         private async Task ProcessWithDiskCache(HttpContext context, string cacheKey, ImageJobInfo info)
         {
