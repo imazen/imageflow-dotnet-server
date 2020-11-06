@@ -98,6 +98,10 @@ namespace Imageflow.Server
                 if (matches) handler.Handler(args);
             }
             appliedWatermarks = args.AppliedWatermarks;
+            if (appliedWatermarks.Count > 0)
+            {
+                HasParams = true; 
+            }
 
             // Add the watermark source files
             foreach (var w in appliedWatermarks)
