@@ -7,14 +7,13 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
-using Imazen.Common.Extensibility.Diagnostics;
 using Imazen.Common.ExtensionMethods;
 using Imazen.Common.Issues;
-using Imazen.Common.Licensing;
 
 namespace Imazen.Common.Licensing
 {
@@ -23,7 +22,7 @@ namespace Imazen.Common.Licensing
     ///     Config, and the license data instantly available
     ///     Transient issues are stored within the class; permanent issues are stored in the  provided sink
     /// </summary>
-    class Computation : IssueSink, IDiagnosticsProvider, IDiagnosticsHeaderProvider, IDiagnosticsFooterProvider, ILicenseDiagnosticsProvider
+    class Computation : IssueSink
     {
 
         
@@ -62,7 +61,7 @@ namespace Imazen.Common.Licensing
             this.clock = clock;
             LicenseConfig = c;
             Scope = c.LicenseScope;
-            LicenseError = c.LicenseError;
+            LicenseError = c.LicenseEnforcement;
             this.mgr = mgr;
             if (mgr.FirstHeartbeat == null) {
                 throw new ArgumentException("ILicenseManager.Heartbeat() must be called before Computation.new");
@@ -91,7 +90,7 @@ namespace Imazen.Common.Licensing
             if (chains.Any(chain => chain.Licenses().Any(b => !b.Revalidate(trustedKeys)))) {
                 EverythingDenied = true;
                 permanentIssueSink.AcceptIssue(new Issue(
-                    "Licenses failed to revalidate; please contact support@imageresizing.net", IssueSeverity.Error));
+                    "Licenses failed to revalidate; please contact support@imazen.io", IssueSeverity.Error));
             }
 
             // Look for grace periods
@@ -138,7 +137,7 @@ namespace Imazen.Common.Licensing
         }
 
 
-        bool IsLicenseExpired(ILicenseDetails details)
+        private bool IsLicenseExpired(ILicenseDetails details)
         {
             if (LicenseConfig.IsImageflow)
             {
@@ -150,7 +149,7 @@ namespace Imazen.Common.Licensing
             }
         }
 
-        bool HasLicenseBegun(ILicenseDetails details) => details.Issued != null &&
+        private bool HasLicenseBegun(ILicenseDetails details) => details.Issued != null &&
                                                          details.Issued < clock.GetUtcNow();
 
 
@@ -165,7 +164,7 @@ namespace Imazen.Common.Licensing
 
         public DateTimeOffset? GetBuildDate() => clock.GetBuildDate() ?? clock.GetAssemblyWriteDate();
 
-        public bool IsBuildDateNewer(DateTimeOffset? value)
+        private bool IsBuildDateNewer(DateTimeOffset? value)
         {
             var buildDate = GetBuildDate();
             return buildDate != null &&
@@ -174,7 +173,7 @@ namespace Imazen.Common.Licensing
         }
 
         [SuppressMessage("ReSharper", "PossibleMultipleEnumeration")]
-        bool AreFeaturesLicensed(ILicenseBlob b, IEnumerable<IEnumerable<string>> oneFromEach, bool logIssues)
+        private bool AreFeaturesLicensed(ILicenseBlob b, IEnumerable<IEnumerable<string>> oneFromEach, bool logIssues)
         {
             var licenseFeatures = b.Fields.GetFeatures();
             var notCovered = oneFromEach.Where(
@@ -189,7 +188,7 @@ namespace Imazen.Common.Licensing
         }
         
 
-        bool IsLicenseValid(ILicenseBlob b)
+        private bool IsLicenseValid(ILicenseBlob b)
         {
             var details = b.Fields;
             if (IsLicenseExpired(details)) {
@@ -221,7 +220,7 @@ namespace Imazen.Common.Licensing
             return true;
         }
 
-        bool IsPendingLicense(ILicenseChain chain)
+        private bool IsPendingLicense(ILicenseChain chain)
         {
             return chain.IsRemote && chain.Licenses().All(b => b.Fields.IsRemotePlaceholder());
         }
@@ -232,7 +231,7 @@ namespace Imazen.Common.Licensing
         /// </summary>
         /// <param name="chain"></param>
         /// <returns></returns>
-        DateTimeOffset? GetGracePeriodFor(ILicenseChain chain)
+        private DateTimeOffset? GetGracePeriodFor(ILicenseChain chain)
         {
             // If the placeholder license fails its own constraints, don't add a grace period
             if (chain.Licenses().All(b => !IsLicenseValid(b))) {
@@ -283,8 +282,22 @@ namespace Imazen.Common.Licensing
                    (AllDomainsLicensed || (domainLookup.KnownDomainCount > 0));
         }
 
-        public bool UpgradeNeeded() =>  !AllDomainsLicensed || KnownDomainStatus.Values.Contains(false); 
+        public bool NoLicenseInstalled => !chains.Any();
 
+        public bool NoLicenseRequired => !LicenseConfig.GetFeaturesUsed().Any();
+        
+        public bool LicensePresentButInvalid =>
+            !NoLicenseRequired && !EverythingDenied && !AllDomainsLicensed
+            && !KnownDomainStatus.Any() && !NoLicenseInstalled;
+
+
+        public bool UpgradeNeeded() =>  !AllDomainsLicensed || KnownDomainStatus.Values.Contains(false);
+
+        public string ManageSubscriptionUrl => chains
+            .SelectMany(c => c.Licenses())
+            .Select(l => l.Fields.Get("ManageYourSubscription"))
+            .FirstOrDefault(v => !string.IsNullOrEmpty(v));
+        
         public bool LicensedForRequestUrl(Uri url)
         {
             if (EverythingDenied) {
@@ -308,14 +321,19 @@ namespace Imazen.Common.Licensing
         }
 
 
+        
 
         public string LicenseStatusSummary()
         {
+            if (NoLicenseRequired)
+            {
+                return "License key not required.";
+            }
             if (EverythingDenied) {
-                return "License error. Contact support@imazen.io";
+                return "License key error. Contact support@imazen.io";
             }
             if (AllDomainsLicensed) {
-                return "License valid for all domains";
+                return "License key valid for all domains.";
             }
             if (KnownDomainStatus.Any())
             {
@@ -339,7 +357,7 @@ namespace Imazen.Common.Licensing
                 return sb.ToString();
             }
    
-            return chains.Any() ? "No valid licenses found" : "No licenses found";
+            return chains.Any() ? "No valid license keys found." : "No license keys found.";
         }
 
         IEnumerable<string> GetMessages() =>
@@ -348,80 +366,105 @@ namespace Imazen.Common.Licensing
                                     .Select(s => $"License {c.Id}: {s}"));
 
         string RestrictionsAndMessages() => GetMessages().Delimited("\r\n");
-        
-
-        string SalesMessage() { 
-            if (LicenseConfig.IsImageResizer && 
-                mgr.GetAllLicenses().All(l => !l.IsRemote && l.Id.Contains("."))) {
-                return "Need to change domains? Get a discounted upgrade to a floating license: https://imageresizing.net/licenses/convert";
-            }
-
-            if (!chains.Any()) {
-                return $"To get a license, visit {LicenseConfig.LicensePurchaseUrl}";
-            }
-
-            // Missing feature codes (could be edition OR version, i.e, R4Performance vs R_Performance
-            if (KnownDomainStatus.Values.Contains(false))
-            {
-                return $"To upgrade your license, visit {LicenseConfig.LicensePurchaseUrl}";
-            }
-
-            if (!EnforcementEnabled && LicenseConfig.IsImageResizer)
-            {
-                return @"Having trouble with NuGet caching a DRM-enabled version of ImageResizer?
-A universal license key would fix that. See if your purchase is eligible for a free key: https://imageresizing.net/licenses/convert";
-            }
-            return null;
-        }
-
-        public string ProvideDiagnosticsHeader() => GetHeader(true, true);
-    
 
 
-        // TODO: Overhaul for Imageflow
-        string EnforcementMethodMessage => LicenseError == LicenseErrorAction.Http402
-            ? $"You are using <licenses licenseError='{LicenseError}'>. If there is a licensing error, an exception will be thrown (with HTTP status code 402). This can also be set to '{LicenseErrorAction.Watermark}'."
-            : $"You are using <licenses licenseError='{LicenseError}'>. If there is a licensing error, an red dot will be drawn on the bottom-right corner of each image. This can be set to '{LicenseErrorAction.Http402}' instead (valuable if you are storing results)."
-        ;
+        internal bool IsUsingPermanentDomainKeys => mgr.GetAllLicenses().All(l => !l.IsRemote && l.Id.Contains("."));
 
-        string GetHeader(bool includeSales, bool includeScope)
+        string GetPublicLicenseHeader()
         {
-
-            var summary = includeScope
-                ? $"License status for active features (for {LicenseConfig.LicenseScope.ToString()}):\r\n{LicenseStatusSummary()}"
-                : LicenseStatusSummary();
-            var restrictionsAndMessages = RestrictionsAndMessages();
-
-            var salesMessage = includeSales ? SalesMessage() : null;
-
-            var hr = EnforcementEnabled
-                ? $"---------------------- Licensing ON ----------------------\r\n"
-                : $"---------------------- Licensing OFF -----------------------\r\n";
-
-
-
-            if (!EnforcementEnabled && LicenseConfig.IsImageResizer)
+            if (NoLicenseRequired)
             {
-                return $@"{hr}
-You are using a DRM-disabled version of ImageResizer. License enforcement is OFF.
-DRM-enabled assemblies (if present) would see <licenses licenseError='{LicenseError}'>
-                
-{salesMessage}
+                return "No license key required; only free features in use.\r\n";
+            }
+            
+            var sb = new StringBuilder();
+            var hr = EnforcementEnabled
+                ? $"---------------------- License Validation ON ----------------------\r\n"
+                : $"---------------------- License Validation OFF -----------------------\r\n";
 
-{restrictionsAndMessages}
-{hr}";
+            sb.Append(hr);
+            if (!EnforcementEnabled)
+            {
+                sb.Append(LicenseConfig.AGPLCompliantMessage);
+                if (!string.IsNullOrEmpty(LicenseConfig.AGPLCompliantMessage))
+                {
+                    sb.Append("\r\n\r\n");
+                }
+                if (LicenseConfig.IsImageResizer)
+                {
+                    sb.Append("You are using a DRM-disabled version of ImageResizer. License enforcement is OFF.\r\n");
+                    sb.Append("Please see if your purchase is eligible for a free key: https://imageresizing.net/licenses/convert.\r\n");
+                    sb.Append("NuGet sometimes caches DRM versions instead of the DRM-free, so please use a key if possible.\r\n");
+                    
+                }
+
+                if (LicenseConfig.IsImageflow)
+                {
+                    sb.Append(
+                        "You have chosen to abide by the AGPLv3, which can be found at https://www.gnu.org/licenses/agpl-3.0.en.html\r\n\r\n");
+                    sb.Append("Please ensure that the URL to your open source project is correctly registered via ImageflowMiddlewareOptions.SetMyOpenSourceProjectUrl().\r\n");
+                    
+                }
+            }
+            sb.Append("\r\n");
+            sb.Append(LicenseStatusSummary());
+            sb.Append("\r\n\r\n");
+            
+            if (LicenseConfig.IsImageResizer && 
+                IsUsingPermanentDomainKeys) {
+                sb.Append("Need to change domains? Get a discounted upgrade to a floating license: https://imageresizing.net/licenses/convert\r\n\r\n");
             }
 
-            return hr + new[] { summary, restrictionsAndMessages, salesMessage, EnforcementMethodMessage }
-                       .Where(s => !string.IsNullOrWhiteSpace(s))
-                       .Delimited("\r\n\r\n") + "\r\n" + hr;
+            if (EnforcementEnabled)
+            {
+                if (NoLicenseInstalled)
+                {
+                    sb.Append(
+                        $"!!! You must purchase a license key or comply with the AGPLv3.\r\nTo get a license key, visit {LicenseConfig.LicensePurchaseUrl}\r\n\r\n");
+                }else if (LicensePresentButInvalid)
+                {
+                    // Missing feature codes (could be edition OR version, i.e, R4Performance vs R_Performance
+                    sb.Append(
+                        $"!!! Your license is invalid. Please renew your license via the management portal or purchase a new one at {LicenseConfig.LicensePurchaseUrl}\r\n\r\n");
+
+                }
+                else if (UpgradeNeeded())
+                {
+                    // Missing feature codes (could be edition OR version, i.e, R4Performance vs R_Performance
+                    sb.Append(
+                        $"!!! Your license needs to be upgraded. To upgrade your license, visit {LicenseConfig.LicensePurchaseUrl}\r\n\r\n");
+                }
+            }
+
+            var messages = RestrictionsAndMessages();
+
+            if (!string.IsNullOrEmpty(messages))
+            {
+                sb.Append("!!!!!!!!!!!!!!!!!!!!!!!!\r\n");
+                sb.Append(messages);
+                sb.Append("\r\n!!!!!!!!!!!!!!!!!!!!!!!!\r\n\r\n");
+            }
+            sb.Append(LicenseConfig.EnforcementMethodMessage);
+            sb.Append("\r\n");
+
+            if (!string.IsNullOrEmpty(ManageSubscriptionUrl))
+            {
+                sb.Append($"Manage your subscription at {ManageSubscriptionUrl}\r\n");
+            }
+
+            sb.Append(
+                "For help with your license, email support@imazen.io and include the contents of this page.\r\n");
+            sb.Append(hr);
+            sb.Append("\r\n");
+            return sb.ToString();
         }
 
-        public string ProvideDiagnostics() => ProvideDiagnosticsInternal(c => c.ToString());
 
-        public string ProvidePublicText() => GetHeader(false, false) + ProvideDiagnosticsInternal(c => c.ToPublicString());
+        public string ProvideDiagnostics() => ListLicensesInternal(c => c.ToString());
 
-        string ProvideDiagnosticsInternal(Func<ILicenseChain, string> stringifyChain)
+        public string ProvidePublicLicensesPage() => GetPublicLicenseHeader() + ListLicensesInternal(c => c.ToPublicString());
+
+        string ListLicensesInternal(Func<ILicenseChain, string> stringifyChain)
         {
             var sb = new StringBuilder();
             if (chains.Count > 0)
@@ -442,7 +485,7 @@ DRM-enabled assemblies (if present) would see <licenses licenseError='{LicenseEr
 
 
 
-        public string ProvideDiagnosticsFooter()
+        public string DisplayLastFetchUrl()
         {
             return "The most recent license fetch used the following URL:\r\n\r\n" +
                    mgr.GetAllLicenses().Select(c => c.LastFetchUrl()).Delimited("\r\n");

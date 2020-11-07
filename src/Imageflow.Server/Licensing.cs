@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using ImageResizer.Plugins.LicenseVerifier;
 using Imazen.Common.Licensing;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
@@ -12,9 +11,9 @@ namespace Imageflow.Server
     {
         private ImageflowMiddlewareOptions options;
 
-        private Func<Uri> getCurrentRequestUrl;
+        private readonly Func<Uri> getCurrentRequestUrl;
 
-        private LicenseManagerSingleton mgr;
+        private readonly LicenseManagerSingleton mgr;
         
         Computation cachedResult;
         internal Licensing(LicenseManagerSingleton mgr, Func<Uri> getCurrentRequestUrl = null)
@@ -68,21 +67,34 @@ namespace Imageflow.Server
 
         public LicenseAccess LicenseScope => LicenseAccess.Local;
 
-        public LicenseErrorAction LicenseError
+        public LicenseErrorAction LicenseEnforcement
         {
             get
             {
-                switch (options.EnforcementMethod)
+                return options.EnforcementMethod switch
                 {
-                    case EnforceLicenseWith.RedDotWatermark:
-                        return LicenseErrorAction.Watermark;
-                    case EnforceLicenseWith.Http422Error:
-                        return LicenseErrorAction.Http422;
-                    case EnforceLicenseWith.Http402Error:
-                        return LicenseErrorAction.Http402;
-                    default:
-                        throw new ArgumentOutOfRangeException();
-                }
+                    Server.EnforceLicenseWith.RedDotWatermark => LicenseErrorAction.Watermark,
+                    Server.EnforceLicenseWith.Http422Error => LicenseErrorAction.Http422,
+                    Server.EnforceLicenseWith.Http402Error => LicenseErrorAction.Http402,
+                    _ => throw new ArgumentOutOfRangeException()
+                };
+            }
+        }
+
+        public string EnforcementMethodMessage
+        {
+            get
+            {
+                return options.EnforcementMethod switch
+                {
+                    Server.EnforceLicenseWith.RedDotWatermark =>
+                        "You are using EnforceLicenseWith.RedDotWatermark. If there is a licensing error, an red dot will be drawn on the bottom-right corner of each image. This can be set to EnforceLicenseWith.Http402Error instead (valuable if you are externally caching or storing result images.)",
+                    Server.EnforceLicenseWith.Http422Error =>
+                        "You are using EnforceLicenseWith.Http422Error. If there is a licensing error, HTTP status code 422 will be returned instead of serving the image. This can also be set to EnforceLicenseWith.RedDotWatermark.",
+                    Server.EnforceLicenseWith.Http402Error =>
+                        "You are using EnforceLicenseWith.Http402Error. If there is a licensing error, HTTP status code 402 will be returned instead of serving the image. This can also be set to EnforceLicenseWith.RedDotWatermark.",
+                    _ => throw new ArgumentOutOfRangeException()
+                };
             }
         }
 
@@ -92,8 +104,24 @@ namespace Imageflow.Server
         public bool IsImageflow => true;
         public bool IsImageResizer => false;
         public string LicensePurchaseUrl => "https://imageresizing.net/licenses";
-        
-        Computation Result
+
+        public string AGPLCompliantMessage
+        {
+            get
+            {
+                if (!string.IsNullOrWhiteSpace(options.MyOpenSourceProjectUrl))
+                {
+                    return "You have certified that you are complying with the AGPLv3 and have open-sourced your project at the following url:\r\n"
+                        + options.MyOpenSourceProjectUrl;
+                }
+                else
+                {
+                    return "";
+                }
+            }
+        }
+
+        internal Computation Result
         {
             get {
                 if (cachedResult?.ComputationExpires != null &&
@@ -132,7 +160,7 @@ namespace Imageflow.Server
 
         public string GetLicensePageContents()
         {
-            return Result.ProvidePublicText();
+            return Result.ProvidePublicLicensesPage();
         }
     }
 }

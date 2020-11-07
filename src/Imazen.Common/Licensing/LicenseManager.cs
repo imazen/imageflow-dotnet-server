@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
-using ImageResizer.Plugins;
 using Imazen.Common.Issues;
  using Imazen.Common.Persistence;
 

@@ -1,16 +1,11 @@
 using System;
-using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Imageflow.Fluent;
-using Imageflow.Server.Tests;
-using ImageResizer.Plugins.LicenseVerifier;
 using Imazen.Common.Licensing;
-using Imazen.Common.Persistence;
 using Imazen.Common.Tests.Licensing;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
@@ -39,7 +34,7 @@ namespace Imageflow.Server.Tests
                 mgr.Clock, true);
             var sb = new StringBuilder();
             
-            sb.AppendLine($"Plugins.LicenseError = {c.LicenseError}");
+            sb.AppendLine($"Plugins.LicenseError = {c.LicenseEnforcement}");
             sb.AppendLine($"Plugins.LicenseScope = {c.LicenseScope}");
             sb.AppendLine($"Computation.");
             sb.AppendLine($"LicensedForAll() => {result.LicensedForAll()}");
@@ -94,11 +89,54 @@ namespace Imageflow.Server.Tests
                 
                 using var notLicensedResponse = await client.GetAsync("/fire.jpg?w=1");
                 Assert.Equal(HttpStatusCode.PaymentRequired,notLicensedResponse.StatusCode);
+
+
+                var page = licensing.Result.ProvidePublicLicensesPage();
+                Assert.Contains("License Validation ON", page);
+                Assert.Contains("No license keys found.", page);
+                Assert.Contains("You must purchase a license key or comply with the AGPLv3.", page);
+                Assert.Contains("To get a license key, visit", page);
+                Assert.Contains("You are using EnforceLicenseWith.Http402Error", page);
                 
                 await host.StopAsync(CancellationToken.None);
             }
         }
         
+        [Fact]
+        public async void TestAGPL()
+        {
+            using (var contentRoot = new TempContentRoot()
+                .AddResource("images/fire.jpg", "TestFiles.fire-umbrella-small.jpg"))
+            {
+
+                var clock = new RealClock();
+                var mgr = new LicenseManagerSingleton(ImazenPublicKeys.Test, clock, new StringCacheMem());
+                var licensing = new Licensing(mgr);
+
+
+                using var host = await StartAsyncWithOptions(new ImageflowMiddlewareOptions()
+                {
+                    Licensing = licensing,
+                    MyOpenSourceProjectUrl = "https://github.com/username/project",
+                    EnforcementMethod = EnforceLicenseWith.RedDotWatermark
+                }.MapPath("/", Path.Combine(contentRoot.PhysicalPath, "images")));
+                
+                // Create an HttpClient to send requests to the TestServer
+                using var client = host.GetTestClient();
+                
+                using var licensedResponse = await client.GetAsync("/fire.jpg?w=1");
+                licensedResponse.EnsureSuccessStatusCode();
+
+                var page = licensing.Result.ProvidePublicLicensesPage();
+                Assert.Contains("License Validation OFF", page);
+                Assert.Contains("No license keys found.", page);
+                Assert.DoesNotContain("You must purchase a license key or comply with the AGPLv3.", page);
+                Assert.DoesNotContain("To get a license key", page);
+                Assert.Contains("You are using EnforceLicenseWith.RedDotWatermark", page);
+                
+                await host.StopAsync(CancellationToken.None);
+            }
+        }
         
         [Fact]
         public async void TestDomainsLicense()
@@ -150,6 +188,14 @@ namespace Imageflow.Server.Tests
                 
                 Assert.Empty(mgr.GetIssues());
                 
+                var page = licensing.Result.ProvidePublicLicensesPage();
+                Assert.Contains("License Validation ON", page);
+                Assert.DoesNotContain("No license keys found.", page);
+                Assert.Contains("License valid for 2 domains, missing for 1 domains", page);
+                Assert.Contains("Your license needs to be upgraded", page);
+                Assert.Contains("You are using EnforceLicenseWith.Http402Error", page);
+
+                
                 await host.StopAsync(CancellationToken.None);
             }
         }
@@ -198,6 +244,14 @@ namespace Imageflow.Server.Tests
                 licensedResponse3.EnsureSuccessStatusCode();
                 
                 Assert.Empty(mgr.GetIssues());
+                
+                var page = licensing.Result.ProvidePublicLicensesPage();
+                Assert.Contains("License Validation ON", page);
+                Assert.Contains("License key valid for all domains.", page);
+                Assert.Contains("No resale of usage. Only for organizations with less than 500 employees.", page);
+                Assert.Contains("You are using EnforceLicenseWith.Http402Error", page);
+                Assert.Contains("Manage your subscription at https://account.imazen.io", page);
+
                 
                 await host.StopAsync(CancellationToken.None);
             }
@@ -248,6 +302,38 @@ namespace Imageflow.Server.Tests
 
                     
                     Assert.NotEmpty(mgr.GetIssues());
+                    
+                    var page = licensing.Result.ProvidePublicLicensesPage();
+                    Assert.Contains("License Validation ON", page);
+                    Assert.Contains("You are using EnforceLicenseWith.Http402Error", page);
+                    Assert.Contains("No valid license keys found.", page);
+
+                    Assert.Contains(
+                        "Your license is invalid. Please renew your license via the management portal or purchase a new one at",
+                        page);
+                    Assert.DoesNotContain("Your license needs to be upgraded.", page);
+
+                    if (set.Name == "CancelledImageflow")
+                    {
+                        Assert.Contains("Your subscription has lapsed; please renew to continue using product.", page);
+                    }
+
+                    if (set.Name == "SoftRevocationImageflow")
+                    {
+                        Assert.Contains(
+                            "This license has been compromised; please contact Vendor Gamma for an updated license",
+                            page);
+                    }
+                    if (set.Name == "HardRevocationImageflow")
+                    {
+                        Assert.Contains(
+                            "Please contact support; the license was shared with an unauthorized party and has been revoked.",
+                            page);
+                    }
+
+                    
+
+                    await host.StopAsync(CancellationToken.None);
                 }
             }
         }

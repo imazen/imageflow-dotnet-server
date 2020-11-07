@@ -44,7 +44,16 @@ namespace Imazen.Common.Licensing
         /// <summary>
         /// The license enforcement action to take
         /// </summary>
-        LicenseErrorAction LicenseError { get; }
+        LicenseErrorAction LicenseEnforcement { get; }
+        
+        /// <summary>
+        ///<code>
+        /// string EnforcementMethodMessage =&gt; LicenseError == LicenseErrorAction.Http402
+        /// ? $"You are using <licenses licenseError='{LicenseError}'>. If there is a licensing error, an exception will be thrown (with HTTP status code 402). This can also be set to '{LicenseErrorAction.Watermark}'."
+        ///: $"You are using <licenses licenseError='{LicenseError}'>. If there is a licensing error, an red dot will be drawn on the bottom-right corner of each image. This can be set to '{LicenseErrorAction.Http402}' instead (valuable if you are storing results)."
+        ///;</code>
+        /// </summary>
+        string EnforcementMethodMessage { get;  }
         
         /// <summary>
         /// There has been a change in licensed or licensing plugins
@@ -72,5 +81,7 @@ namespace Imazen.Common.Licensing
         /// Should be https://imageresizing.net/licenses 
         /// </summary>
         string LicensePurchaseUrl { get;  }
+        
+        string AGPLCompliantMessage { get; }
     }
 }

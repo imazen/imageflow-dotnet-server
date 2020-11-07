@@ -131,12 +131,14 @@ namespace Imazen.Common.Tests.Licensing
         }
 
         public LicenseAccess LicenseScope { get; } = LicenseAccess.Local;
-        public LicenseErrorAction LicenseError { get; } = LicenseErrorAction.Http402;
+        public LicenseErrorAction LicenseEnforcement { get; } = LicenseErrorAction.Http402;
+        public string EnforcementMethodMessage { get; } = "";
         public event LicenseConfigEvent LicensingChange;
         public event LicenseConfigEvent Heartbeat;
         public bool IsImageflow { get; } = false;
         public bool IsImageResizer { get; } = true;
         public string LicensePurchaseUrl { get; }  = "https://imageresizing.net/licenses";
+        public string AGPLCompliantMessage { get; } = "";
 
         public void AddLicense(string license)
         {
@@ -147,19 +149,13 @@ namespace Imazen.Common.Tests.Licensing
 
         public string GetLicensesPage()
         {
-            return Result.ProvidePublicText();
+            return Result.ProvidePublicLicensesPage();
         }
         
         public IEnumerable<IIssue> GetIssues() => mgr.GetIssues().Concat(Result?.GetIssues() ?? Enumerable.Empty<IIssue>());
 
     }
-    class RequestUrlProvider
-    {
-        public Uri Url { get; set; } = null;
-        public Uri Get() => Url;
-    }
 
- 
     static class MockHttpHelpers
     {
         public static Mock<HttpMessageHandler> MockRemoteLicense(LicenseManagerSingleton mgr, HttpStatusCode code, string value,
