@@ -21,6 +21,7 @@
       <ProjectReference Include="..\..\src\Imageflow.Server.Storage.AzureBlob\Imageflow.Server.Storage.AzureBlob.csproj" />
       <ProjectReference Include="..\..\src\Imageflow.Server.Storage.S3\Imageflow.Server.Storage.S3.csproj" />
       <ProjectReference Include="..\..\src\Imageflow.Server\Imageflow.Server.csproj" />
+      <ProjectReference Include="..\Imazen.Common.Tests\Imazen.Common.Tests.csproj" />
     </ItemGroup>
 
     <ItemGroup>

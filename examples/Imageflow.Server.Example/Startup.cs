@@ -100,6 +100,8 @@ namespace Imageflow.Server.Example
                 .SetMapWebRoot(true)
                 // Maps /folder to WebRootPath/folder
                 .MapPath("/folder", Path.Combine(Env.ContentRootPath, "folder"))
+                // Allow localhost to access the diagnostics page or remotely via /imageflow.debug?password=fuzzy_caterpillar
+                .SetDiagnosticsPageAccess(true, "fuzzy_caterpillar")
                 // Allow Disk Caching
                 .SetAllowDiskCaching(true)
                 // Allow Sqlite Caching
@@ -131,10 +133,10 @@ namespace Imageflow.Server.Example
                 // Use Imazen.Common.Helpers.Signatures.SignRequest(string pathAndQuery, string signingKey) to generate
                 //.ForPrefix allows you to set less restrictive rules for subfolders. 
                 // For example, you may want to allow unmodified requests through with SignatureRequired.ForQuerystringRequests
-                .SetRequestSignatureOptions(
-                    new RequestSignatureOptions(SignatureRequired.ForAllRequests, new []{"test key"})
-                        .ForPrefix("/logos/", StringComparison.Ordinal, 
-                            SignatureRequired.ForQuerystringRequests, new []{"test key"}))
+                // .SetRequestSignatureOptions(
+                //     new RequestSignatureOptions(SignatureRequired.ForAllRequests, new []{"test key"})
+                //         .ForPrefix("/logos/", StringComparison.Ordinal, 
+                //             SignatureRequired.ForQuerystringRequests, new []{"test key"}))
                 // It's a good idea to limit image sizes for security. Requests causing these to be exceeded will fail
                 // The last argument to FrameSizeLimit() is the maximum number of megapixels
                 .SetJobSecurityOptions(new SecurityOptions()

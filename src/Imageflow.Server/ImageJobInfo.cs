@@ -68,6 +68,15 @@ namespace Imageflow.Server
             
             if (HasParams)
             {
+                if (options.Licensing.RequestNeedsEnforcementAction(context.Request))
+                {
+                    if (options.EnforcementMethod == EnforceLicenseWith.RedDotWatermark)
+                    {
+                        FinalQuery["watermark_red_dot"] = "true";
+                    }
+                    LicenseError = true;
+                }
+                
                 CommandString = PathHelpers.SerializeCommandString(FinalQuery);
 
                 // Look up watermark names
@@ -118,6 +127,8 @@ namespace Imageflow.Server
         public bool HasParams { get; }
         
         public bool Authorized { get; }
+
+        public bool LicenseError { get; } = false;
         public string CommandString { get; } = "";
         public string EstimatedFileExtension { get; }
         public string AuthorizedMessage { get; set; }
@@ -195,7 +206,7 @@ namespace Imageflow.Server
                     path = args.VirtualPath;
                 }
             }
-            
+
             // Set defaults if keys are missing, but at least 1 supported key is present
             if (PathHelpers.SupportedQuerystringKeys.Any(args.Query.ContainsKey))
             {
