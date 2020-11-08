@@ -386,7 +386,7 @@ namespace Imageflow.Server
                         var blob = await b.GetBlob();
                         if (blob != null)
                         {
-                            var source = new StreamSource(blob.OpenRead(), true);
+                            using var source = new StreamSource(blob.OpenRead(), true);
                             var bytes = await source.GetBytesAsync(CancellationToken.None);
                             sw.Stop();
                             GlobalPerf.BlobRead(sw.ElapsedTicks, bytes.Count);
