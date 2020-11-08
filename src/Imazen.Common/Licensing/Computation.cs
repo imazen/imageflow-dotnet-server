@@ -11,8 +11,11 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using Imazen.Common.ExtensionMethods;
+using Imazen.Common.Instrumentation;
+using Imazen.Common.Instrumentation.Support;
 using Imazen.Common.Issues;
 
 namespace Imazen.Common.Licensing
@@ -490,5 +493,9 @@ namespace Imazen.Common.Licensing
             return "The most recent license fetch used the following URL:\r\n\r\n" +
                    mgr.GetAllLicenses().Select(c => c.LastFetchUrl()).Delimited("\r\n");
         }
+
+        internal IInfoAccumulator GetReportPairs() => (mgr as LicenseManagerSingleton)?.GetReportPairs() ??
+                                             GlobalPerf.Singleton.GetReportPairs();
+
     }
 }

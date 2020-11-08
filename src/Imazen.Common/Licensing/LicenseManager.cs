@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Imazen.Common.Instrumentation;
+using Imazen.Common.Instrumentation.Support;
 using Imazen.Common.Issues;
  using Imazen.Common.Persistence;
 
@@ -328,6 +330,26 @@ using Imazen.Common.Issues;
                 return null;
             }
             return blob;
+        }
+        
+        internal IInfoAccumulator GetReportPairs()
+        {
+            if (!ManagerGuid.HasValue)
+            {
+                Heartbeat();
+            }
+
+            var beatCount = HeartbeatCount;
+
+            var firstHeartbeat = (long)(FirstHeartbeat.GetValueOrDefault() -
+                                        new DateTimeOffset(1970, 1, 1, 0, 0, 0, 0, TimeSpan.Zero)).TotalSeconds;
+
+            var q = GlobalPerf.Singleton.GetReportPairs();
+            var prepending = q.WithPrepend(true);
+            prepending.Add("total_heartbeats", HeartbeatCount.ToString());
+            prepending.Add("first_heartbeat", firstHeartbeat.ToString());
+            prepending.Add("manager_id", ManagerGuid?.ToString("D"));
+            return q;
         }
     }
 }

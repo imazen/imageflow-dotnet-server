@@ -10,6 +10,8 @@ using System.Security;
 using System.Text;
 using System.Threading.Tasks;
 using Imazen.Common.Extensibility.ClassicDiskCache;
+using Imazen.Common.Instrumentation;
+using Imazen.Common.Instrumentation.Support;
 using Imazen.Common.Issues;
 using Imazen.Common.Storage;
 using Microsoft.AspNetCore.Hosting;
@@ -180,10 +182,18 @@ namespace Imageflow.Server
                 s.AppendLine(line);
             }
 
+            s.AppendLine(
+                "\n\nWhen fetching a remote license file (if you have one), the following information is sent via the querystring.");
+            foreach (var pair in options.Licensing.Result.GetReportPairs().GetInfo()) {
+                s.AppendFormat("   {0,32} {1}\n", pair.Key, pair.Value);
+            }
+
+            
             s.AppendLine(options.Licensing.Result.DisplayLastFetchUrl());
             
             return Task.FromResult(s.ToString());
         }
+        
         
         private static string GetNetCoreVersion()
         {

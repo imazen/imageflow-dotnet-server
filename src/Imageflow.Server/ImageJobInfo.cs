@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography.Xml;
+using System.Threading;
 using System.Threading.Tasks;
 using Imageflow.Fluent;
 using Imazen.Common.Helpers;
+using Imazen.Common.Instrumentation;
 using Imazen.Common.Storage;
 using Microsoft.AspNetCore.Http;
 
@@ -52,7 +55,14 @@ namespace Imageflow.Server
 
             HasParams = PathHelpers.SupportedQuerystringKeys.Any(FinalQuery.ContainsKey);
 
-
+            // Get the image and page domains
+            ImageDomain = context.Request.Host.Host;
+            var referer = context.Request.Headers["Referer"].ToString();
+            if (!string.IsNullOrEmpty(referer) && Uri.TryCreate(referer, UriKind.Absolute, out var result))
+            {
+                PageDomain = result.DnsSafeHost;
+            }
+       
             var extension = Path.GetExtension(FinalVirtualPath);
             if (FinalQuery.TryGetValue("format", out var newExtension))
             {
@@ -132,6 +142,9 @@ namespace Imageflow.Server
         public string CommandString { get; } = "";
         public string EstimatedFileExtension { get; }
         public string AuthorizedMessage { get; set; }
+        
+        private string ImageDomain { get; set; }
+        private string PageDomain { get; set;  }
 
         private readonly BlobProvider provider;
 
@@ -152,6 +165,9 @@ namespace Imageflow.Server
             var path = context.Request.Path.Value;
             var args = new UrlEventArgs(context, context.Request.Path.Value, PathHelpers.ToQueryDictionary(context.Request.Query));
 
+            
+            GlobalPerf.Singleton.PreRewriteQuery(args.Query.Keys);
+            
             foreach (var handler in options.PreRewriteAuthorization)
             {
                 var matches = string.IsNullOrEmpty(handler.PathPrefix) ||
@@ -365,7 +381,23 @@ namespace Imageflow.Server
             var blobs = await Task.WhenAll(
                 allBlobs
                     .Select(async b =>
-                        (await b.GetBlob())));
+                    {
+                        var sw = Stopwatch.StartNew();
+                        var blob = await b.GetBlob();
+                        if (blob != null)
+                        {
+                            var source = new StreamSource(blob.OpenRead(), true);
+                            var bytes = await source.GetBytesAsync(CancellationToken.None);
+                            sw.Stop();
+                            GlobalPerf.BlobRead(sw.ElapsedTicks, bytes.Count);
+                            return (IBytesSource)new BytesSource(bytes);
+                        }
+                        else
+                        {
+                            return null;
+                        }
+                    }));
+            
             
             //Add all StreamSources
             List<InputWatermark> watermarks = null;
@@ -379,18 +411,34 @@ namespace Imageflow.Server
                             throw new BlobMissingException(
                                 $"Cannot locate watermark \"{t.Name}\" at virtual path \"{t.VirtualPath}\"");
                         return new InputWatermark(
-                            new StreamSource(blobs[i + 1].OpenRead(), true),
+                            blobs[i + 1],
                             t.Watermark);
                     }));
             }
 
             using var buildJob = new ImageJob();
             var jobResult = await buildJob.BuildCommandString(
-                    new StreamSource(blobs[0].OpenRead(), true),
+                    blobs[0],
                     new BytesDestination(), CommandString, watermarks)
                 .Finish()
                 .SetSecurityOptions(options.JobSecurityOptions)
                 .InProcessAsync();
+
+            var jobInstrumentation = new ImageJobInstrumentation()
+            {
+                FinalWidth = jobResult.EncodeResults.FirstOrDefault()?.Width,
+                FinalHeight = jobResult.EncodeResults.FirstOrDefault()?.Height,
+                SourceFileExtension = Path.GetExtension(FinalVirtualPath ?? "").ToLowerInvariant().TrimStart('.'),
+                FinalCommandKeys = FinalQuery.Keys,
+                ImageDomain = ImageDomain,
+                PageDomain =  PageDomain,
+                TotalTicks = jobResult.PerformanceDetails.GetTotalWallTicks(),
+                DecodeTicks = jobResult.PerformanceDetails.GetDecodeWallTicks(),
+                EncodeTicks = jobResult.PerformanceDetails.GetEncodeWallTicks(),
+                SourceHeight = null,
+                SourceWidth = null,
+            };
+            GlobalPerf.Singleton.JobComplete(jobInstrumentation);
 
             var bytes = jobResult.First.TryGetBytes();
 
@@ -406,5 +454,33 @@ namespace Imageflow.Server
                 ResultBytes = bytes.Value
             };
         }
+    }
+    
+    internal static class PerformanceDetailsExtensions{
+        
+        public static long GetWallMicroseconds(this PerformanceDetails d, Func<string, bool> nodeFilter)
+        {
+            long totalMicroseconds = 0;
+            foreach (var frame in d.Frames)
+            {
+                foreach (var node in frame.Nodes.Where(n => nodeFilter(n.Name)))
+                {
+                    totalMicroseconds += node.WallMicroseconds;
+                }
+            }
+
+            return totalMicroseconds;
+        }
+        
+  
+        
+        public static long GetTotalWallTicks(this PerformanceDetails d) =>
+            d.GetWallMicroseconds(n => true) * TimeSpan.TicksPerSecond / 1000000;
+        
+        public static long GetEncodeWallTicks(this PerformanceDetails d) =>
+            d.GetWallMicroseconds(n => n == "primitive_encoder") * TimeSpan.TicksPerSecond / 1000000;
+        
+        public static long GetDecodeWallTicks(this PerformanceDetails d) =>
+            d.GetWallMicroseconds(n => n == "primitive_decoder") * TimeSpan.TicksPerSecond / 1000000;
     }
 }

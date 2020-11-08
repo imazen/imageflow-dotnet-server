@@ -246,11 +246,6 @@ namespace Imazen.Common.Instrumentation
             }
         }
 
-        internal void QueryRewrittenWithDirective(string rewrittenVirtualPath)
-        {
-            
-        }
-
         public static void BlobRead(long ticks, long bytes)
         {
             Singleton.blobReadEvents.Record(Stopwatch.GetTimestamp(), 1);
