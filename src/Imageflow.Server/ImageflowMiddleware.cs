@@ -64,7 +64,7 @@ namespace Imageflow.Server
             options.Licensing.Initialize(this.options);
 
             blobProvider = new BlobProvider(providers, mappedPaths);
-            diagnosticsPage = new DiagnosticsPage(env, this.logger, this.memoryCache, this.distributedCache, this.diskCache, providers);
+            diagnosticsPage = new DiagnosticsPage(options, env, this.logger, this.memoryCache, this.distributedCache, this.diskCache, providers);
             licensePage = new LicensePage(options);
         }
 
@@ -106,12 +106,12 @@ namespace Imageflow.Server
             {
                 if (options.EnforcementMethod == EnforceLicenseWith.Http422Error)
                 {
-                    await StringResponse(context, 422, options.Licensing.InvalidLicenseMessage);
+                    await StringResponseNoCache(context, 422, options.Licensing.InvalidLicenseMessage);
                     return;
                 }
                 if (options.EnforcementMethod == EnforceLicenseWith.Http402Error)
                 {
-                    await StringResponse(context, 402, options.Licensing.InvalidLicenseMessage);
+                    await StringResponseNoCache(context, 402, options.Licensing.InvalidLicenseMessage);
                     return;
                 }
             }
@@ -185,18 +185,24 @@ namespace Imageflow.Server
                 s += "\r\n" + detail;
             }
 
-            await StringResponse(context, 403, s);
+            await StringResponseNoCache(context, 403, s);
         }
         
         private async Task NotFound(HttpContext context, BlobMissingException e)
         {
+            // We allow 404s to be cached, but not 403s or license errors
             var s = "The specified resource does not exist.\r\n" + e.Message;
-            await StringResponse(context, 404, s);
+            context.Response.StatusCode = 404;
+            context.Response.ContentType = "text/plain; charset=utf-8";
+            var bytes = Encoding.UTF8.GetBytes(s);
+            context.Response.ContentLength = bytes.Length;
+            await context.Response.Body.WriteAsync(bytes, 0, bytes.Length);
         }
-        private async Task StringResponse(HttpContext context, int statusCode, string contents)
+        private async Task StringResponseNoCache(HttpContext context, int statusCode, string contents)
         {
             context.Response.StatusCode = statusCode;
             context.Response.ContentType = "text/plain; charset=utf-8";
+            context.Response.Headers[HeaderNames.CacheControl] = "no-store";
             var bytes = Encoding.UTF8.GetBytes(contents);
             context.Response.ContentLength = bytes.Length;
             await context.Response.Body.WriteAsync(bytes, 0, bytes.Length);

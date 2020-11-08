@@ -17,6 +17,7 @@ using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Net.Http.Headers;
 
 namespace Imageflow.Server
 {
@@ -30,13 +31,15 @@ namespace Imageflow.Server
         }
 
         public bool MatchesPath(string path) => "/imageflow.license".Equals(path, StringComparison.Ordinal);
-        
+
         public async Task Invoke(HttpContext context)
         {
-            
-           var s = await GeneratePage(context);
-           context.Response.ContentType = "text/plain; charset=utf-8";
+
+            var s = await GeneratePage(context);
+            context.Response.StatusCode = 200;
+            context.Response.ContentType = "text/plain; charset=utf-8";
             context.Response.Headers.Add("X-Robots-Tag", "none");
+            context.Response.Headers[HeaderNames.CacheControl] = "no-store";
             var bytes = Encoding.UTF8.GetBytes(s);
             await context.Response.Body.WriteAsync(bytes, 0, bytes.Length);
         }

@@ -100,6 +100,8 @@ namespace Imageflow.Server.Example
                 .SetMapWebRoot(true)
                 // Maps /folder to WebRootPath/folder
                 .MapPath("/folder", Path.Combine(Env.ContentRootPath, "folder"))
+                // Allow localhost to access the diagnostics page or remotely via /imageflow.debug?password=fuzzy_caterpillar
+                .SetDiagnosticsPageAccess(true, "fuzzy_caterpillar")
                 // Allow Disk Caching
                 .SetAllowDiskCaching(true)
                 // Allow Sqlite Caching

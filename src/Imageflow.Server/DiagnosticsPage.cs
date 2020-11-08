@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Security;
@@ -17,6 +18,7 @@ using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Net.Http.Headers;
 
 namespace Imageflow.Server
 {
@@ -28,10 +30,11 @@ namespace Imageflow.Server
         private readonly IDistributedCache distributedCache;
         private readonly IClassicDiskCache diskCache;
         private readonly IList<IBlobProvider> blobProviders;
-        
-        internal DiagnosticsPage(IWebHostEnvironment env, ILogger<ImageflowMiddleware> logger, IMemoryCache memoryCache, IDistributedCache distributedCache,
+        private readonly ImageflowMiddlewareOptions options;
+        internal DiagnosticsPage(ImageflowMiddlewareOptions options,IWebHostEnvironment env, ILogger<ImageflowMiddleware> logger, IMemoryCache memoryCache, IDistributedCache distributedCache,
             IClassicDiskCache diskCache, IList<IBlobProvider> blobProviders)
         {
+            this.options = options;
             this.env = env;
             this.logger = logger;
             this.memoryCache = memoryCache;
@@ -42,14 +45,55 @@ namespace Imageflow.Server
 
         public bool MatchesPath(string path) => "/imageflow.debug".Equals(path, StringComparison.Ordinal);
         
+        public static bool IsLocalRequest(HttpContext context)
+        {
+            if (context.Connection.RemoteIpAddress.Equals(context.Connection.LocalIpAddress))
+            {
+                return true;
+            }
+            if (IPAddress.IsLoopback(context.Connection.RemoteIpAddress))
+            {
+                return true;
+            }
+            return false;
+        }
         public async Task Invoke(HttpContext context)
         {
-            var s = "Imageflow Diagnostics Page only available in development";
-            if (env.IsDevelopment())
-            {
+            var providedPassword = context.Request.Query["password"].ToString();
+            var passwordMatch = !string.IsNullOrEmpty(options.DiagnosticsPassword)
+                                && options.DiagnosticsPassword == providedPassword;
+            
+            string s = "";
+            if (passwordMatch || 
+                (options.ShowDiagnosticsLocalhost && IsLocalRequest(context))){
                 s = await GeneratePage(context);
+                context.Response.StatusCode = 200;
+            }
+            else
+            {
+                s =
+                    "You can configure access to this page via ImageflowMiddlewareOptions.SetDiagnosticsPageAccess(allowLocalhost, password)\r\n\r\n";
+                if (options.ShowDiagnosticsLocalhost)
+                {
+                    s += "You can access this page from the localhost\r\n\r\n";
+                }
+                else
+                {
+                    s += "Access to this page from localhost is disabled\r\n\r\n";
+                }
+
+                if (!string.IsNullOrEmpty(options.DiagnosticsPassword))
+                {
+                    s += "You can access this page by adding ?password=[insert password] to the URL.\r\n\r\n";
+                }
+                else
+                {
+                    s += "You can set a password via SetDiagnosticsPageAccess to access this page remotely.\r\n\r\n";
+                }
+                context.Response.StatusCode = 401; //Unauthorized
             }
 
+            context.Response.Headers[HeaderNames.CacheControl] = "no-store";
             context.Response.ContentType = "text/plain; charset=utf-8";
             context.Response.Headers.Add("X-Robots-Tag", "none");
             var bytes = Encoding.UTF8.GetBytes(s);
@@ -79,6 +123,10 @@ namespace Imageflow.Server
             foreach (var i in issues.OrderBy(i => i?.Severity))
                 s.AppendLine($"{i?.Source}({i?.Severity}):\t{i?.Summary}\n\t\t\t{i?.Details?.Replace("\n", "\r\n\t\t\t")}\n");
 
+            
+            s.AppendLine(options.Licensing.Result.ProvidePublicLicensesPage());
+
+            
             s.AppendLine("\nInstalled Plugins");
 
             if (memoryCache != null) s.AppendLine(this.memoryCache.GetType().FullName);
@@ -131,6 +179,9 @@ namespace Imageflow.Server
                 
                 s.AppendLine(line);
             }
+
+            s.AppendLine(options.Licensing.Result.DisplayLastFetchUrl());
+            
             return Task.FromResult(s.ToString());
         }
         

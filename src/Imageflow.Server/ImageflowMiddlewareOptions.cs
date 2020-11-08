@@ -39,6 +39,9 @@ namespace Imageflow.Server
         public IReadOnlyCollection<PathMapping> MappedPaths => mappedPaths;
 
         public bool MapWebRoot { get; set; }
+        
+        internal bool ShowDiagnosticsLocalhost { get; set; }
+        internal string DiagnosticsPassword { get; set;  }
 
         public bool UsePresetsExclusively { get; set; }
         
@@ -87,6 +90,13 @@ namespace Imageflow.Server
         {
             ExtensionlessPaths.Add(new ExtensionlessPath() { Prefix = prefix, PrefixComparison = prefixComparison});
             return this;
+        }
+
+        public ImageflowMiddlewareOptions SetDiagnosticsPageAccess(bool allowLocalhostAccess, string password)
+        {
+            DiagnosticsPassword = password;
+            ShowDiagnosticsLocalhost = allowLocalhostAccess;
+            return this; 
         }
 
         /// <summary>

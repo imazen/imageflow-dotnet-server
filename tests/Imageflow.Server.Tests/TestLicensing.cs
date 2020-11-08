@@ -78,11 +78,13 @@ namespace Imageflow.Server.Tests
 
 
                 using var host = await StartAsyncWithOptions(new ImageflowMiddlewareOptions()
-                {
-                    Licensing = licensing,
-                    MyOpenSourceProjectUrl = null,
-                    EnforcementMethod = EnforceLicenseWith.Http402Error
-                }.MapPath("/", Path.Combine(contentRoot.PhysicalPath, "images")));
+                    {
+                        Licensing = licensing,
+                        MyOpenSourceProjectUrl = null,
+                        EnforcementMethod = EnforceLicenseWith.Http402Error
+                    }
+                    .SetDiagnosticsPageAccess(false, "pass")
+                    .MapPath("/", Path.Combine(contentRoot.PhysicalPath, "images")));
                 
                 // Create an HttpClient to send requests to the TestServer
                 using var client = host.GetTestClient();
@@ -90,6 +92,15 @@ namespace Imageflow.Server.Tests
                 using var notLicensedResponse = await client.GetAsync("/fire.jpg?w=1");
                 Assert.Equal(HttpStatusCode.PaymentRequired,notLicensedResponse.StatusCode);
 
+                using var licensePageResponse = await client.GetAsync("/imageflow.license");
+                licensePageResponse.EnsureSuccessStatusCode();
+                
+                using var notAuthorizedResponse = await client.GetAsync("/imageflow.debug");
+                Assert.Equal(HttpStatusCode.Unauthorized,notAuthorizedResponse.StatusCode);
+                
+                using var debugPageResponse = await client.GetAsync("/imageflow.debug?password=pass");
+                debugPageResponse.EnsureSuccessStatusCode();
+                
 
                 var page = licensing.Result.ProvidePublicLicensesPage();
                 Assert.Contains("License Validation ON", page);
