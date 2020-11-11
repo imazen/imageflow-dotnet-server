@@ -428,15 +428,15 @@ namespace Imageflow.Server
             {
                 FinalWidth = jobResult.EncodeResults.FirstOrDefault()?.Width,
                 FinalHeight = jobResult.EncodeResults.FirstOrDefault()?.Height,
-                SourceFileExtension = Path.GetExtension(FinalVirtualPath ?? "").ToLowerInvariant().TrimStart('.'),
                 FinalCommandKeys = FinalQuery.Keys,
                 ImageDomain = ImageDomain,
                 PageDomain =  PageDomain,
                 TotalTicks = jobResult.PerformanceDetails.GetTotalWallTicks(),
                 DecodeTicks = jobResult.PerformanceDetails.GetDecodeWallTicks(),
                 EncodeTicks = jobResult.PerformanceDetails.GetEncodeWallTicks(),
-                SourceHeight = null,
-                SourceWidth = null,
+                SourceFileExtension = jobResult.DecodeResults.FirstOrDefault()?.PreferredExtension,
+                SourceHeight = jobResult.DecodeResults.FirstOrDefault()?.Height,
+                SourceWidth = jobResult.DecodeResults.FirstOrDefault()?.Width,
             };
             GlobalPerf.Singleton.JobComplete(jobInstrumentation);
 
