@@ -65,16 +65,19 @@ namespace Imazen.Common.Instrumentation
             // Excludes other processor groups that aren't available to the CLR
             q.Add("logical_cores", LogicalCores.ToString());
 
-            q.Add("mac_digest",this.MachineDigest);
+            q.Add("mac_digest", this.MachineDigest);
             q.Add("os64", OperatingSystem64Bit);
             q.Add("network_drives_count", NetworkDrives);
             q.Add("other_drives_count", OtherDrives);
             q.Add("fixed_drives_count", FixedDrives.Count());
             foreach (var drive in FixedDrives)
             {
-
-                q.Add("fixed_drive",
-                    $"{drive.Filesystem},{drive.AvailableBytes / 1000000000},{drive.TotalBytes / 1000000000}");
+                var totalGigabytes = Math.Round((float) drive.TotalBytes / 1000000000);
+                if (totalGigabytes > 0)
+                {
+                    q.Add("fixed_drive",
+                        $"{drive.Filesystem},{Math.Round((float) drive.AvailableBytes / 1000000000)},{totalGigabytes}");
+                }
             }
         }
     }
