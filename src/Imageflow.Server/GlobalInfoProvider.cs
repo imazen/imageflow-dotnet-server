@@ -15,12 +15,16 @@ namespace Imageflow.Server
         {
             this.env = env;
             this.options = options;
-            pluginNames = plugins.Select(p =>
+            pluginNames = plugins
+                .Where(p => p != null)
+                .Select(p =>
             {
                 var t = p.GetType();
                 if (t.Namespace != null && 
                     (t.Namespace.StartsWith("Imazen") ||
-                    t.Namespace.StartsWith("Imageflow")))
+                    t.Namespace.StartsWith("Imageflow") ||
+                    t.Namespace.StartsWith("Microsoft.Extensions.Logging") ||
+                    t.Namespace.StartsWith("Microsoft.Extensions.Caching")))
                 {
                     return t.Name;
                 }
