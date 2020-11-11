@@ -11,6 +11,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Imageflow.Server.Extensibility;
 using Imazen.Common.Extensibility.ClassicDiskCache;
+using Imazen.Common.Instrumentation;
+using Imazen.Common.Instrumentation.Support;
 using Imazen.Common.Licensing;
 using Imazen.Common.Storage;
 using Microsoft.Extensions.Caching.Distributed;
@@ -66,6 +68,8 @@ namespace Imageflow.Server
             blobProvider = new BlobProvider(providers, mappedPaths);
             diagnosticsPage = new DiagnosticsPage(options, env, this.logger, this.memoryCache, this.distributedCache, this.diskCache, providers);
             licensePage = new LicensePage(options);
+            GlobalPerf.Singleton.SetInfoProviders(new List<IInfoProvider>(){new GlobalInfoProvider(env, this.options
+            ,new object[]{this.logger, this.memoryCache, this.distributedCache, this.diskCache}.Concat(providers))});
         }
 
         public async Task Invoke(HttpContext context)
