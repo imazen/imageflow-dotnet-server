@@ -153,7 +153,8 @@ namespace Imageflow.Server
             }
             
             string cacheKey = null;
-            if (options.ActiveCacheBackend != CacheBackend.NoCache)
+            var cachingPath = imageJobInfo.NeedsCaching() ? options.ActiveCacheBackend : CacheBackend.NoCache;
+            if (cachingPath != CacheBackend.NoCache)
             {
                 cacheKey = await imageJobInfo.GetFastCacheKey();
 
@@ -170,7 +171,7 @@ namespace Imageflow.Server
 
             try
             {
-                switch (options.ActiveCacheBackend)
+                switch (cachingPath)
                 {
                     case CacheBackend.ClassicDiskCache:
                         await ProcessWithDiskCache(context, cacheKey, imageJobInfo);

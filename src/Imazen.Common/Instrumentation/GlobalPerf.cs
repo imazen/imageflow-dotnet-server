@@ -100,6 +100,8 @@ namespace Imazen.Common.Instrumentation
         public void JobComplete(IImageJobInstrumentation job)
         {
 
+            IncrementCounter("image_jobs");
+            
             var timestamp = Stopwatch.GetTimestamp();
             var s_w = job.SourceWidth.GetValueOrDefault(0);
             var s_h = job.SourceHeight.GetValueOrDefault(0);

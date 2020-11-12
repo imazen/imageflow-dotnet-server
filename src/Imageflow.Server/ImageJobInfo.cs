@@ -375,85 +375,104 @@ namespace Imageflow.Server
             return HashStrings(new [] {FinalVirtualPath, CommandString}.Concat(dateTimes).Concat(SerializeWatermarkConfigs()));
         }
 
+        private class BlobFetchResult: IDisposable
+        {
+            private IBlobData Blob;
+            private StreamSource StreamSource;
+            internal ArraySegment<byte> Bytes;
+
+
+            internal BytesSource GetBytesSource()
+            {
+                return new BytesSource(Bytes);
+            }
+            public void Dispose()
+            {
+                StreamSource?.Dispose();
+                Blob?.Dispose();
+            }
+
+            public static async Task<BlobFetchResult> FromCache(BlobFetchCache blobFetchCache)
+            {
+                var sw = Stopwatch.StartNew();
+                using var blob = await blobFetchCache.GetBlob();
+                if (blob == null) return null;
+                
+                var source = new StreamSource(blob.OpenRead(), true);
+                var result = new BlobFetchResult()
+                {
+                    StreamSource = source,
+                    Blob = blob,
+                    Bytes = await source.GetBytesAsync(CancellationToken.None)
+                };
+                sw.Stop();
+                GlobalPerf.BlobRead(sw.ElapsedTicks, result.Bytes.Count);
+                return result;
+            }
+        }
+
         public async Task<ImageData> ProcessUncached()
         {
             //Fetch all blobs simultaneously
             var blobs = await Task.WhenAll(
                 allBlobs
-                    .Select(async b =>
-                    {
-                        var sw = Stopwatch.StartNew();
-                        var blob = await b.GetBlob();
-                        if (blob != null)
+                    .Select(BlobFetchResult.FromCache));
+            try
+            {
+                //Add all 
+                List<InputWatermark> watermarks = null;
+                if (appliedWatermarks != null)
+                {
+                    watermarks = new List<InputWatermark>(appliedWatermarks.Count);
+                    watermarks.AddRange(
+                        appliedWatermarks.Select((t, i) =>
                         {
-                            using var source = new StreamSource(blob.OpenRead(), true);
-                            var bytes = await source.GetBytesAsync(CancellationToken.None);
-                            sw.Stop();
-                            GlobalPerf.BlobRead(sw.ElapsedTicks, bytes.Count);
-                            return (IBytesSource)new BytesSource(bytes);
-                        }
-                        else
-                        {
-                            return null;
-                        }
-                    }));
-            
-            
-            //Add all StreamSources
-            List<InputWatermark> watermarks = null;
-            if (appliedWatermarks != null)
-            {
-                watermarks = new List<InputWatermark>(appliedWatermarks.Count);
-                watermarks.AddRange(
-                    appliedWatermarks.Select((t, i) =>
-                    {
-                        if (blobs[i + 1] == null)
-                            throw new BlobMissingException(
-                                $"Cannot locate watermark \"{t.Name}\" at virtual path \"{t.VirtualPath}\"");
-                        return new InputWatermark(
-                            blobs[i + 1],
-                            t.Watermark);
-                    }));
+                            if (blobs[i + 1] == null)
+                                throw new BlobMissingException(
+                                    $"Cannot locate watermark \"{t.Name}\" at virtual path \"{t.VirtualPath}\"");
+                            return new InputWatermark(
+                                blobs[i + 1].GetBytesSource(),
+                                t.Watermark);
+                        }));
+                }
+
+                using var buildJob = new ImageJob();
+                var jobResult = await buildJob.BuildCommandString(
+                        blobs[0].GetBytesSource(),
+                        new BytesDestination(), CommandString, watermarks)
+                    .Finish()
+                    .SetSecurityOptions(options.JobSecurityOptions)
+                    .InProcessAsync();
+                
+                GlobalPerf.Singleton.JobComplete(new ImageJobInstrumentation(jobResult)
+                {
+                    FinalCommandKeys = FinalQuery.Keys,
+                    ImageDomain = ImageDomain,
+                    PageDomain = PageDomain
+                });
+                
+                // TryGetBytes returns the buffer from a regular MemoryStream, not a recycled one
+                var resultBytes = jobResult.First.TryGetBytes();
+
+                if (!resultBytes.HasValue || resultBytes.Value.Count < 1)
+                {
+                    throw new InvalidOperationException("Image job returned zero bytes.");
+                }
+
+                return new ImageData
+                {
+                    ContentType = jobResult.First.PreferredMimeType,
+                    FileExtension = jobResult.First.PreferredExtension,
+                    ResultBytes = resultBytes.Value
+                };
             }
-
-            using var buildJob = new ImageJob();
-            var jobResult = await buildJob.BuildCommandString(
-                    blobs[0],
-                    new BytesDestination(), CommandString, watermarks)
-                .Finish()
-                .SetSecurityOptions(options.JobSecurityOptions)
-                .InProcessAsync();
-
-            var jobInstrumentation = new ImageJobInstrumentation()
+            finally
             {
-                FinalWidth = jobResult.EncodeResults.FirstOrDefault()?.Width,
-                FinalHeight = jobResult.EncodeResults.FirstOrDefault()?.Height,
-                FinalCommandKeys = FinalQuery.Keys,
-                ImageDomain = ImageDomain,
-                PageDomain =  PageDomain,
-                TotalTicks = jobResult.PerformanceDetails.GetTotalWallTicks(),
-                DecodeTicks = jobResult.PerformanceDetails.GetDecodeWallTicks(),
-                EncodeTicks = jobResult.PerformanceDetails.GetEncodeWallTicks(),
-                SourceFileExtension = jobResult.DecodeResults.FirstOrDefault()?.PreferredExtension,
-                SourceHeight = jobResult.DecodeResults.FirstOrDefault()?.Height,
-                SourceWidth = jobResult.DecodeResults.FirstOrDefault()?.Width,
-            };
-            GlobalPerf.Singleton.JobComplete(jobInstrumentation);
-            GlobalPerf.Singleton.IncrementCounter("image_jobs");
-
-            var resultBytes = jobResult.First.TryGetBytes();
-
-            if (!resultBytes.HasValue || resultBytes.Value.Count < 1)
-            {
-                throw new InvalidOperationException("Image job returned zero bytes.");
+                foreach (var b in blobs)
+                {
+                    b?.Dispose();
+                }
             }
-
-            return new ImageData
-            {
-                ContentType = jobResult.First.PreferredMimeType,
-                FileExtension = jobResult.First.PreferredExtension,
-                ResultBytes = resultBytes.Value
-            };
         }
     }
     
