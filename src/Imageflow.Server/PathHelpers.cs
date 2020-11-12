@@ -62,7 +62,17 @@ namespace Imageflow.Server
                 _ => null 
             };
         }
-
+        public static string GetImageExtensionFromContentType(string contentType)
+        {
+            return contentType switch
+            {
+                "image/png" => "png",
+                "image/gif" => "gif",
+                "image/webp" => "webp",
+                "image/jpeg" => "jpg",
+                _ => null 
+            };
+        }
         internal static string Base64Hash(string data)
         {
             using var sha2 = SHA256.Create();

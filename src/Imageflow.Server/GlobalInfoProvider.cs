@@ -1,8 +1,10 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Imazen.Common.Instrumentation.Support;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
 
 namespace Imageflow.Server
 {

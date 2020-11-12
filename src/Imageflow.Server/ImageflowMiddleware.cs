@@ -33,7 +33,7 @@ namespace Imageflow.Server
         private readonly DiagnosticsPage diagnosticsPage;
         private readonly LicensePage licensePage;
         private readonly ImageflowMiddlewareOptions options;
-
+        private readonly GlobalInfoProvider globalInfoProvider;
         public ImageflowMiddleware(
             RequestDelegate next, 
             IWebHostEnvironment env, 
@@ -68,12 +68,17 @@ namespace Imageflow.Server
             blobProvider = new BlobProvider(providers, mappedPaths);
             diagnosticsPage = new DiagnosticsPage(options, env, this.logger, this.memoryCache, this.distributedCache, this.diskCache, providers);
             licensePage = new LicensePage(options);
-            GlobalPerf.Singleton.SetInfoProviders(new List<IInfoProvider>(){new GlobalInfoProvider(env, this.options
-            ,new object[]{this.logger, this.memoryCache, this.distributedCache, this.diskCache}.Concat(providers))});
+            globalInfoProvider = new GlobalInfoProvider(env, this.options
+                , new object[] {this.logger, this.memoryCache, this.distributedCache, this.diskCache}.Concat(providers));
+            
+            GlobalPerf.Singleton.SetInfoProviders(new List<IInfoProvider>(){globalInfoProvider});
         }
 
         public async Task Invoke(HttpContext context)
         {
+            // For instrumentation
+            globalInfoProvider.CopyHttpContextInfo(context);
+            
             var path = context.Request.Path;
 
             // Delegate to the diagnostics page if it is requested
@@ -144,11 +149,13 @@ namespace Imageflow.Server
 
                 if (context.Request.Headers.TryGetValue(HeaderNames.IfNoneMatch, out var etag) && cacheKey == etag)
                 {
+                    GlobalPerf.Singleton.IncrementCounter("etag_hit");
                     context.Response.StatusCode = StatusCodes.Status304NotModified;
                     context.Response.ContentLength = 0;
                     context.Response.ContentType = null;
                     return;
                 }
+                GlobalPerf.Singleton.IncrementCounter("etag_miss");
             }
 
             try
@@ -174,10 +181,28 @@ namespace Imageflow.Server
                 {
                     await ProcessWithNoCache(context, imageJobInfo);
                 }
+                GlobalPerf.Singleton.IncrementCounter("middleware_ok");
             }
             catch (BlobMissingException e)
             {
                 await NotFound(context, e);
+            }
+            catch (Exception e)
+            {
+                var errorName = e.GetType()?.Name ?? "unknown";
+                var errorCounter = "middleware_" + errorName;
+                GlobalPerf.Singleton.IncrementCounter(errorCounter);
+                GlobalPerf.Singleton.IncrementCounter("middleware_errors");
+                throw;
+            }
+            finally
+            {
+                // Increment counter for type of file served
+                var imageExtension = PathHelpers.GetImageExtensionFromContentType(context.Response.ContentType);
+                if (imageExtension != null)
+                {
+                    GlobalPerf.Singleton.IncrementCounter("module_response_ext_" + imageExtension);
+                }
             }
         }
 
@@ -188,12 +213,13 @@ namespace Imageflow.Server
             {
                 s += "\r\n" + detail;
             }
-
+            GlobalPerf.Singleton.IncrementCounter("http_403");
             await StringResponseNoCache(context, 403, s);
         }
         
         private async Task NotFound(HttpContext context, BlobMissingException e)
         {
+            GlobalPerf.Singleton.IncrementCounter("http_404");
             // We allow 404s to be cached, but not 403s or license errors
             var s = "The specified resource does not exist.\r\n" + e.Message;
             context.Response.StatusCode = 404;
@@ -233,6 +259,19 @@ namespace Imageflow.Server
                     await info.CopyPrimaryBlobToAsync(stream);
                 }
             });
+            
+            if (cacheResult.Result == CacheQueryResult.Miss)
+            {
+                GlobalPerf.Singleton.IncrementCounter("diskcache_miss");
+            }
+            else if (cacheResult.Result == CacheQueryResult.Hit)
+            {
+                GlobalPerf.Singleton.IncrementCounter("diskcache_hit");
+            }
+            else if (cacheResult.Result == CacheQueryResult.Failed)
+            {
+                GlobalPerf.Singleton.IncrementCounter("diskcache_timeout");
+            }
 
             // Note that using estimated file extension instead of parsing magic bytes will lead to incorrect content-type
             // values when the source file has a mismatched extension.
@@ -411,16 +450,17 @@ namespace Imageflow.Server
             var betterCacheKey = await info.GetExactCacheKey();
             if (context.Request.Headers.TryGetValue(HeaderNames.IfNoneMatch, out var etag) && betterCacheKey == etag)
             {
+                GlobalPerf.Singleton.IncrementCounter("etag_hit");
                 context.Response.StatusCode = StatusCodes.Status304NotModified;
                 context.Response.ContentLength = 0;
                 context.Response.ContentType = null;
                 return;
             }
-            
+            GlobalPerf.Singleton.IncrementCounter("etag_miss");
             if (info.HasParams)
             {
                 logger?.LogInformation($"Processing image {info.FinalVirtualPath} with params {info.CommandString}");
-
+                GlobalPerf.Singleton.IncrementCounter("nocache_processed");
                 var imageData = await info.ProcessUncached();
                 var imageBytes = imageData.ResultBytes;
                 var contentType = imageData.ContentType;
@@ -435,7 +475,7 @@ namespace Imageflow.Server
             else
             {
                 logger?.LogInformation($"Proxying image {info.FinalVirtualPath} with params {info.CommandString}");
-
+                GlobalPerf.Singleton.IncrementCounter("nocache_proxied");
                 await using var sourceStream = (await info.GetPrimaryBlob()).OpenRead();
                 SetCachingHeaders(context, betterCacheKey);
                 await MagicBytes.ProxyToStream(sourceStream, context.Response);

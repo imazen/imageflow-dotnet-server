@@ -14,8 +14,8 @@ namespace Imageflow.Server
         private readonly Func<Uri> getCurrentRequestUrl;
 
         private readonly LicenseManagerSingleton mgr;
-        
-        Computation cachedResult;
+
+        private Computation cachedResult;
         internal Licensing(LicenseManagerSingleton mgr, Func<Uri> getCurrentRequestUrl = null)
         {
             this.mgr = mgr;
@@ -55,14 +55,7 @@ namespace Imageflow.Server
 
         public IEnumerable<string> GetLicenses()
         {
-            if (!string.IsNullOrEmpty(options?.LicenseKey))
-            {
-                return Enumerable.Repeat(options.LicenseKey, 1);
-            }
-            else
-            {
-                return Enumerable.Empty<string>();
-            }
+            return !string.IsNullOrEmpty(options?.LicenseKey) ? Enumerable.Repeat(options.LicenseKey, 1) : Enumerable.Empty<string>();
         }
 
         public LicenseAccess LicenseScope => LicenseAccess.Local;
@@ -73,9 +66,9 @@ namespace Imageflow.Server
             {
                 return options.EnforcementMethod switch
                 {
-                    Server.EnforceLicenseWith.RedDotWatermark => LicenseErrorAction.Watermark,
-                    Server.EnforceLicenseWith.Http422Error => LicenseErrorAction.Http422,
-                    Server.EnforceLicenseWith.Http402Error => LicenseErrorAction.Http402,
+                    EnforceLicenseWith.RedDotWatermark => LicenseErrorAction.Watermark,
+                    EnforceLicenseWith.Http422Error => LicenseErrorAction.Http422,
+                    EnforceLicenseWith.Http402Error => LicenseErrorAction.Http402,
                     _ => throw new ArgumentOutOfRangeException()
                 };
             }

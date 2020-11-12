@@ -339,7 +339,7 @@ namespace Imageflow.Server
             return buffer;
         }
 
-        private string[] serializedWatermarkConfigs = null;
+        private string[] serializedWatermarkConfigs;
         private IEnumerable<string> SerializeWatermarkConfigs()
         {
             if (serializedWatermarkConfigs != null) return serializedWatermarkConfigs;
@@ -357,7 +357,7 @@ namespace Imageflow.Server
                     .Select(async b =>
                         (await b.GetBlob())?.LastModifiedDateUtc?.ToBinary().ToString()));
             
-            return HashStrings(new string[] {FinalVirtualPath, CommandString}.Concat(dateTimes).Concat(SerializeWatermarkConfigs()));
+            return HashStrings(new [] {FinalVirtualPath, CommandString}.Concat(dateTimes).Concat(SerializeWatermarkConfigs()));
         }
 
         public override string ToString()
@@ -372,7 +372,7 @@ namespace Imageflow.Server
                     .Select(async b =>
                         (await b.GetBlob())?.LastModifiedDateUtc?.ToBinary().ToString()));
             
-            return HashStrings(new string[] {FinalVirtualPath, CommandString}.Concat(dateTimes).Concat(SerializeWatermarkConfigs()));
+            return HashStrings(new [] {FinalVirtualPath, CommandString}.Concat(dateTimes).Concat(SerializeWatermarkConfigs()));
         }
 
         public async Task<ImageData> ProcessUncached()
@@ -439,10 +439,11 @@ namespace Imageflow.Server
                 SourceWidth = jobResult.DecodeResults.FirstOrDefault()?.Width,
             };
             GlobalPerf.Singleton.JobComplete(jobInstrumentation);
+            GlobalPerf.Singleton.IncrementCounter("image_jobs");
 
-            var bytes = jobResult.First.TryGetBytes();
+            var resultBytes = jobResult.First.TryGetBytes();
 
-            if (!bytes.HasValue || bytes.Value.Count < 1)
+            if (!resultBytes.HasValue || resultBytes.Value.Count < 1)
             {
                 throw new InvalidOperationException("Image job returned zero bytes.");
             }
@@ -451,14 +452,14 @@ namespace Imageflow.Server
             {
                 ContentType = jobResult.First.PreferredMimeType,
                 FileExtension = jobResult.First.PreferredExtension,
-                ResultBytes = bytes.Value
+                ResultBytes = resultBytes.Value
             };
         }
     }
     
     internal static class PerformanceDetailsExtensions{
         
-        public static long GetWallMicroseconds(this PerformanceDetails d, Func<string, bool> nodeFilter)
+        private static long GetWallMicroseconds(this PerformanceDetails d, Func<string, bool> nodeFilter)
         {
             long totalMicroseconds = 0;
             foreach (var frame in d.Frames)

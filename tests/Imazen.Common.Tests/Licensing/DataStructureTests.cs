@@ -60,17 +60,17 @@ namespace Imazen.Common.Tests.Licensing
             Assert.True(b.Record(321, 2));
             Assert.True(b.Record(331, 3));
 
-            var zeroes = b.DequeueValues();
+            var zeroes = b.DequeueValues().ToList();
             Assert.Equal(13, zeroes.Count());
             Assert.True(zeroes.All(v => v == 0));
 
             //We should have nothing to dequeue, with 30..33 in the buffer
-            Assert.Equal(0, b.DequeueValues().Count());
+            Assert.Empty(b.DequeueValues());
 
             // Skip buckets 34..55, dequeuing 30..52
             Assert.True(b.Record(561, 3));
 
-            var results = b.DequeueValues();
+            var results = b.DequeueValues().ToList();
             Assert.Equal(23, results.Count());
             Assert.Equal(new[] {0L, 1, 2, 3}, results.Take(4));
         }
