@@ -44,7 +44,7 @@ All operations are designed to be fast enough for on-demand use.
 ### License
 
 We offer commercial licenses at https://imageresizing.net/pricing, or you can use
-Imageflow, Imageflow.NET and Imageflow.NET Server under the terms of the AGPLv3. License keys are not yet required for commercial use, but we ask that you buy a license to help fund development of the Imageflow product suite. 
+Imageflow, Imageflow.NET and Imageflow.NET Server under the terms of the AGPLv3. 
 
 ### For users coming from ImageResizer
 
@@ -67,7 +67,8 @@ For examples on serving files from S3 or Azure, see the full example after this.
 4. Open Startup.cs and edit the Configure method.  Add
     ```c#
     app.UseImageflow(new ImageflowMiddlewareOptions()
-        .SetMapWebRoot(true));
+        .SetMapWebRoot(true)
+        .SetMyOpenSourceProjectUrl("https://github.com/my/project"));
     ```
 5. Replace the endpoint with something that generates an image tag, like 
    ```c#
@@ -81,6 +82,12 @@ For examples on serving files from S3 or Azure, see the full example after this.
    });
    ```
 6. Run your project and see the image be dynamically resized. 
+7. If you're not open-sourcing your project, get a [trial license key](https://imageresizing.net/pricing):
+    ```c#
+    app.UseImageflow(new ImageflowMiddlewareOptions()
+        .SetMapWebRoot(true)
+        .SetLicenseKey(EnforceLicenseWith.RedDotWatermark, "License 50913...."));
+    ```
 
 ## Installing everything
 
@@ -172,10 +179,13 @@ namespace Imageflow.Server.Example
             app.UseImageflow(new ImageflowMiddlewareOptions()
                 // Maps / to WebRootPath
                 .SetMapWebRoot(true) 
+                // Register your license key
+                .SetLicenseKey(EnforceLicenseWith.RedDotWatermark, "License 50913....")
                 // Maps /folder to ContentRootPath/folder
                 .MapPath("/folder", Path.Combine(Env.ContentRootPath, "folder"))
                 // Allow localhost to access the diagnostics page or remotely via /imageflow.debug?password=fuzzy_caterpillar
-                .SetDiagnosticsPageAccess(true, "fuzzy_caterpillar")
+                .SetDiagnosticsPageAccess(env.IsDevelopment() ? AccessDiagnosticsFrom.AnyHost : AccessDiagnosticsFrom.LocalHost)
+                .SetDiagnosticsPagePassword("fuzzy_caterpillar")
                 // Allow Disk Caching
                 .SetAllowDiskCaching(true)
                 // We can only have one type of caching enabled at a time

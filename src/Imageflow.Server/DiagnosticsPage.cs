@@ -16,6 +16,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Net.Http.Headers;
 
@@ -54,7 +55,8 @@ namespace Imageflow.Server
             
             string s;
             if (passwordMatch || 
-                (options.ShowDiagnosticsLocalhost && IsLocalRequest(context))){
+                options.DiagnosticsAccess == AccessDiagnosticsFrom.AnyHost ||
+                    (options.DiagnosticsAccess == AccessDiagnosticsFrom.LocalHost && IsLocalRequest(context))){
                 s = await GeneratePage(context);
                 context.Response.StatusCode = 200;
             }
@@ -62,7 +64,7 @@ namespace Imageflow.Server
             {
                 s =
                     "You can configure access to this page via ImageflowMiddlewareOptions.SetDiagnosticsPageAccess(allowLocalhost, password)\r\n\r\n";
-                if (options.ShowDiagnosticsLocalhost)
+                if (options.DiagnosticsAccess == AccessDiagnosticsFrom.LocalHost)
                 {
                     s += "You can access this page from the localhost\r\n\r\n";
                 }

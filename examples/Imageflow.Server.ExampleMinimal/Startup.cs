@@ -19,7 +19,8 @@ namespace Imageflow.Server.ExampleMinimal
             }
 
             app.UseImageflow(new ImageflowMiddlewareOptions()
-                .SetMapWebRoot(true));
+                .SetMapWebRoot(true)
+                .SetMyOpenSourceProjectUrl("https://github.com/imazen/imageflow-dotnet-server"));
             
             app.UseRouting();
 

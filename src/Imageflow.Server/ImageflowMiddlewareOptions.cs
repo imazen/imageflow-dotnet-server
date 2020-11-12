@@ -34,8 +34,9 @@ namespace Imageflow.Server
         public IReadOnlyCollection<PathMapping> MappedPaths => mappedPaths;
 
         public bool MapWebRoot { get; set; }
+
+        internal AccessDiagnosticsFrom DiagnosticsAccess { get; set; } = AccessDiagnosticsFrom.LocalHost;
         
-        internal bool ShowDiagnosticsLocalhost { get; set; }
         internal string DiagnosticsPassword { get; set;  }
 
         public bool UsePresetsExclusively { get; set; }
@@ -87,10 +88,26 @@ namespace Imageflow.Server
             return this;
         }
 
-        public ImageflowMiddlewareOptions SetDiagnosticsPageAccess(bool allowLocalhostAccess, string password)
+        /// <summary>
+        /// Control when and where the diagnostics page is accessible when no password is used
+        /// </summary>
+        /// <param name="accessDiagnosticsFrom"></param>
+        /// <param name="optionalPassword"></param>
+        /// <returns></returns>
+        public ImageflowMiddlewareOptions SetDiagnosticsPageAccess(AccessDiagnosticsFrom accessDiagnosticsFrom)
+        {
+            DiagnosticsAccess = accessDiagnosticsFrom;
+            return this; 
+        }
+        
+        /// <summary>
+        /// When set, the diagnostics page will be accessible form anywhere by adding ?password=[password]
+        /// </summary>
+        /// <param name="password"></param>
+        /// <returns></returns>
+        public ImageflowMiddlewareOptions SetDiagnosticsPagePassword(string password)
         {
             DiagnosticsPassword = password;
-            ShowDiagnosticsLocalhost = allowLocalhostAccess;
             return this; 
         }
 

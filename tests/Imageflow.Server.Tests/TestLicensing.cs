@@ -83,7 +83,8 @@ namespace Imageflow.Server.Tests
                         MyOpenSourceProjectUrl = null,
                         EnforcementMethod = EnforceLicenseWith.Http402Error
                     }
-                    .SetDiagnosticsPageAccess(false, "pass")
+                    .SetDiagnosticsPageAccess(AccessDiagnosticsFrom.None)
+                    .SetDiagnosticsPagePassword("pass")
                     .MapPath("/", Path.Combine(contentRoot.PhysicalPath, "images")));
                 
                 // Create an HttpClient to send requests to the TestServer

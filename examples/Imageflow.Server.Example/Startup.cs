@@ -98,10 +98,12 @@ namespace Imageflow.Server.Example
             app.UseImageflow(new ImageflowMiddlewareOptions()
                 // Maps / to WebRootPath
                 .SetMapWebRoot(true)
+                .SetMyOpenSourceProjectUrl("https://github.com/imazen/imageflow-dotnet-server")
                 // Maps /folder to WebRootPath/folder
                 .MapPath("/folder", Path.Combine(Env.ContentRootPath, "folder"))
                 // Allow localhost to access the diagnostics page or remotely via /imageflow.debug?password=fuzzy_caterpillar
-                .SetDiagnosticsPageAccess(true, "fuzzy_caterpillar")
+                .SetDiagnosticsPageAccess(env.IsDevelopment() ? AccessDiagnosticsFrom.AnyHost : AccessDiagnosticsFrom.LocalHost)
+                .SetDiagnosticsPagePassword("fuzzy_caterpillar")
                 // Allow Disk Caching
                 .SetAllowDiskCaching(true)
                 // Allow Sqlite Caching
