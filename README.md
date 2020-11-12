@@ -37,7 +37,7 @@ All operations are designed to be fast enough for on-demand use.
 * Memory Caching
 * Distributed Caching
 * Mapping arbitrary virtual paths to physical ones. 
-* Imageflow's [Querystring API](https://docs.imageflow.io/querystring/introduction.html) (compatible with ImageResizer)
+* Imageflow [Querystring API](https://docs.imageflow.io/querystring/introduction.html) (compatible with ImageResizer)
 * Production-ready for trusted image files. 
 
 
@@ -62,7 +62,7 @@ For examples on serving files from S3 or Azure, see the full example after this.
 2. Create a directory called "wwwroot" and add a file "image.jpg"
 3. Install Imageflow.Server
     ```
-    Install-Package Imageflow.Server
+    dotnet add package Imageflow.Server
     ```
 4. Open Startup.cs and edit the Configure method.  Add
     ```c#
@@ -88,16 +88,17 @@ For examples on serving files from S3 or Azure, see the full example after this.
         .SetMapWebRoot(true)
         .SetLicenseKey(EnforceLicenseWith.RedDotWatermark, "License 50913...."));
     ```
+   Then visit `/imageflow.license` to verify your license status. This page will be publicly available and show whether you are choosing AGPLv3 mode or using a license key.
 
 ## Installing everything
 
 See `examples/Imageflow.Server.Example` for this example. 
 
 ```
-Install-Package Imageflow.Server
-Install-Package Imageflow.Server.DiskCache
-Install-Package Imageflow.Server.Storage.S3
-Install-Package Imageflow.Server.Storage.AzureBlob
+dotnet add package Imageflow.Server
+dotnet add package Imageflow.Server.DiskCache
+dotnet add package Imageflow.Server.Storage.S3
+dotnet add package Imageflow.Server.Storage.AzureBlob
 ```
 
 Note: Older versions of Windows may not have the C Runtime 
