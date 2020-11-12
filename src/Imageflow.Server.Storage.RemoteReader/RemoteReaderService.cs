@@ -54,6 +54,16 @@ namespace Imageflow.Server.Storage.RemoteReader
             var url = EncodingUtils.FromBase64UToString(urlb64);
 
             var resp = await _http.GetAsync(url);
+
+            var redirectCount = 0;
+
+            while (resp.StatusCode == System.Net.HttpStatusCode.Redirect 
+                && redirectCount++ < _options.RedirectLimit
+                && resp.Headers.Location != null
+                )
+            {
+                resp = await _http.GetAsync(resp.Headers.Location);
+            }
             return new RemoteReaderBlob(resp);
         }
 
