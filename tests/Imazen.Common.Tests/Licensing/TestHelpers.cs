@@ -152,6 +152,11 @@ namespace Imazen.Common.Tests.Licensing
         
         public IEnumerable<IIssue> GetIssues() => mgr.GetIssues().Concat(Result?.GetIssues() ?? Enumerable.Empty<IIssue>());
 
+
+        public void FireHeartbeat()
+        {
+            Heartbeat?.Invoke(this,this);
+        }
     }
 
     static class MockHttpHelpers

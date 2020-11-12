@@ -63,7 +63,7 @@ namespace Imazen.Common.Tests.Licensing
                     
                     conf.AddLicense(LicenseStrings.EliteSubscriptionPlaceholder);
 
-                    mgr.Heartbeat();
+                    conf.FireHeartbeat();
                     mgr.WaitForTasks();
 
                     var result = new Computation(conf, ImazenPublicKeys.Test, mgr, mgr, clock, true);
@@ -118,7 +118,7 @@ namespace Imazen.Common.Tests.Licensing
                 
                 conf.AddLicense(LicenseStrings.EliteSubscriptionPlaceholder);
 
-                mgr.Heartbeat();
+                conf.FireHeartbeat();
                 Assert.Equal(0, mgr.WaitForTasks());
 
                 var result = new Computation(conf, ImazenPublicKeys.Test, mgr, mgr, clock, true);
@@ -133,7 +133,7 @@ namespace Imazen.Common.Tests.Licensing
 
                 while (!mgr.AllowFetching())
                 {
-                    mgr.Heartbeat();
+                    conf.FireHeartbeat();
                 }
 
                 mgr.WaitForTasks();
@@ -256,7 +256,7 @@ namespace Imazen.Common.Tests.Licensing
 
                 Assert.Single(mgr.GetAllLicenses());
                 Assert.True(mgr.GetAllLicenses().First().IsRemote);
-                mgr.Heartbeat();
+                conf.FireHeartbeat();
 
                 mgr.WaitForTasks();
                 Assert.Empty(mgr.GetIssues());
@@ -306,7 +306,7 @@ namespace Imazen.Common.Tests.Licensing
         //    Assert.Equal(1, tasks.Count());
         //    Task.WaitAll(tasks);
 
-        //    mgr.Heartbeat();
+        //    conf.FireHeartbeat();
         //    Mock.Verify(httpHandler);
 
         //    var sink = new IssueSink("LicenseManagerTest");

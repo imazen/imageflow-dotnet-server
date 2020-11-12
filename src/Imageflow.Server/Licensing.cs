@@ -91,7 +91,9 @@ namespace Imageflow.Server
             }
         }
 
+#pragma warning disable CS0067
         public event LicenseConfigEvent LicensingChange;
+#pragma warning restore CS0067
         
         public event LicenseConfigEvent Heartbeat;
         public bool IsImageflow => true;
@@ -154,6 +156,11 @@ namespace Imageflow.Server
         public string GetLicensePageContents()
         {
             return Result.ProvidePublicLicensesPage();
+        }
+
+        public void FireHeartbeat()
+        {
+            Heartbeat?.Invoke(this, this);
         }
     }
 }

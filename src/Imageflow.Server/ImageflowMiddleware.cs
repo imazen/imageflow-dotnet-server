@@ -92,6 +92,7 @@ namespace Imageflow.Server
             licensePage = new LicensePage(options);
             globalInfoProvider = new GlobalInfoProvider(options, env, this.logger, this.sqliteCache, this.memoryCache, this.distributedCache, this.diskCache, providers);
             
+            options.Licensing.FireHeartbeat();
             GlobalPerf.Singleton.SetInfoProviders(new List<IInfoProvider>(){globalInfoProvider});
         }
 
@@ -124,6 +125,8 @@ namespace Imageflow.Server
                 await next.Invoke(context);
                 return;
             }
+            
+            options.Licensing.FireHeartbeat();
             
             var imageJobInfo = new ImageJobInfo(context, options, blobProvider);
 
