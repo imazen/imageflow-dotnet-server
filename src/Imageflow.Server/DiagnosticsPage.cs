@@ -9,6 +9,7 @@ using System.Runtime.CompilerServices;
 using System.Security;
 using System.Text;
 using System.Threading.Tasks;
+using Imageflow.Server.Extensibility;
 using Imazen.Common.Extensibility.ClassicDiskCache;
 using Imazen.Common.Instrumentation;
 using Imazen.Common.Instrumentation.Support;
@@ -33,7 +34,7 @@ namespace Imageflow.Server
         private readonly IClassicDiskCache diskCache;
         private readonly IList<IBlobProvider> blobProviders;
         private readonly ImageflowMiddlewareOptions options;
-        internal DiagnosticsPage(ImageflowMiddlewareOptions options,IWebHostEnvironment env, ILogger<ImageflowMiddleware> logger, IMemoryCache memoryCache, IDistributedCache distributedCache,
+        internal DiagnosticsPage(ImageflowMiddlewareOptions options,IWebHostEnvironment env, ILogger<ImageflowMiddleware> logger, ISqliteCache sqliteCache,  IMemoryCache memoryCache, IDistributedCache distributedCache,
             IClassicDiskCache diskCache, IList<IBlobProvider> blobProviders)
         {
             this.options = options;

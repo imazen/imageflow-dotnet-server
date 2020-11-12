@@ -63,13 +63,32 @@ namespace Imageflow.Server
                     throw new InvalidOperationException("Cannot call MapWebRoot if env.WebRootPath is null");
                 mappedPaths.Add(new PathMapping("/", this.env.WebRootPath));
             }
+            
+            //Determine the active cache backend
+            var memoryCacheEnabled = this.memoryCache != null && options.AllowMemoryCaching;
+            var diskCacheEnabled = this.diskCache != null && options.AllowDiskCaching;
+            var distributedCacheEnabled = this.distributedCache != null && options.AllowDistributedCaching;
+            var sqliteCacheEnabled = this.sqliteCache != null && options.AllowSqliteCaching;
+            
+            if (sqliteCacheEnabled)
+                options.ActiveCacheBackend = CacheBackend.SqliteCache;
+            else if (diskCacheEnabled)
+                options.ActiveCacheBackend = CacheBackend.ClassicDiskCache;
+            else if (memoryCacheEnabled)
+                options.ActiveCacheBackend = CacheBackend.MemoryCache;
+            else if (distributedCacheEnabled)
+                options.ActiveCacheBackend = CacheBackend.DistributedCache;
+            else
+                options.ActiveCacheBackend = CacheBackend.NoCache;
+            
+            
+            
             options.Licensing.Initialize(this.options);
 
             blobProvider = new BlobProvider(providers, mappedPaths);
-            diagnosticsPage = new DiagnosticsPage(options, env, this.logger, this.memoryCache, this.distributedCache, this.diskCache, providers);
+            diagnosticsPage = new DiagnosticsPage(options, env, this.logger, this.sqliteCache, this.memoryCache, this.distributedCache, this.diskCache, providers);
             licensePage = new LicensePage(options);
-            globalInfoProvider = new GlobalInfoProvider(env, this.options
-                , new object[] {this.logger, this.memoryCache, this.distributedCache, this.diskCache}.Concat(providers));
+            globalInfoProvider = new GlobalInfoProvider(options, env, this.logger, this.sqliteCache, this.memoryCache, this.distributedCache, this.diskCache, providers);
             
             GlobalPerf.Singleton.SetInfoProviders(new List<IInfoProvider>(){globalInfoProvider});
         }
@@ -132,19 +151,10 @@ namespace Imageflow.Server
                 await next.Invoke(context);
                 return;
             }
-
-
-
-            var memoryCacheEnabled = memoryCache != null && options.AllowMemoryCaching && imageJobInfo.NeedsCaching();
-            var diskCacheEnabled = diskCache != null && options.AllowDiskCaching && imageJobInfo.NeedsCaching();
-            var distributedCacheEnabled = distributedCache != null && options.AllowDistributedCaching && imageJobInfo.NeedsCaching();
-            var sqliteCacheEnabled = sqliteCache != null && options.AllowSqliteCaching && imageJobInfo.NeedsCaching();
-
-
+            
             string cacheKey = null;
-            if (memoryCacheEnabled || diskCacheEnabled || distributedCacheEnabled | sqliteCacheEnabled)
+            if (options.ActiveCacheBackend != CacheBackend.NoCache)
             {
-
                 cacheKey = await imageJobInfo.GetFastCacheKey();
 
                 if (context.Request.Headers.TryGetValue(HeaderNames.IfNoneMatch, out var etag) && cacheKey == etag)
@@ -160,27 +170,27 @@ namespace Imageflow.Server
 
             try
             {
-                if (sqliteCacheEnabled)
+                switch (options.ActiveCacheBackend)
                 {
-                    await ProcessWithSqliteCache(context, cacheKey, imageJobInfo);
+                    case CacheBackend.ClassicDiskCache:
+                        await ProcessWithDiskCache(context, cacheKey, imageJobInfo);
+                        break;
+                    case CacheBackend.SqliteCache:
+                        await ProcessWithSqliteCache(context, cacheKey, imageJobInfo);
+                        break;
+                    case CacheBackend.MemoryCache:
+                        await ProcessWithMemoryCache(context, cacheKey, imageJobInfo);
+                        break;
+                    case CacheBackend.DistributedCache:
+                        await ProcessWithDistributedCache(context, cacheKey, imageJobInfo);
+                        break;
+                    case CacheBackend.NoCache:
+                        await ProcessWithNoCache(context, imageJobInfo);
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
                 }
-                else if (diskCacheEnabled)
-                {
-                    await ProcessWithDiskCache(context, cacheKey, imageJobInfo);
-                }
-                else if (memoryCacheEnabled)
-                {
-                    await ProcessWithMemoryCache(context, cacheKey, imageJobInfo);
-                    // ReSharper disable once ConditionIsAlwaysTrueOrFalse
-                }
-                else if (distributedCacheEnabled)
-                {
-                    await ProcessWithDistributedCache(context, cacheKey, imageJobInfo);
-                }
-                else
-                {
-                    await ProcessWithNoCache(context, imageJobInfo);
-                }
+                
                 GlobalPerf.Singleton.IncrementCounter("middleware_ok");
             }
             catch (BlobMissingException e)

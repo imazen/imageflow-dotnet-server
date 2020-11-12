@@ -30,6 +30,8 @@ namespace Imageflow.Server
         public TimeSpan DistributedCacheSlidingExpiration { get; set; } = TimeSpan.FromHours(24);
         public bool AllowDiskCaching { get; set; } = true;
         public bool AllowDistributedCaching { get; set; } = false;
+        
+        internal CacheBackend ActiveCacheBackend { get; set; }
 
         private readonly List<NamedWatermark> namedWatermarks = new List<NamedWatermark>();
         public IReadOnlyCollection<NamedWatermark> NamedWatermarks => namedWatermarks;
