@@ -21,13 +21,15 @@ namespace Imageflow.Server
         private readonly IWebHostEnvironment env;
         private readonly ImageflowMiddlewareOptions options;
         private readonly List<string> pluginNames;
+        private readonly List<IInfoProvider> infoProviders;
         public GlobalInfoProvider(ImageflowMiddlewareOptions options,IWebHostEnvironment env, ILogger<ImageflowMiddleware> logger,  ISqliteCache sqliteCache,  IMemoryCache memoryCache, IDistributedCache distributedCache,
             IClassicDiskCache diskCache, IList<IBlobProvider> blobProviders)
         {
             this.env = env;
             this.options = options;
-            var plugins = new List<object>(){logger, memoryCache, diskCache, distributedCache}.Concat(blobProviders);
-            ;
+            var plugins = new List<object>(){logger, memoryCache, diskCache, distributedCache}.Concat(blobProviders).ToList();
+            infoProviders = plugins.OfType<IInfoProvider>().ToList();
+                
             pluginNames = plugins
                 .Where(p => p != null)
                 .Select(p =>
@@ -45,7 +47,6 @@ namespace Imageflow.Server
                 {
                     return t.FullName;
                 }
-
             }).ToList();
             
  
@@ -109,23 +110,11 @@ namespace Imageflow.Server
             {
                 query.Add("p",s);
             }
-            
-            /*
-             *
-             * sqlite/memory/distributed/disk cache enabled
-             * 
-             *
-                     provider_flags 1,1,0,0,1,1,1
-                    provider_prefix /s3/
-              diskcache_virtualpath /imagecache
-              diskcache_drive_total 161059172352
-              diskcache_drive_avail 38921302016
-               diskcache_filesystem NTFS
-            diskcache_network_drive 0
-               diskcache_subfolders 8192
-              diskcache_asyncwrites 0
-                diskcache_autoclean 0
-             */
+            foreach (var p in infoProviders)
+            {
+                p?.Add(query);
+            }
+
         }
     }
 }
