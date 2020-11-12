@@ -36,12 +36,12 @@ namespace Imazen.Common.Tests.Licensing
     }
 
     /// <summary>
-    /// Time advances normally, but starting from the givien date instead of now
+    /// Time advances normally, but starting from the given date instead of now
     /// </summary>
     class OffsetClock : ILicenseClock
     {
         TimeSpan offset;
-        long ticksOffset;
+        readonly long ticksOffset;
         readonly DateTimeOffset built;
 
         public OffsetClock(string date, string buildDate)
@@ -51,7 +51,7 @@ namespace Imazen.Common.Tests.Licensing
             built = DateTimeOffset.Parse(buildDate);
         }
 
-        public void AdvanceSeconds(int seconds) { offset = offset + new TimeSpan(0,0, seconds); }
+        public void AdvanceSeconds(int seconds) { offset += new TimeSpan(0,0, seconds); }
         public DateTimeOffset GetUtcNow() => DateTimeOffset.UtcNow - offset;
         public long GetTimestampTicks() => Stopwatch.GetTimestamp() - ticksOffset;
         public long TicksPerSecond { get; } = Stopwatch.Frequency;
@@ -122,7 +122,7 @@ namespace Imazen.Common.Tests.Licensing
             return Enumerable.Repeat<IEnumerable<string>>(codes, 1);
         }
 
-        private List<string> licenses = new List<string>();
+        private readonly List<string> licenses = new List<string>();
         public IEnumerable<string> GetLicenses()
         {
             return licenses;

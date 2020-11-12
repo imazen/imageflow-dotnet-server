@@ -23,7 +23,7 @@ using Imazen.Common.Issues;
             new ConcurrentDictionary<string, LicenseChain>(StringComparer.Ordinal);
 
         /// <summary>
-        ///     By license id/domain, lowercaseinvariant.
+        ///     By license id/domain, lowercase invariant.
         /// </summary>
         readonly ConcurrentDictionary<string, LicenseChain> chains =
             new ConcurrentDictionary<string, LicenseChain>(StringComparer.OrdinalIgnoreCase);
@@ -60,7 +60,7 @@ using Imazen.Common.Issues;
         /// <summary>
         /// Heartbeats remaining to skip before fetching
         /// </summary>
-        private long SkipHeartbeats { get; set; } = 0;
+        private long SkipHeartbeats { get; set; }
         /// <summary>
         /// How many initial heartbeats to skip if the last modified date of the disk cached license is recent (under 60m old)
         /// </summary>
@@ -102,7 +102,7 @@ using Imazen.Common.Issues;
             return false;
         }
 
-        public Guid? ManagerGuid { get; private set; }
+        private Guid? ManagerGuid { get; set; }
 
         /// <summary>
         ///     Trusted public keys
@@ -110,7 +110,7 @@ using Imazen.Common.Issues;
         public IReadOnlyCollection<RSADecryptPublic> TrustedKeys { get; }
 
         private static readonly object SingletonLock = new object();
-        private static LicenseManagerSingleton _singleton = null;
+        private static LicenseManagerSingleton _singleton;
         public static LicenseManagerSingleton GetOrCreateSingleton(string keyPrefix, string[] candidateCacheFolders)
         {
             lock (SingletonLock)
@@ -219,6 +219,7 @@ using Imazen.Common.Issues;
                                                                     Action<TTarget, ILicenseManager> action)
         {
             var weakTarget = new WeakReference(target, false);
+            // ReSharper disable once ConvertToLocalFunction
             LicenseManagerEvent handler = null;
             handler = mgr =>
             {
@@ -291,7 +292,7 @@ using Imazen.Common.Issues;
         ///     Returns a snapshot of
         /// </summary>
         /// <returns></returns>
-        public IEnumerable<Task> GetAsyncTasksSnapshot()
+        private IEnumerable<Task> GetAsyncTasksSnapshot()
         {
             return chains.Values.SelectMany(chain => chain.GetAsyncTasksSnapshot());
         }

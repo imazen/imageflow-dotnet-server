@@ -6,7 +6,7 @@ using Imazen.Common.Storage;
 
 namespace Imageflow.Server.Storage.AzureBlob
 {
-    internal class AzureBlob :IBlobData, IDisposable
+    internal class AzureBlob :IBlobData
     {
         private readonly Response<BlobDownloadInfo> response;
 

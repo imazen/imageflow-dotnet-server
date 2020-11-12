@@ -6,7 +6,7 @@ namespace Imageflow.Server.Storage.RemoteReader
 {
     public class RemoteReaderServiceOptions
     {
-        internal readonly List<string> _prefixes = new List<string>();
+        internal readonly List<string> Prefixes = new List<string>();
 
         public int RedirectLimit { get; set; } = 5;
         public string SigningKey { get; set; }
@@ -24,7 +24,7 @@ namespace Imageflow.Server.Storage.RemoteReader
 
             prefix = '/' + prefix + '/';
 
-            _prefixes.Add(prefix);
+            Prefixes.Add(prefix);
             return this;
         }
     }

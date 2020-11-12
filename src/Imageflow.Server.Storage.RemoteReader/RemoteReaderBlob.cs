@@ -6,7 +6,7 @@ using Imazen.Common.Storage;
 
 namespace Imageflow.Server.Storage.RemoteReader
 {
-    public class RemoteReaderBlob : IBlobData, IDisposable
+    public class RemoteReaderBlob : IBlobData
     {
         private readonly HttpResponseMessage response;
 

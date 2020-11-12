@@ -6,10 +6,10 @@ namespace Imageflow.Server.Storage.AzureBlob
 {
     public class AzureBlobServiceOptions
     {
-        public Azure.Storage.Blobs.BlobClientOptions BlobClientOptions { get; set; }
+        public BlobClientOptions BlobClientOptions { get; set; }
         public string ConnectionString { get; set; }
 
-        internal readonly List<PrefixMapping> mappings = new List<PrefixMapping>();
+        internal readonly List<PrefixMapping> Mappings = new List<PrefixMapping>();
         
         public AzureBlobServiceOptions(string connectionString, BlobClientOptions blobClientOptions = null)
         {
@@ -38,7 +38,7 @@ namespace Imageflow.Server.Storage.AzureBlob
             blobPrefix = blobPrefix.Trim('/');
 
 
-            mappings.Add(new PrefixMapping()
+            Mappings.Add(new PrefixMapping()
             {
                 Container = container, 
                 BlobPrefix = blobPrefix, 

@@ -12,7 +12,7 @@ namespace Imageflow.Server.Storage.S3
 
         internal readonly string AccessKeyId;
         internal readonly string SecretAccessKey;
-        internal readonly List<PrefixMapping> mappings = new List<PrefixMapping>();
+        internal readonly List<PrefixMapping> Mappings = new List<PrefixMapping>();
         public S3ServiceOptions(string accessKeyId, string secretAccessKey)
         {
             this.AccessKeyId = accessKeyId;
@@ -57,7 +57,7 @@ namespace Imageflow.Server.Storage.S3
             prefix = '/' + prefix + '/';
             blobPrefix = blobPrefix.Trim('/');
 
-            mappings.Add(new PrefixMapping()
+            Mappings.Add(new PrefixMapping()
             {
                 Bucket=bucket, 
                 Prefix=prefix, 

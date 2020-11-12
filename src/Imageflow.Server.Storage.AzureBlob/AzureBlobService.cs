@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Azure;
@@ -14,12 +13,12 @@ namespace Imageflow.Server.Storage.AzureBlob
     {
         private readonly List<PrefixMapping> mappings = new List<PrefixMapping>();
 
-        private readonly Azure.Storage.Blobs.BlobServiceClient client;
+        private readonly BlobServiceClient client;
 
         public AzureBlobService(AzureBlobServiceOptions options, ILogger<AzureBlobService> logger)
         {
             client = new BlobServiceClient(options.ConnectionString, options.BlobClientOptions);
-            foreach (var m in options.mappings)
+            foreach (var m in options.Mappings)
             {
                 mappings.Add(m);
             }

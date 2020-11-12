@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Amazon;
 using Amazon.Runtime;
 using Amazon.S3;
 using Imazen.Common.Storage;
@@ -28,7 +26,7 @@ namespace Imageflow.Server.Storage.S3
                 credentials = new  BasicAWSCredentials(options.AccessKeyId, options.SecretAccessKey);
             }
 
-            foreach (var m in options.mappings)
+            foreach (var m in options.Mappings)
             {
                 mappings.Add(m);;
             }

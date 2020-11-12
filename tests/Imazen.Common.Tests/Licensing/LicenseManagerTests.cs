@@ -194,7 +194,7 @@ namespace Imazen.Common.Tests.Licensing
             var result = new Computation(conf, ImazenPublicKeys.Test, mgr, mgr, clock, true);
 
             Assert.False(result.LicensedForRequestUrl(new Uri("http://acme.com")));
-            conf.AddLicense(LicenseStrings.Offlinev4DomainAcmeComCreative);
+            conf.AddLicense(LicenseStrings.OfflineV4DomainAcmeComCreative);
 
             Assert.NotNull(mgr.GetAllLicenses().First());
 
@@ -216,7 +216,7 @@ namespace Imazen.Common.Tests.Licensing
             {
                 new KeyValuePair<string, string>("localhost", "acme.com")
             });
-            conf.AddLicense(LicenseStrings.Offlinev4DomainAcmeComCreative);
+            conf.AddLicense(LicenseStrings.OfflineV4DomainAcmeComCreative);
             
             Assert.Equal(0, mgr.WaitForTasks());
             Assert.Empty(mgr.GetIssues());

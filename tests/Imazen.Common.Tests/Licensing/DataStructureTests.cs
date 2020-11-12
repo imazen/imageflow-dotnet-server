@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Xunit;
-using Xunit.Abstractions;
 using System.Threading;
 using System.Threading.Tasks;
 using Imazen.Common.Instrumentation.Support;
@@ -15,10 +14,6 @@ namespace Imazen.Common.Tests.Licensing
 {
     public class DataStructureTests
     {
-        public DataStructureTests(ITestOutputHelper output) { this.output = output; }
-
-        ITestOutputHelper output;
-
         class TimeProvider
         {
             public long Timestamp { get; set; }
@@ -143,8 +138,8 @@ namespace Imazen.Common.Tests.Licensing
         public void TestMinSketch()
         {
             var rand = new MersenneTwister(1095807143);
-            uint slots = 5113;
-            uint algs = 5;
+            const uint slots = 5113;
+            const uint hashAlgCount = 5;
             //uint slots = 1279;
             //uint algs = 3;
 
@@ -153,14 +148,14 @@ namespace Imazen.Common.Tests.Licensing
             var uniqueInputs = inputs.Count();
 
 
-            var medianOvercountExpected = (double) uniqueInputs / slots;
-            var peakOvercountPercentageAllowed = 1.03;
-            var actualCount = 1;
-            var allowedOvercount = Math.Max(actualCount,
-                actualCount * medianOvercountExpected * peakOvercountPercentageAllowed);
+            var medianOverCountExpected = (double) uniqueInputs / slots;
+            const double peakOverCountPercentageAllowed = 1.03;
+            const int actualCount = 1;
+            var allowedOverCount = Math.Max(actualCount,
+                actualCount * medianOverCountExpected * peakOverCountPercentageAllowed);
 
 
-            var s = new CountMinSketch<AddMulModHash>(slots, algs, AddMulModHash.DeterministicDefault());
+            var s = new CountMinSketch<AddMulModHash>(slots, hashAlgCount, AddMulModHash.DeterministicDefault());
 
             foreach (var i in inputs) {
                 s.InterlockedAdd(i, actualCount);
@@ -169,7 +164,7 @@ namespace Imazen.Common.Tests.Licensing
             var errors = new List<KeyValuePair<uint, long>>(100);
             for (uint i = 0; i < uniqueInputs; i++) {
                 var found = s.Estimate(i);
-                if (found > allowedOvercount) {
+                if (found > allowedOverCount) {
                     errors.Add(new KeyValuePair<uint, long>(i, found));
                 }
             }

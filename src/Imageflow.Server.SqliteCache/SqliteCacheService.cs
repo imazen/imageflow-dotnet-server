@@ -7,8 +7,6 @@ using Microsoft.Extensions.Logging;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.IO;
-using Microsoft.Extensions.DependencyInjection;
-using System.Collections.Concurrent;
 
 namespace Imageflow.Server.SqliteCache
 {
@@ -19,10 +17,10 @@ namespace Imageflow.Server.SqliteCache
         private readonly string databasePath;
         private readonly bool databaseInMemory;
         private SQLiteConnection connection;
-        private bool isOpen = false;
+        private bool isOpen;
         private readonly CancellationTokenSource killer;
-        private long CacheSize = 0;
-        private long BytesWrittenSinceCheckpoint = 0;
+        private long cacheSize;
+        private long bytesWrittenSinceCheckpoint;
 
         public SqliteCacheService(SqliteCacheOptions options, ILogger<SqliteCacheService> logger)
         {
@@ -31,9 +29,12 @@ namespace Imageflow.Server.SqliteCache
             databaseInMemory = options.DatabaseDir == ":memory:";
             if (!databaseInMemory)
             {
-                this.databasePath = Path.Combine(options.DatabaseDir, "imageflow_cache.sqlite");
+                databasePath = Path.Combine(options.DatabaseDir, "imageflow_cache.sqlite");
             }
             killer = new CancellationTokenSource();
+            isOpen = false;
+            cacheSize = 0;
+            bytesWrittenSinceCheckpoint = 0;
         }
 
         private void AssertOpen()
@@ -48,8 +49,8 @@ namespace Imageflow.Server.SqliteCache
             // key TEXT PRIMARY KEY, lastused INTEGER, disksize INTEGER, contentype TEXT, data BLOB
             AssertOpen();
             await using var read = connection.CreateCommand();
-            read.CommandText = "SELECT * FROM blobs WHERE key=@cachekey LIMIT 1";
-            read.Parameters.AddWithValue("@cachekey", key);
+            read.CommandText = "SELECT * FROM blobs WHERE key=@cache_key LIMIT 1";
+            read.Parameters.AddWithValue("@cache_key", key);
             await read.PrepareAsync();
             AssertOpen();
             var reader = await read.ExecuteReaderAsync(CommandBehavior.SingleRow, killer.Token);
@@ -72,27 +73,27 @@ namespace Imageflow.Server.SqliteCache
                 var diskSize = entry.Data.Length + 300;
                 await using var write = connection.CreateCommand();
                 write.CommandText =
-                    "INSERT OR IGNORE INTO blobs(key, lastused, disksize, contentype, data) VALUES (@key, @lastused, @disksize, @contenttype, @data)";
+                    "INSERT OR IGNORE INTO blobs(key, lastused, disksize, contentype, data) VALUES (@key, @last_used, @disk_size, @content_type, @data)";
                 write.Parameters.AddWithValue("@key", key);
-                write.Parameters.AddWithValue("@lastused", DateTimeOffset.Now.Ticks);
-                write.Parameters.AddWithValue("@disksize", diskSize);
-                write.Parameters.AddWithValue("@contenttype", entry.ContentType);
+                write.Parameters.AddWithValue("@last_used", DateTimeOffset.Now.Ticks);
+                write.Parameters.AddWithValue("@disk_size", diskSize);
+                write.Parameters.AddWithValue("@content_type", entry.ContentType);
                 write.Parameters.AddWithValue("@data", entry.Data);
                 await write.PrepareAsync();
                 AssertOpen();
                 await write.ExecuteNonQueryAsync();
-                Interlocked.Add(ref CacheSize, diskSize);
-                Interlocked.Add(ref BytesWrittenSinceCheckpoint, diskSize);
+                Interlocked.Add(ref cacheSize, diskSize);
+                Interlocked.Add(ref bytesWrittenSinceCheckpoint, diskSize);
                 putTime.Stop();
 
             
-                if (BytesWrittenSinceCheckpoint > 8096 * 1000)
+                if (bytesWrittenSinceCheckpoint > 8096 * 1000)
                 {
                     // We *want* to fire and forget
 #pragma warning disable CS4014
                     Task.Run(CheckpointDatabase);
 #pragma warning restore CS4014
-                    BytesWrittenSinceCheckpoint = 0;
+                    bytesWrittenSinceCheckpoint = 0;
                 }
                 
                 logger?.LogInformation($"SqliteCache (miss) lookup time {lookupTime.ElapsedMilliseconds}ms, imaging time {createTime.ElapsedMilliseconds}ms, put time {putTime.ElapsedMilliseconds}ms");
@@ -106,7 +107,7 @@ namespace Imageflow.Server.SqliteCache
             await using var cmd = connection.CreateCommand();
             cmd.CommandText = "PRAGMA wal_checkpoint(TRUNCATE);";
             await cmd.ExecuteNonQueryAsync(killer.Token);
-            BytesWrittenSinceCheckpoint = 0;
+            bytesWrittenSinceCheckpoint = 0;
             checkpointTime.Stop();
             logger?.LogInformation($"SqliteCache checkpoint flushed in {checkpointTime.ElapsedMilliseconds}ms");
         }
@@ -141,7 +142,7 @@ namespace Imageflow.Server.SqliteCache
             var sizeReader = await sumDiskSize.ExecuteReaderAsync(cancellationToken);
             if (await sizeReader.ReadAsync(cancellationToken) && sizeReader.GetValue(0) != DBNull.Value)
             {
-                CacheSize = sizeReader.GetInt64(0);
+                cacheSize = sizeReader.GetInt64(0);
             }
             isOpen = true;
             logger?.LogInformation("SqliteCache started successfully.");

@@ -11,8 +11,7 @@ namespace Imazen.Common.Tests.Licensing
 
         public StringCachePutResult TryPut(string key, string value)
         {
-            string current;
-            if (cache.TryGetValue(key, out current) && current == value) {
+            if (cache.TryGetValue(key, out var current) && current == value) {
                 return StringCachePutResult.Duplicate;
             }
             cache[key] = value;
@@ -22,8 +21,7 @@ namespace Imazen.Common.Tests.Licensing
 
         public string Get(string key)
         {
-            string current;
-            if (cache.TryGetValue(key, out current)) {
+            if (cache.TryGetValue(key, out var current)) {
                 return current;
             }
             return null;
@@ -31,8 +29,7 @@ namespace Imazen.Common.Tests.Licensing
 
         public DateTime? GetWriteTimeUtc(string key)
         {
-            DateTime current;
-            if (cacheWrite.TryGetValue(key, out current))
+            if (cacheWrite.TryGetValue(key, out var current))
             {
                 return current;
             }

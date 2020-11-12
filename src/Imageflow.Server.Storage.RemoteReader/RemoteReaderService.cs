@@ -14,26 +14,27 @@ namespace Imageflow.Server.Storage.RemoteReader
     {
 
         private readonly List<string> prefixes = new List<string>();
-        private readonly HttpClient _http;
-        private readonly RemoteReaderServiceOptions _options;
-        private readonly ILogger<RemoteReaderService> _logger;
+        private readonly HttpClient http;
+        private readonly RemoteReaderServiceOptions options;
+        // ReSharper disable once NotAccessedField.Local
+        private readonly ILogger<RemoteReaderService> logger;
 
         public RemoteReaderService(RemoteReaderServiceOptions options, ILogger<RemoteReaderService> logger)
         {
-            _options = options;
-            _logger = logger;
+            this.options = options;
+            this.logger = logger;
 
-            prefixes.AddRange(_options._prefixes);
+            prefixes.AddRange(this.options.Prefixes);
             prefixes.Sort((a, b) => b.Length.CompareTo(a.Length));
 
-            _http = new HttpClient();
-            _http.DefaultRequestHeaders.Add("user-agent", _options.UserAgent);
+            http = new HttpClient();
+            http.DefaultRequestHeaders.Add("user-agent", this.options.UserAgent);
         }
 
         /// <summary>
         /// The remote URL and signature are encoded in the "file" part
         /// of the virtualPath parameter as follows:
-        /// path/path/.../path/urlb64.hmac.ext
+        /// path/path/.../path/url_b64.hmac.ext
         /// </summary>
         /// <param name="virtualPath"></param>
         /// <returns></returns>
@@ -44,25 +45,25 @@ namespace Imageflow.Server.Storage.RemoteReader
                 .Last()
                 .Split('.');
 
-            var urlb64 = remote[0];
+            var urlBase64 = remote[0];
             var hmac = remote[1];
-            var sig =  Signatures.SignString(urlb64, _options.SigningKey,8);
+            var sig =  Signatures.SignString(urlBase64, options.SigningKey,8);
 
             if (hmac != sig) 
                 throw new BlobMissingException($"Missing or Invalid signature on remote path: {virtualPath}");
 
-            var url = EncodingUtils.FromBase64UToString(urlb64);
+            var url = EncodingUtils.FromBase64UToString(urlBase64);
 
-            var resp = await _http.GetAsync(url);
+            var resp = await http.GetAsync(url);
 
             var redirectCount = 0;
 
             while (resp.StatusCode == System.Net.HttpStatusCode.Redirect 
-                && redirectCount++ < _options.RedirectLimit
+                && redirectCount++ < options.RedirectLimit
                 && resp.Headers.Location != null
                 )
             {
-                resp = await _http.GetAsync(resp.Headers.Location);
+                resp = await http.GetAsync(resp.Headers.Location);
             }
             return new RemoteReaderBlob(resp);
         }
@@ -75,7 +76,7 @@ namespace Imageflow.Server.Storage.RemoteReader
         public bool SupportsPath(string virtualPath)
         {
             return prefixes.Any(s => virtualPath.StartsWith(s,
-                _options.IgnorePrefixCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal));
+                options.IgnorePrefixCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal));
         }
         
         public static string EncodeAndSignUrl(string url, string key)

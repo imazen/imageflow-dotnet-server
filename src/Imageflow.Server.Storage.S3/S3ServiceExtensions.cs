@@ -7,6 +7,7 @@ namespace Imageflow.Server.Storage.S3
     public static class S3ServiceExtensions
     {
 
+        // ReSharper disable once UnusedMethodReturnValue.Global
         public static IServiceCollection AddImageflowS3Service(this IServiceCollection services,
             S3ServiceOptions options)
         {

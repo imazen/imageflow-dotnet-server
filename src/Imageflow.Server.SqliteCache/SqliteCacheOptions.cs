@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Imageflow.Server.SqliteCache
+﻿namespace Imageflow.Server.SqliteCache
 {
     public class SqliteCacheOptions
     {
