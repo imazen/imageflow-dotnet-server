@@ -1,4 +1,4 @@
-namespace Imazen.Common.Instrumentation.Support
+namespace Imazen.Common.Instrumentation.Support.InfoAccumulators
 {
     public interface IInfoProvider
     {

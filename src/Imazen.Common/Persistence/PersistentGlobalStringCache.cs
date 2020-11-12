@@ -126,15 +126,15 @@ namespace Imazen.Common.Persistence
     /// </summary>
     internal class PersistentGlobalStringCache : IPersistentStringCache, IIssueProvider
     {
-        private static WriteThroughCache processCache;
+        private static WriteThroughCache _processCache;
 
 
         WriteThroughCache cache;
         public PersistentGlobalStringCache(string keyPrefix, string[] candidateFolders)
         {
-            if (processCache == null)
-                processCache = new WriteThroughCache(keyPrefix, candidateFolders);
-            cache = processCache;
+            if (_processCache == null)
+                _processCache = new WriteThroughCache(keyPrefix, candidateFolders);
+            cache = _processCache;
         }
 
         public string Get(string key)

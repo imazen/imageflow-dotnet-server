@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using Imazen.Common.Helpers;
 
-namespace Imazen.Common.Instrumentation.Support
+namespace Imazen.Common.Instrumentation.Support.InfoAccumulators
 {
     public static class InfoAccumulatorExtensions
     {

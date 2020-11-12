@@ -1,6 +1,4 @@
 using System;
-using System.Diagnostics;
-using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Web;
@@ -12,8 +10,8 @@ namespace Imazen.Common.Helpers
         public static string SignString(string data, string key, int signatureLengthInBytes)
         {
             if (signatureLengthInBytes < 1 || signatureLengthInBytes > 32) throw new ArgumentOutOfRangeException(nameof(signatureLengthInBytes));
-            HMACSHA256 hmac = new HMACSHA256(UTF8Encoding.UTF8.GetBytes(key));
-            byte[] hash = hmac.ComputeHash(UTF8Encoding.UTF8.GetBytes(data));
+            HMACSHA256 hmac = new HMACSHA256(Encoding.UTF8.GetBytes(key));
+            byte[] hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(data));
             //32-byte hash is a bit overkill. Truncation only marginally weakens the algorithm integrity.
             byte[] shorterHash = new byte[signatureLengthInBytes];
             Array.Copy(hash, shorterHash, signatureLengthInBytes);
@@ -31,7 +29,7 @@ namespace Imazen.Common.Helpers
 
             var path = parts[0];
             //URL encode path
-            var newPathAndQuery = System.Web.HttpUtility.UrlDecode(path);
+            var newPathAndQuery = HttpUtility.UrlDecode(path);
             if (parts.Length > 1)
             {
                 var query = parts[1];

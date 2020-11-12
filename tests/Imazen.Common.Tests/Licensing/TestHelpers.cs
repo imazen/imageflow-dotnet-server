@@ -3,12 +3,10 @@ using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Moq;
 using Moq.Protected;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using Imazen.Common.Issues;
 using Imazen.Common.Licensing;
@@ -138,7 +136,7 @@ namespace Imazen.Common.Tests.Licensing
         public bool IsImageflow { get; } = false;
         public bool IsImageResizer { get; } = true;
         public string LicensePurchaseUrl { get; }  = "https://imageresizing.net/licenses";
-        public string AGPLCompliantMessage { get; } = "";
+        public string AgplCompliantMessage { get; } = "";
 
         public void AddLicense(string license)
         {

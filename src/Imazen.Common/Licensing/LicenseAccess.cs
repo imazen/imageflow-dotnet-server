@@ -19,7 +19,7 @@ namespace Imazen.Common.Licensing
         /// <summary>
         /// Share but don't reuse
         /// </summary>
-        ProcessShareonly = 2,
+        ProcessShareOnly = 2,
         /// <summary>
         /// Share and reuse licenses process-wide
         /// </summary>

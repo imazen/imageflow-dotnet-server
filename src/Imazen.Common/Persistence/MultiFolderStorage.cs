@@ -1,14 +1,10 @@
 ﻿using Imazen.Common.Issues;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Security.AccessControl;
-using System.Security.Principal;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Imazen.Common.Persistence
 {
@@ -27,7 +23,7 @@ namespace Imazen.Common.Persistence
         string issueSource;
         string[] candidateFolders;
         FolderOptions options;
-        string dataKind = "file";
+        string dataKind;
 
         public MultiFolderStorage(string issueSource, string dataKind, IIssueReceiver sink, string[] candidateFolders, FolderOptions options)
         {
@@ -125,7 +121,7 @@ namespace Imazen.Common.Persistence
                             try
                             {
 
-                                File.WriteAllText(path, value, UTF8Encoding.UTF8);
+                                File.WriteAllText(path, value, Encoding.UTF8);
 
                                 // TODO: Original version made license files world readable. 
                                 // Make world readable
@@ -173,7 +169,7 @@ namespace Imazen.Common.Persistence
                     {
                         try
                         {
-                            return File.ReadAllText(path, UTF8Encoding.UTF8);
+                            return File.ReadAllText(path, Encoding.UTF8);
                         }
                         catch (Exception e)
                         {

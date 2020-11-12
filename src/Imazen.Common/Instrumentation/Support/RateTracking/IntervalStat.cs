@@ -1,17 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-
-namespace Imazen.Common.Instrumentation.Support
+﻿namespace Imazen.Common.Instrumentation.Support.RateTracking
 {
     /// <summary>
     /// Min/Max/Avg values for an interval
     /// </summary>
-    struct IntervalStat
+    internal struct IntervalStat
     {
         public NamedInterval Interval { get; set; }
         public long Min { get; set; }

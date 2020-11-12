@@ -5,7 +5,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Collections.ObjectModel;
 using System.Collections;
 
@@ -31,7 +30,7 @@ namespace Imazen.Common.Collections {
         public ReverseEnumerator(ReadOnlyCollection<T> collection) {
             this.collection = collection;
             curIndex = this.collection.Count;
-            Current = default(T);
+            Current = default;
 
         }
 
@@ -39,13 +38,13 @@ namespace Imazen.Common.Collections {
             curIndex--;
             //Avoids going beyond the beginning of the collection.
             if (curIndex < 0) {
-                Current = default(T);
+                Current = default;
                 return false;
-            } else {
-                // Set current box to next item in collection.
-                Current = collection[curIndex];
-                return true;
             }
+
+            // Set current box to next item in collection.
+            Current = collection[curIndex];
+            return true;
         }
 
         public void Reset() { curIndex = collection.Count; Current = default(T); }

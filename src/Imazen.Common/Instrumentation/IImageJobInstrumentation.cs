@@ -1,9 +1,8 @@
 using System.Collections.Generic;
-using Imazen.Common.Instrumentation.Support;
 
 namespace Imazen.Common.Instrumentation
 {
-    public interface IImageJobInstrumentation
+    internal interface IImageJobInstrumentation
     {
         int? SourceWidth { get; }
         int? SourceHeight { get; }

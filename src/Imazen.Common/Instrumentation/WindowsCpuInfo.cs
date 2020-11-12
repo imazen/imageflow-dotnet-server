@@ -1,13 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Imazen.Common.Instrumentation
 {
-    class WindowsCpuInfo
+    internal class WindowsCpuInfo
     {
         public WindowsCpuInfo() { }
 

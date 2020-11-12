@@ -1,13 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Imazen.Common.Instrumentation.Support
+namespace Imazen.Common.Instrumentation.Support.Clamping
 {
 
-    public class SignificantDigitsClamping
+    internal class SignificantDigitsClamping
     {
         public long MinValue { get; set; } = 0;
         public long MaxValue { get; set; } = long.MaxValue;

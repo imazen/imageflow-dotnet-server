@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Text;
 
 namespace Imazen.Common.Helpers
@@ -32,7 +31,7 @@ namespace Imazen.Common.Helpers
         /// <returns></returns>
         public static string ToBase64U(string data)
         {
-            return ToBase64U(UTF8Encoding.UTF8.GetBytes(data));
+            return ToBase64U(Encoding.UTF8.GetBytes(data));
         }
         /// <summary>
         /// Converts a URL-safe version of base64 to a string. 64U is (no = padding, with - instead of + and _ instead of /)
@@ -41,7 +40,7 @@ namespace Imazen.Common.Helpers
         /// <returns></returns>
         public static string FromBase64UToString(string data)
         {
-            return UTF8Encoding.UTF8.GetString(FromBase64UToBytes(data));
+            return Encoding.UTF8.GetString(FromBase64UToBytes(data));
         }
 
     }

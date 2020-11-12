@@ -1,14 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
 
 namespace Imazen.Common.Instrumentation.Support
 {
-    struct AddMulModHash : IHash
+    readonly struct AddMulModHash : IHash
     {
-        static readonly ulong prime = (ulong)(Math.Pow(2, 32) - 5.0);//(ulong)(Math.Pow(2,33) - 355.0);
+        private static readonly ulong Prime = (ulong)(Math.Pow(2, 32) - 5.0);//(ulong)(Math.Pow(2,33) - 355.0);
 
         /// <summary>
         /// Seed the random number generator with a good prime, or you'll get poor distribution
@@ -17,8 +13,8 @@ namespace Imazen.Common.Instrumentation.Support
         public AddMulModHash(IRandomDoubleGenerator r)
         {
             this.r = r;
-            this.a = (ulong)(r.NextDouble() * (prime - 2)) + 1;
-            this.b = (ulong)(r.NextDouble() * (prime - 2)) + 1;
+            this.a = (ulong)(r.NextDouble() * (Prime - 2)) + 1;
+            this.b = (ulong)(r.NextDouble() * (Prime - 2)) + 1;
         }
 
         readonly ulong a;
@@ -26,7 +22,7 @@ namespace Imazen.Common.Instrumentation.Support
         readonly IRandomDoubleGenerator r;
         public uint ComputeHash(uint value)
         {
-            return (uint)((a * value + b) % prime);
+            return (uint)((a * value + b) % Prime);
         }
 
         public IHash GetNext()

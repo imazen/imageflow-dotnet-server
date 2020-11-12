@@ -7,7 +7,7 @@ using Imazen.Common.Persistence;
 
 namespace Imazen.Common.Instrumentation.Support
 {
-    class MachineStorage: IIssueProvider
+    internal class MachineStorage: IIssueProvider
     {
         public MachineStorage()
         {

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -8,7 +7,6 @@ using System.Reflection;
 using Imazen.Common.ExtensionMethods;
 using Imazen.Common.Licensing;
 using Imazen.Common.Persistence;
-using Imazen.Common.Tests.Licensing;
 using Moq;
 using Xunit;
 using Xunit.Abstractions;
@@ -54,8 +52,10 @@ namespace Imazen.Common.Tests.Licensing
 
             // Use cache
             {
-                var mgr = new LicenseManagerSingleton(ImazenPublicKeys.Test, clock, cache);
-                mgr.SkipHeartbeatsIfDiskCacheIsFresh = 0;
+                var mgr = new LicenseManagerSingleton(ImazenPublicKeys.Test, clock, cache)
+                {
+                    SkipHeartbeatsIfDiskCacheIsFresh = 0
+                };
                 MockHttpHelpers.MockRemoteLicenseException(mgr, WebExceptionStatus.NameResolutionFailure);
 
                 var conf = new MockConfig(mgr, clock, new []{"R_Elite", "R4Elite"}, new List<KeyValuePair<string, string>>());
@@ -152,13 +152,14 @@ namespace Imazen.Common.Tests.Licensing
         {
             // We don't want to test the singleton
 
-            var unique_prefix = "test_cache_" + Guid.NewGuid() + "__";
+            var uniquePrefix = "test_cache_" + Guid.NewGuid() + "__";
 
-            var cacheInstance = new WriteThroughCache(unique_prefix, new string[] { Path.GetTempPath() });
+            var cacheInstance = new WriteThroughCache(uniquePrefix, new[] { Path.GetTempPath() });
 
-            var c = new PersistentGlobalStringCache(unique_prefix, new string[] { Path.GetTempPath() });
+            var c = new PersistentGlobalStringCache(uniquePrefix, new[] { Path.GetTempPath() });
             var cacheField = typeof(PersistentGlobalStringCache)
                 .GetField("cache", BindingFlags.NonPublic | BindingFlags.Instance);
+            Assert.NotNull(cacheField);
             cacheField.SetValue(c, cacheInstance);
 
             try

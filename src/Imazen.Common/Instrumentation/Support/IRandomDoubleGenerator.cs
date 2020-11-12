@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Imazen.Common.Instrumentation.Support
 {
-    interface IRandomDoubleGenerator
+    internal interface IRandomDoubleGenerator
     {
         double NextDouble();
     }

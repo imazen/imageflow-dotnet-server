@@ -1,38 +1,38 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
-namespace Imazen.Common.Instrumentation.Support
+namespace Imazen.Common.Instrumentation.Support.RateTracking
 {
-    class CircularTimeBuffer
+    internal class CircularTimeBuffer
     {
-        readonly long[] buffer;
-        readonly Queue<TimeSlotResult> results;
-        long skippedResults = 0;
-        readonly int maxResultQueueLength;
-        readonly long ticksPerBucket;
-        readonly int buckets;
-        readonly int activeDistance;
+        private readonly long[] buffer;
+        private readonly Queue<TimeSlotResult> results;
+        private long skippedResults;
+        private readonly int maxResultQueueLength;
+        private readonly long ticksPerBucket;
+        private readonly int buckets;
+        private readonly int activeDistance;
 
         public CircularTimeBuffer(long ticksPerBucket, int activeBuckets)
         {
             this.ticksPerBucket = ticksPerBucket;
             // Gap buckets allow us to not lock on increment, just on rotate.
-            var gapBuckets = 1;
-            this.buckets = activeBuckets + gapBuckets;
-            this.activeDistance = buckets - 1 - gapBuckets;
+            const int gapBuckets = 1;
+            buckets = activeBuckets + gapBuckets;
+            activeDistance = buckets - 1 - gapBuckets;
 
             buffer = new long[buckets];
             results = new Queue<TimeSlotResult>(buckets);
             maxResultQueueLength = buckets * 3;
+            skippedResults = 0;
+            currentHead = 0;
+            pendingHead = 0;
         }
 
-        long currentHead = 0;
-        long pendingHead = 0;
+        long currentHead;
+        long pendingHead;
         long initialTail = int.MaxValue;
 
 

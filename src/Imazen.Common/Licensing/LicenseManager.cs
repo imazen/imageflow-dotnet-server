@@ -5,7 +5,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Imazen.Common.Instrumentation;
-using Imazen.Common.Instrumentation.Support;
+using Imazen.Common.Instrumentation.Support.InfoAccumulators;
 using Imazen.Common.Issues;
  using Imazen.Common.Persistence;
 
@@ -191,7 +191,7 @@ using Imazen.Common.Issues;
         {
             var chain = aliases.GetOrAdd(license, GetChainFor);
             // We may want to share a previously unshared license
-            if (chain != null && access.HasFlag(LicenseAccess.ProcessShareonly) && !chain.Shared) {
+            if (chain != null && access.HasFlag(LicenseAccess.ProcessShareOnly) && !chain.Shared) {
                 chain.Shared = true;
                 FireLicenseChange();
             }
@@ -346,7 +346,7 @@ using Imazen.Common.Issues;
 
             var q = GlobalPerf.Singleton.GetReportPairs();
             var prepending = q.WithPrepend(true);
-            prepending.Add("total_heartbeats", HeartbeatCount.ToString());
+            prepending.Add("total_heartbeats", beatCount.ToString());
             prepending.Add("first_heartbeat", firstHeartbeat.ToString());
             prepending.Add("manager_id", ManagerGuid?.ToString("D"));
             return q;

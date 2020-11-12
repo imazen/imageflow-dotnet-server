@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Diagnostics;
 
-namespace Imazen.Common.Instrumentation.Support
+namespace Imazen.Common.Instrumentation.Support.RateTracking
 {
 
     /// <summary>
     /// 4 overlapping windows are used
     /// </summary>
-    class PerIntervalSampling
+    internal class PerIntervalSampling
     {
         readonly CircularTimeBuffer[] rings;
         readonly long[] offsets;

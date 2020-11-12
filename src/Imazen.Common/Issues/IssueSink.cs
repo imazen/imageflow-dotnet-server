@@ -3,14 +3,12 @@
 // propagated, or distributed except as permitted in COPYRIGHT.txt.
 // Licensed under the Apache License, Version 2.0.
 
-using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace Imazen.Common.Issues
 {
     public class IssueSink: IIssueProvider,IIssueReceiver {
-        private readonly string defaultSource = null;
+        private readonly string defaultSource;
         public IssueSink(string defaultSource) {
             this.defaultSource = defaultSource;
         }

@@ -11,11 +11,10 @@ using Imazen.Common.Helpers;
 
 namespace Imazen.Common.Instrumentation.Support
 {
-
-    class Utilities
+    internal static class Utilities
     {
         
-        public static string Sha256hex(string input)
+        public static string Sha256Hex(string input)
         {
             var hash = System.Security.Cryptography.SHA256.Create().ComputeHash(System.Text.Encoding.UTF8.GetBytes(input));
             return BitConverter.ToString(hash, 0, 4).Replace("-", "").ToLowerInvariant();

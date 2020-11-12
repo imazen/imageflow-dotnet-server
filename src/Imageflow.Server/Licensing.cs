@@ -98,7 +98,7 @@ namespace Imageflow.Server
         public bool IsImageResizer => false;
         public string LicensePurchaseUrl => "https://imageresizing.net/licenses";
 
-        public string AGPLCompliantMessage
+        public string AgplCompliantMessage
         {
             get
             {

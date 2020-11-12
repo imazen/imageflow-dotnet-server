@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace Imazen.Common.Instrumentation.Support
+namespace Imazen.Common.Instrumentation.Support.PercentileSinks
 {
     interface IPercentileProviderSink
     {

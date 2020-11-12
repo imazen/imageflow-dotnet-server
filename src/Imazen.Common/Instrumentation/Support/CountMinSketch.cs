@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using Imazen.Common.Instrumentation.Support.Clamping;
 
 namespace Imazen.Common.Instrumentation.Support
 {
-    class CountMinSketch<T> where T: struct, IHash
+    internal class CountMinSketch<T> where T: struct, IHash
     {
         readonly int[,] table;
         readonly uint bucketCount;
@@ -72,11 +73,13 @@ namespace Imazen.Common.Instrumentation.Support
             for (var b = 0; b < bucketCount; b++)
             {
                 var row = Enumerable.Range(0, (int)hashAlgCount).Select(ix => table[ix, b]);
+                // ReSharper disable once PossibleMultipleEnumeration
                 if (!skipEmptyRows || row.Any(v => v > 0))
                 {
                     //Print the bucket index
                     sb.AppendFormat("[{0,-5}]  ", b);
 
+                    // ReSharper disable once PossibleMultipleEnumeration
                     foreach (var cell in row)
                     {
                         sb.AppendFormat("{0,10} ", cell);

@@ -5,12 +5,11 @@ namespace Imazen.Common.Licensing
     [AttributeUsage(AttributeTargets.Assembly)]
     public class BuildDateAttribute : Attribute
     {
-
-        string str;
+        readonly string str;
         public BuildDateAttribute() { str = string.Empty; }
         public BuildDateAttribute(string txt) { str = txt; }
 
-        public string Value { get { return str; } }
+        public string Value => str;
 
         public DateTimeOffset? ValueDate
         {

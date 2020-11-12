@@ -13,6 +13,7 @@ using Imageflow.Server.Extensibility;
 using Imazen.Common.Extensibility.ClassicDiskCache;
 using Imazen.Common.Instrumentation;
 using Imazen.Common.Instrumentation.Support;
+using Imazen.Common.Instrumentation.Support.InfoAccumulators;
 using Imazen.Common.Licensing;
 using Imazen.Common.Storage;
 using Microsoft.Extensions.Caching.Distributed;

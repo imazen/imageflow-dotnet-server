@@ -2,14 +2,11 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
-namespace Imazen.Common.Instrumentation.Support
+namespace Imazen.Common.Instrumentation.Support.RateTracking
 {
-
-    class MultiIntervalStats
+    internal class MultiIntervalStats
     {
         readonly PerIntervalSampling[] set;
         readonly long[] max;

@@ -4,6 +4,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Imazen.Common.Instrumentation.Support;
+using Imazen.Common.Instrumentation.Support.InfoAccumulators;
+using Imazen.Common.Instrumentation.Support.PercentileSinks;
+using Imazen.Common.Instrumentation.Support.RateTracking;
 using Imazen.Common.Issues;
 
 
@@ -12,7 +15,7 @@ namespace Imazen.Common.Instrumentation
 
     // https://github.com/jawa-the-hutt/lz-string-csharp/blob/master/src/LZString.cs
     // https://github.com/maiwald/lz-string-ruby
-    public class GlobalPerf
+    internal class GlobalPerf
     {
         readonly IssueSink sink = new IssueSink("GlobalPerf");
 

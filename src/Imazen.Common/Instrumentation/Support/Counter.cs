@@ -8,13 +8,14 @@ using System.Threading.Tasks;
 
 namespace Imazen.Common.Instrumentation.Support
 {
-    class Counter
+    internal class Counter
     {
         public Counter(long initialValue)
         {
             v = initialValue;
         }
-        long v = 0;
+
+        private long v = 0;
         public long Increment()
         {
             return Interlocked.Increment(ref v);

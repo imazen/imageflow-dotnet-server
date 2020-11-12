@@ -6,7 +6,7 @@ using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using Imazen.Common.Instrumentation.Support;
+using Imazen.Common.Instrumentation.Support.InfoAccumulators;
 using Imazen.Common.Issues;
 
 namespace Imazen.Common.Licensing
@@ -78,13 +78,12 @@ namespace Imazen.Common.Licensing
             {
                 try {
                     await FetchLicense(null, fromErrorSchedule);
-                    Task temp;
-                    activeTasks.TryRemove(key, out temp);
+                    activeTasks.TryRemove(key, out _);
                     foreach (var pair in activeTasks) {
                         if (pair.Value.Status == TaskStatus.RanToCompletion ||
                             pair.Value.Status == TaskStatus.Faulted ||
                             pair.Value.Status == TaskStatus.Canceled) {
-                            activeTasks.TryRemove(pair.Key, out temp);
+                            activeTasks.TryRemove(pair.Key, out _);
                         }
                     }
                 } catch (Exception ex) {

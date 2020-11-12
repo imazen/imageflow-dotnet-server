@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Net.NetworkInformation;
 using Imazen.Common.Instrumentation.Support;
+using Imazen.Common.Instrumentation.Support.InfoAccumulators;
 using Imazen.Common.Issues;
 
 namespace Imazen.Common.Instrumentation
@@ -13,7 +14,7 @@ namespace Imazen.Common.Instrumentation
     /// Collects digest(mac addresses), processor count, bitness, network/fixed/other drive count, 
     /// and [filesystem,available gigs,total gigs] for local drives. 
     /// </summary>
-    class HardwareInfo
+    internal class HardwareInfo
     {
         public struct FixedDriveInfo
         {

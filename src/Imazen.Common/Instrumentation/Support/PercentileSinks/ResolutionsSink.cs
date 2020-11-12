@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
+using Imazen.Common.Instrumentation.Support.Clamping;
 
-namespace Imazen.Common.Instrumentation.Support
+namespace Imazen.Common.Instrumentation.Support.PercentileSinks
 {
     /// <summary>
     /// 

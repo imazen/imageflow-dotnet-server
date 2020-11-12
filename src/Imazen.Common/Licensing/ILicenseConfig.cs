@@ -49,8 +49,8 @@ namespace Imazen.Common.Licensing
         /// <summary>
         ///<code>
         /// string EnforcementMethodMessage =&gt; LicenseError == LicenseErrorAction.Http402
-        /// ? $"You are using <licenses licenseError='{LicenseError}'>. If there is a licensing error, an exception will be thrown (with HTTP status code 402). This can also be set to '{LicenseErrorAction.Watermark}'."
-        ///: $"You are using <licenses licenseError='{LicenseError}'>. If there is a licensing error, an red dot will be drawn on the bottom-right corner of each image. This can be set to '{LicenseErrorAction.Http402}' instead (valuable if you are storing results)."
+        /// ? $"You are using &lt;licenses licenseError='{LicenseError}'>. If there is a licensing error, an exception will be thrown (with HTTP status code 402). This can also be set to '{LicenseErrorAction.Watermark}'."
+        ///: $"You are using &lt;licenses licenseError='{LicenseError}'>. If there is a licensing error, an red dot will be drawn on the bottom-right corner of each image. This can be set to '{LicenseErrorAction.Http402}' instead (valuable if you are storing results)."
         ///;</code>
         /// </summary>
         string EnforcementMethodMessage { get;  }
@@ -62,7 +62,7 @@ namespace Imazen.Common.Licensing
         
         
         /// <summary>
-        /// An event that fires for most image requests, but does not guarantee an httpcontext.
+        /// An event that fires for most image requests, but does not guarantee an http context.
         /// </summary>
         event LicenseConfigEvent Heartbeat;
         
@@ -82,6 +82,6 @@ namespace Imazen.Common.Licensing
         /// </summary>
         string LicensePurchaseUrl { get;  }
         
-        string AGPLCompliantMessage { get; }
+        string AgplCompliantMessage { get; }
     }
 }

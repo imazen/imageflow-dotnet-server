@@ -1,13 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 
-
-namespace Imazen.Common.Instrumentation.Support
+namespace Imazen.Common.Instrumentation.Support.Clamping
 {
-
-    class SegmentClamping
+    internal class SegmentClamping
     {
         public long MaxPossibleValues { get; set; } = 100000;
         public long MinValue { get; set; } = 0;
@@ -49,11 +46,11 @@ namespace Imazen.Common.Instrumentation.Support
             EnsureValidates();
 
             var bounded = Math.Max(Math.Min(value, MaxValue), MinValue);
-            for (var ix = 0; ix < Segments.Length; ix++)
+            foreach (var t in Segments)
             {
-                if (bounded >= Segments[ix].Above)
+                if (bounded >= t.Above)
                 {
-                    var loss = Segments[ix].Loss;
+                    var loss = t.Loss;
                     return ((bounded + loss - 1) / loss) * loss;
                 }
             }

@@ -7,6 +7,9 @@ using Xunit.Abstractions;
 using System.Threading;
 using System.Threading.Tasks;
 using Imazen.Common.Instrumentation.Support;
+using Imazen.Common.Instrumentation.Support.Clamping;
+using Imazen.Common.Instrumentation.Support.PercentileSinks;
+using Imazen.Common.Instrumentation.Support.RateTracking;
 
 namespace Imazen.Common.Tests.Licensing
 {
@@ -78,13 +81,13 @@ namespace Imazen.Common.Tests.Licensing
         [Fact]
         public void MultiIntervalTest()
         {
-            NamedInterval[] Intervals  = {
+            NamedInterval[] intervals  = {
                 new NamedInterval { Unit = "second", Name = "Per Second", TicksDuration = Stopwatch.Frequency },
                     new NamedInterval { Unit = "minute", Name = "Per Minute", TicksDuration = Stopwatch.Frequency * 60 },
                     new NamedInterval { Unit = "15_mins", Name = "Per 15 Minutes", TicksDuration = Stopwatch.Frequency * 60 * 15 },
                     new NamedInterval { Unit = "hour", Name = "Per Hour", TicksDuration = Stopwatch.Frequency * 60 * 60 },
                 };
-            var s = new MultiIntervalStats(Intervals);
+            var s = new MultiIntervalStats(intervals);
             for (long i = Stopwatch.Frequency * -1000; i < Stopwatch.Frequency * 5000; i += Stopwatch.Frequency / 2)
             {
                 s.Record(i, 1);

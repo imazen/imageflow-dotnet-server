@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
-namespace Imazen.Common.Instrumentation.Support
+namespace Imazen.Common.Instrumentation.Support.InfoAccumulators
 {
-    class QueryAccumulator
+    internal class QueryAccumulator
     {
         readonly List<KeyValuePair<string, string>> pairs = new List<KeyValuePair<string, string>>();
 

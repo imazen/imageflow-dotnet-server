@@ -16,6 +16,7 @@ using System.Text;
 using Imazen.Common.ExtensionMethods;
 using Imazen.Common.Instrumentation;
 using Imazen.Common.Instrumentation.Support;
+using Imazen.Common.Instrumentation.Support.InfoAccumulators;
 using Imazen.Common.Issues;
 
 namespace Imazen.Common.Licensing
@@ -25,7 +26,7 @@ namespace Imazen.Common.Licensing
     ///     Config, and the license data instantly available
     ///     Transient issues are stored within the class; permanent issues are stored in the  provided sink
     /// </summary>
-    class Computation : IssueSink
+    internal class Computation : IssueSink
     {
 
         
@@ -388,8 +389,8 @@ namespace Imazen.Common.Licensing
             sb.Append(hr);
             if (!EnforcementEnabled)
             {
-                sb.Append(LicenseConfig.AGPLCompliantMessage);
-                if (!string.IsNullOrEmpty(LicenseConfig.AGPLCompliantMessage))
+                sb.Append(LicenseConfig.AgplCompliantMessage);
+                if (!string.IsNullOrEmpty(LicenseConfig.AgplCompliantMessage))
                 {
                     sb.Append("\r\n\r\n");
                 }

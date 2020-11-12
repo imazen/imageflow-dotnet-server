@@ -360,8 +360,8 @@ namespace Imazen.Common.Licensing
         // ReSharper disable once UnusedMember.Local
         static int Main(IReadOnlyList<string> args)
         {
-            var mod = BigInteger.Parse(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(args[0])));
-            var exp = BigInteger.Parse(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(args[1])));
+            var mod = BigInteger.Parse(Encoding.UTF8.GetString(Convert.FromBase64String(args[0])));
+            var exp = BigInteger.Parse(Encoding.UTF8.GetString(Convert.FromBase64String(args[1])));
 
             var licenseStr = ReadStdin();
             var debug = args.ElementAtOrDefault(2) == "-d";

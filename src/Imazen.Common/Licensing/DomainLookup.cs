@@ -8,31 +8,26 @@ using Imazen.Common.Issues;
 
 namespace Imazen.Common.Licensing
 {
-    class DomainLookup
+    internal class DomainLookup
     {
         /// <summary>
         ///     Limit the growth of the lookup table cache
         /// </summary>
-        const long LookupTableLimit = 8000;
-
-        /// <summary>
-        ///     Retained for diagnostics purposes; this data is also in LookupTable
-        /// </summary>
-        readonly Dictionary<string, string> customMappings;
+        private const long LookupTableLimit = 8000;
 
         // For runtime use
-        readonly ConcurrentDictionary<string, string> lookupTable;
+        private readonly ConcurrentDictionary<string, string> lookupTable;
 
         /// <summary>
         ///     Used to locate a domain when it's not cached in lookupTable
         /// </summary>
-        readonly List<KeyValuePair<string, string>> suffixSearchList;
+        private readonly List<KeyValuePair<string, string>> suffixSearchList;
 
         // Track and limit runtime table lookup growth
         long lookupTableSize;
 
 
-        public long LookupTableSize => lookupTableSize;
+        private long LookupTableSize => lookupTableSize;
 
         public int KnownDomainCount => suffixSearchList.Count;
 
@@ -44,7 +39,7 @@ namespace Imazen.Common.Licensing
             var knownDomains = chainsByDomain.Keys.ToList();
 
             // What custom mappings has the user set up?
-            customMappings = GetDomainMappings(c, sink, knownDomains);
+            var customMappings = GetDomainMappings(c, sink, knownDomains);
 
             // Start with identity mappings and the mappings for the normalized domains.
             lookupTable = new ConcurrentDictionary<string, string>(
@@ -133,8 +128,8 @@ namespace Imazen.Common.Licensing
                                                .Value;
                     });
             }
-            string result;
-            return lookupTable.TryGetValue(TrimLowerInvariant(similarDomain), out result) ? result : null;
+
+            return lookupTable.TryGetValue(TrimLowerInvariant(similarDomain), out var result) ? result : null;
         }
 
         /// <summary>
