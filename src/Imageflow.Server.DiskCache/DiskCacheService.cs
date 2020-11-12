@@ -1,11 +1,9 @@
-using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Imazen.Common.Extensibility.ClassicDiskCache;
 using Imazen.Common.Issues;
 using Imazen.DiskCache;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Imageflow.Server.DiskCache
@@ -18,7 +16,7 @@ namespace Imageflow.Server.DiskCache
         public DiskCacheService(DiskCacheOptions options, ILogger logger)
         {
             this.options = options;
-            this.cache = new ClassicDiskCache(options, logger );
+            cache = new ClassicDiskCache(options, logger );
             this.logger = logger;
         }
 

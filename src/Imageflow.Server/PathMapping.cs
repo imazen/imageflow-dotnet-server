@@ -1,6 +1,6 @@
 namespace Imageflow.Server
 {
-    public struct PathMapping
+    public readonly struct PathMapping
     {
         public PathMapping(string virtualPath, string physicalPath)
         {

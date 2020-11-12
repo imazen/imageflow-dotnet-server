@@ -11,7 +11,7 @@ namespace Imageflow.Server
     public static class PathHelpers
     {
         
-        private static readonly string[] suffixes = new string[] {
+        private static readonly string[] Suffixes = new string[] {
             ".png",
             ".jpg",
             ".jpeg",
@@ -24,7 +24,7 @@ namespace Imageflow.Server
         };
 
 
-        private static readonly string[] querystringKeys = new string[]
+        private static readonly string[] QuerystringKeys = new string[]
         {
             "mode", "anchor", "flip", "sflip", "scale", "cache", "process",
             "quality", "zoom", "dpr", "crop", "cropxunits", "cropyunits",
@@ -38,12 +38,12 @@ namespace Imageflow.Server
             "encoder", "decoder", "builder", "s.roundcorners.", "paddingwidth", "paddingheight", "margin", "borderwidth", "decoder.min_precise_scaling_ratio"
         };
 
-        public static IEnumerable<string> AcceptedImageExtensions => suffixes;
-        public static IEnumerable<string> SupportedQuerystringKeys => querystringKeys;
+        public static IEnumerable<string> AcceptedImageExtensions => Suffixes;
+        public static IEnumerable<string> SupportedQuerystringKeys => QuerystringKeys;
 
         internal static bool IsImagePath(string path)
         {
-            return suffixes.Any(suffix => path.EndsWith(suffix, StringComparison.OrdinalIgnoreCase));
+            return Suffixes.Any(suffix => path.EndsWith(suffix, StringComparison.OrdinalIgnoreCase));
         }
 
         public static string SanitizeImageExtension(string extension)

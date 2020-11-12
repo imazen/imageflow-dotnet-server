@@ -1,5 +1,3 @@
-using System;
-
 namespace Imageflow.Server
 {
     internal class UrlHandler<T>

@@ -11,6 +11,7 @@ namespace Imageflow.Server
             Context = context;
             Query = query;
         }
+        
         public string VirtualPath { get; set; }
         
         public Dictionary<string,string> Query { get; set; }

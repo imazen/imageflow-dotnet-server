@@ -1,10 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Dynamic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Imageflow.Fluent;
 using Imazen.Common.Storage;
 
 namespace Imageflow.Server
@@ -43,7 +41,8 @@ namespace Imageflow.Server
         {
             return GetBlobResult(virtualPath) ?? GetFileResult(virtualPath);
         }
-        internal BlobProviderResult? GetBlobResult(string virtualPath)
+
+        private BlobProviderResult? GetBlobResult(string virtualPath)
         {
             if (blobPrefixes.Any(p => virtualPath.StartsWith(p, StringComparison.OrdinalIgnoreCase)))
             {
@@ -62,7 +61,7 @@ namespace Imageflow.Server
             return null;
         }
 
-        internal BlobProviderResult? GetFileResult(string virtualPath)
+        private BlobProviderResult? GetFileResult(string virtualPath)
         {
             var mapping = pathMappings.FirstOrDefault(
                 m => virtualPath.StartsWith(m.VirtualPath, 

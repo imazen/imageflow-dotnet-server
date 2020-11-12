@@ -9,12 +9,14 @@ namespace Imageflow.Server
         {
             this.virtualPath = virtualPath;
             this.provider = provider;
+            resultFetched = false;
+            blobFetched = false;
         }
 
         private readonly BlobProvider provider;
         private readonly string virtualPath;
-        private bool resultFetched = false;
-        private bool blobFetched = false;
+        private bool resultFetched;
+        private bool blobFetched;
         private BlobProviderResult? result;
         private IBlobData blob;
 

@@ -12,7 +12,6 @@ using System.Threading.Tasks;
 using Imageflow.Server.Extensibility;
 using Imazen.Common.Extensibility.ClassicDiskCache;
 using Imazen.Common.Instrumentation;
-using Imazen.Common.Instrumentation.Support;
 using Imazen.Common.Instrumentation.Support.InfoAccumulators;
 using Imazen.Common.Licensing;
 using Imazen.Common.Storage;
@@ -21,10 +20,12 @@ using Microsoft.Net.Http.Headers;
 
 namespace Imageflow.Server
 {
+    // ReSharper disable once ClassNeverInstantiated.Global
     public class ImageflowMiddleware
     {
         private readonly RequestDelegate next;
         private readonly ILogger<ImageflowMiddleware> logger;
+        // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
         private readonly IWebHostEnvironment env;
         private readonly IMemoryCache memoryCache;
         private readonly IDistributedCache distributedCache;
@@ -94,6 +95,7 @@ namespace Imageflow.Server
             GlobalPerf.Singleton.SetInfoProviders(new List<IInfoProvider>(){globalInfoProvider});
         }
 
+        // ReSharper disable once UnusedMember.Global
         public async Task Invoke(HttpContext context)
         {
             // For instrumentation
@@ -102,7 +104,7 @@ namespace Imageflow.Server
             var path = context.Request.Path;
 
             // Delegate to the diagnostics page if it is requested
-            if (diagnosticsPage.MatchesPath(path.Value))
+            if (DiagnosticsPage.MatchesPath(path.Value))
             {
                 await diagnosticsPage.Invoke(context);
                 return;
@@ -117,7 +119,7 @@ namespace Imageflow.Server
             // We only handle requests with an image extension or if we configured a path prefix for which to handle
             // extensionless requests
             
-            if (!ImageJobInfo.ShouldHandleRequest(context, options, blobProvider))
+            if (!ImageJobInfo.ShouldHandleRequest(context, options))
             {
                 await next.Invoke(context);
                 return;
@@ -201,7 +203,7 @@ namespace Imageflow.Server
             }
             catch (Exception e)
             {
-                var errorName = e.GetType()?.Name ?? "unknown";
+                var errorName = e.GetType().Name;
                 var errorCounter = "middleware_" + errorName;
                 GlobalPerf.Singleton.IncrementCounter(errorCounter);
                 GlobalPerf.Singleton.IncrementCounter("middleware_errors");
@@ -260,6 +262,10 @@ namespace Imageflow.Server
 
  
                     var result = await info.ProcessUncached();
+                    if (result.ResultBytes.Array == null)
+                    {
+                        throw new InvalidOperationException("Image job returned zero bytes.");
+                    }
                     await stream.WriteAsync(result.ResultBytes.Array, result.ResultBytes.Offset,
                         result.ResultBytes.Count,
                         CancellationToken.None);
@@ -361,7 +367,10 @@ namespace Imageflow.Server
             context.Response.ContentLength = imageBytes.Count;
             SetCachingHeaders(context, cacheKey);
 
-
+            if (imageBytes.Array == null)
+            {
+                throw new InvalidOperationException("Memory cache returned zero bytes.");
+            }
             await context.Response.Body.WriteAsync(imageBytes.Array, imageBytes.Offset, imageBytes.Count);
         }
 
@@ -482,6 +491,10 @@ namespace Imageflow.Server
                 context.Response.ContentLength = imageBytes.Count;
                 SetCachingHeaders(context, betterCacheKey);
 
+                if (imageBytes.Array == null)
+                {
+                    throw new InvalidOperationException("Image job returned zero bytes.");
+                }
                 await context.Response.Body.WriteAsync(imageBytes.Array, imageBytes.Offset, imageBytes.Count);
             }
             else

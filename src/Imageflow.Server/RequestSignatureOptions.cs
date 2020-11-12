@@ -23,9 +23,9 @@ namespace Imageflow.Server
     public class RequestSignatureOptions
     {
         internal SignatureRequired DefaultRequirement { get; }
-        internal List<string> DefaultSigningKeys { get; }
+        private List<string> DefaultSigningKeys { get; }
 
-        internal List<SignaturePrefix> Prefixes { get; } = new List<SignaturePrefix>();
+        private List<SignaturePrefix> Prefixes { get; } = new List<SignaturePrefix>();
         
 
         public RequestSignatureOptions(SignatureRequired defaultRequirement, IEnumerable<string> defaultSigningKeys)

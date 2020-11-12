@@ -1,19 +1,12 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using Imageflow.Fluent;
-using Imazen.Common.Licensing;
 
 namespace Imageflow.Server
 {
     public class ImageflowMiddlewareOptions
     {
-        public ImageflowMiddlewareOptions()
-        {
-        }
-        
         internal string LicenseKey { get; set; }
         internal EnforceLicenseWith EnforcementMethod { get; set; } = EnforceLicenseWith.Http422Error;
         
@@ -21,15 +14,15 @@ namespace Imageflow.Server
 
         public string MyOpenSourceProjectUrl { get; set; } = "https://i-need-a-license.com";
 
-        public bool AllowMemoryCaching { get; set; } = false;
+        public bool AllowMemoryCaching { get; set; }
 
-        public bool AllowSqliteCaching { get; set; } = false;
+        public bool AllowSqliteCaching { get; set; }
 
 
         public TimeSpan MemoryCacheSlidingExpiration { get; set; } = TimeSpan.FromHours(24);
         public TimeSpan DistributedCacheSlidingExpiration { get; set; } = TimeSpan.FromHours(24);
         public bool AllowDiskCaching { get; set; } = true;
-        public bool AllowDistributedCaching { get; set; } = false;
+        public bool AllowDistributedCaching { get; set; }
         
         internal CacheBackend ActiveCacheBackend { get; set; }
 

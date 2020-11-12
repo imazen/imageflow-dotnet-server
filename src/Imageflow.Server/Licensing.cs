@@ -22,9 +22,9 @@ namespace Imageflow.Server
             this.getCurrentRequestUrl = getCurrentRequestUrl;
         }
 
-        internal void Initialize(ImageflowMiddlewareOptions options)
+        internal void Initialize(ImageflowMiddlewareOptions middlewareOptions)
         {
-            this.options = options;
+            options = middlewareOptions;
             mgr.MonitorLicenses(this);
             mgr.MonitorHeartbeat(this);
 
@@ -38,7 +38,7 @@ namespace Imageflow.Server
             }
         }
 
-        public bool EnforcementEnabled()
+        private bool EnforcementEnabled()
         {
             return !string.IsNullOrEmpty(options.LicenseKey)
                 || string.IsNullOrEmpty(options.MyOpenSourceProjectUrl);
@@ -80,11 +80,11 @@ namespace Imageflow.Server
             {
                 return options.EnforcementMethod switch
                 {
-                    Server.EnforceLicenseWith.RedDotWatermark =>
+                    EnforceLicenseWith.RedDotWatermark =>
                         "You are using EnforceLicenseWith.RedDotWatermark. If there is a licensing error, an red dot will be drawn on the bottom-right corner of each image. This can be set to EnforceLicenseWith.Http402Error instead (valuable if you are externally caching or storing result images.)",
-                    Server.EnforceLicenseWith.Http422Error =>
+                    EnforceLicenseWith.Http422Error =>
                         "You are using EnforceLicenseWith.Http422Error. If there is a licensing error, HTTP status code 422 will be returned instead of serving the image. This can also be set to EnforceLicenseWith.RedDotWatermark.",
-                    Server.EnforceLicenseWith.Http402Error =>
+                    EnforceLicenseWith.Http402Error =>
                         "You are using EnforceLicenseWith.Http402Error. If there is a licensing error, HTTP status code 402 will be returned instead of serving the image. This can also be set to EnforceLicenseWith.RedDotWatermark.",
                     _ => throw new ArgumentOutOfRangeException()
                 };

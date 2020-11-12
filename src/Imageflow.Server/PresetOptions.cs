@@ -14,7 +14,7 @@ namespace Imageflow.Server
         
         public PresetPriority Priority { get;  }
         
-        internal Dictionary<string, string> pairs = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        internal readonly Dictionary<string, string> Pairs = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         
         public PresetOptions(string name, PresetPriority priority)
         {
@@ -24,7 +24,7 @@ namespace Imageflow.Server
 
         public PresetOptions SetCommand(string key, string value)
         {
-            pairs[key] = value;
+            Pairs[key] = value;
             return this;
         }
     }

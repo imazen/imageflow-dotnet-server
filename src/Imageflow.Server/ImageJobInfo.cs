@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography.Xml;
 using System.Threading;
 using System.Threading.Tasks;
 using Imageflow.Fluent;
@@ -16,8 +15,7 @@ namespace Imageflow.Server
 {
     internal class ImageJobInfo
     {
-        public static bool ShouldHandleRequest(HttpContext context, ImageflowMiddlewareOptions options,
-            BlobProvider blobProvider)
+        public static bool ShouldHandleRequest(HttpContext context, ImageflowMiddlewareOptions options)
         {
             // If the path is empty or null we don't handle it
             var pathValue = context.Request.Path;
@@ -113,7 +111,8 @@ namespace Imageflow.Server
             foreach (var handler in options.Watermarking)
             {
                 var matches = string.IsNullOrEmpty(handler.PathPrefix) ||
-                              FinalVirtualPath.StartsWith(handler.PathPrefix, StringComparison.OrdinalIgnoreCase);
+                              ( FinalVirtualPath != null &&
+                              FinalVirtualPath.StartsWith(handler.PathPrefix, StringComparison.OrdinalIgnoreCase));
                 if (matches) handler.Handler(args);
             }
             appliedWatermarks = args.AppliedWatermarks;
@@ -127,26 +126,22 @@ namespace Imageflow.Server
             {
                 allBlobs.Add(new BlobFetchCache(w.VirtualPath, blobProvider));
             }
-
-            provider = blobProvider;
         }
 
         public string FinalVirtualPath { get; private set; }
-        
-        public Dictionary<string,string> FinalQuery { get; private set; }
+
+        private Dictionary<string,string> FinalQuery { get; set; }
         public bool HasParams { get; }
         
         public bool Authorized { get; }
 
-        public bool LicenseError { get; } = false;
+        public bool LicenseError { get; }
         public string CommandString { get; } = "";
         public string EstimatedFileExtension { get; }
-        public string AuthorizedMessage { get; set; }
+        public string AuthorizedMessage { get; private set; }
         
-        private string ImageDomain { get; set; }
-        private string PageDomain { get; set;  }
-
-        private readonly BlobProvider provider;
+        private string ImageDomain { get; }
+        private string PageDomain { get; }
 
         private readonly List<NamedWatermark> appliedWatermarks;
 
@@ -154,9 +149,9 @@ namespace Imageflow.Server
         private readonly BlobFetchCache primaryBlob;
         private readonly ImageflowMiddlewareOptions options;
 
-        private bool ProcessRewritesAndAuthorization(HttpContext context, ImageflowMiddlewareOptions options)
+        private bool ProcessRewritesAndAuthorization(HttpContext context, ImageflowMiddlewareOptions middlewareOptions)
         {
-            if (!VerifySignature(context, options))
+            if (!VerifySignature(context, middlewareOptions))
             {
                 AuthorizedMessage = "Invalid request signature";
                 return false;
@@ -168,14 +163,14 @@ namespace Imageflow.Server
             
             GlobalPerf.Singleton.PreRewriteQuery(args.Query.Keys);
             
-            foreach (var handler in options.PreRewriteAuthorization)
+            foreach (var handler in middlewareOptions.PreRewriteAuthorization)
             {
                 var matches = string.IsNullOrEmpty(handler.PathPrefix) ||
                               path.StartsWith(handler.PathPrefix, StringComparison.OrdinalIgnoreCase);
                 if (matches && !handler.Handler(args)) return false;
             }
 
-            if (options.UsePresetsExclusively)
+            if (middlewareOptions.UsePresetsExclusively)
             {
                 var firstKey = args.Query.FirstOrDefault().Key;
                 
@@ -190,12 +185,12 @@ namespace Imageflow.Server
             if (args.Query.TryGetValue("preset", out var presetNames))
             {
                 var presetNamesList = presetNames
-                    .Split(new char[] {','}, StringSplitOptions.RemoveEmptyEntries);
+                    .Split(new[] {','}, StringSplitOptions.RemoveEmptyEntries);
                 foreach (var presetName in presetNamesList)
                 {
-                    if (options.Presets.TryGetValue(presetName, out var presetOptions))
+                    if (middlewareOptions.Presets.TryGetValue(presetName, out var presetOptions))
                     {
-                        foreach (var pair in presetOptions.pairs)
+                        foreach (var pair in presetOptions.Pairs)
                         {
                             if (presetOptions.Priority == PresetPriority.OverrideQuery ||
                                 !args.Query.ContainsKey(pair.Key))
@@ -212,7 +207,7 @@ namespace Imageflow.Server
             }
             
             // Apply rewrite handlers
-            foreach (var handler in options.Rewrite)
+            foreach (var handler in middlewareOptions.Rewrite)
             {
                 var matches = string.IsNullOrEmpty(handler.PathPrefix) ||
                               path.StartsWith(handler.PathPrefix, StringComparison.OrdinalIgnoreCase);
@@ -226,7 +221,7 @@ namespace Imageflow.Server
             // Set defaults if keys are missing, but at least 1 supported key is present
             if (PathHelpers.SupportedQuerystringKeys.Any(args.Query.ContainsKey))
             {
-                foreach (var pair in options.CommandDefaults)
+                foreach (var pair in middlewareOptions.CommandDefaults)
                 {
                     if (!args.Query.ContainsKey(pair.Key))
                     {
@@ -236,7 +231,7 @@ namespace Imageflow.Server
             }
 
             // Run post-rewrite authorization
-            foreach (var handler in options.PostRewriteAuthorization)
+            foreach (var handler in middlewareOptions.PostRewriteAuthorization)
             {
                 var matches = string.IsNullOrEmpty(handler.PathPrefix) ||
                               path.StartsWith(handler.PathPrefix, StringComparison.OrdinalIgnoreCase);
@@ -248,11 +243,11 @@ namespace Imageflow.Server
             return true; 
         }
 
-        private bool VerifySignature(HttpContext context, ImageflowMiddlewareOptions options)
+        private bool VerifySignature(HttpContext context, ImageflowMiddlewareOptions middlewareOptions)
         {
-            if (options.RequestSignatureOptions == null) return true;
+            if (middlewareOptions.RequestSignatureOptions == null) return true;
 
-            var (requirement, signingKeys) = options.RequestSignatureOptions
+            var (requirement, signingKeys) = middlewareOptions.RequestSignatureOptions
                 .GetRequirementForPath(context.Request.Path.Value);
 
             var queryString = context.Request.QueryString.ToString();
@@ -377,19 +372,19 @@ namespace Imageflow.Server
 
         private class BlobFetchResult: IDisposable
         {
-            private IBlobData Blob;
-            private StreamSource StreamSource;
-            internal ArraySegment<byte> Bytes;
+            private IBlobData blob;
+            private StreamSource streamSource;
+            private ArraySegment<byte> bytes;
 
 
             internal BytesSource GetBytesSource()
             {
-                return new BytesSource(Bytes);
+                return new BytesSource(bytes);
             }
             public void Dispose()
             {
-                StreamSource?.Dispose();
-                Blob?.Dispose();
+                streamSource?.Dispose();
+                blob?.Dispose();
             }
 
             public static async Task<BlobFetchResult> FromCache(BlobFetchCache blobFetchCache)
@@ -401,12 +396,12 @@ namespace Imageflow.Server
                 var source = new StreamSource(blob.OpenRead(), true);
                 var result = new BlobFetchResult()
                 {
-                    StreamSource = source,
-                    Blob = blob,
-                    Bytes = await source.GetBytesAsync(CancellationToken.None)
+                    streamSource = source,
+                    blob = blob,
+                    bytes = await source.GetBytesAsync(CancellationToken.None)
                 };
                 sw.Stop();
-                GlobalPerf.BlobRead(sw.ElapsedTicks, result.Bytes.Count);
+                GlobalPerf.BlobRead(sw.ElapsedTicks, result.bytes.Count);
                 return result;
             }
         }
@@ -454,7 +449,7 @@ namespace Imageflow.Server
                 // TryGetBytes returns the buffer from a regular MemoryStream, not a recycled one
                 var resultBytes = jobResult.First.TryGetBytes();
 
-                if (!resultBytes.HasValue || resultBytes.Value.Count < 1)
+                if (!resultBytes.HasValue || resultBytes.Value.Count < 1 || resultBytes.Value.Array == null)
                 {
                     throw new InvalidOperationException("Image job returned zero bytes.");
                 }
@@ -462,7 +457,6 @@ namespace Imageflow.Server
                 return new ImageData
                 {
                     ContentType = jobResult.First.PreferredMimeType,
-                    FileExtension = jobResult.First.PreferredExtension,
                     ResultBytes = resultBytes.Value
                 };
             }

@@ -43,14 +43,7 @@ namespace Imageflow.Server
                     throw new InvalidOperationException("Source blob has zero bytes.");
                 }
                 
-                if (bytesRead >= 12)
-                {
-                    response.ContentType = GetContentTypeFromBytes(buffer);
-                }
-                else
-                {
-                    response.ContentType = "application/octet-stream";
-                }
+                response.ContentType = bytesRead >= 12 ? GetContentTypeFromBytes(buffer) : "application/octet-stream";
                 await response.Body.WriteAsync(new ReadOnlyMemory<byte>(buffer, 0, bytesRead)).ConfigureAwait(false);
             }
             finally

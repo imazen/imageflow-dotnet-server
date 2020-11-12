@@ -22,14 +22,14 @@ namespace Imageflow.Server
             FinalCommandKeys = null;
         }
 
-        public int? SourceWidth { get; set; }
-        public int? SourceHeight { get; set; }
-        public int? FinalWidth { get; set; }
-        public int? FinalHeight { get; set; }
-        public long TotalTicks { get; set; }
-        public long DecodeTicks { get; set; }
-        public long EncodeTicks { get; set; }
-        public string SourceFileExtension { get; set; }
+        public int? SourceWidth { get; }
+        public int? SourceHeight { get; }
+        public int? FinalWidth { get; }
+        public int? FinalHeight { get; }
+        public long TotalTicks { get; }
+        public long DecodeTicks { get; }
+        public long EncodeTicks { get; }
+        public string SourceFileExtension { get; }
         public string ImageDomain { get; set; }
         public string PageDomain { get; set; }
         public IEnumerable<string> FinalCommandKeys { get; set; }

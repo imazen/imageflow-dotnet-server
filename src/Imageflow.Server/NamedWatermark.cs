@@ -11,13 +11,14 @@ namespace Imageflow.Server
             Name = name;
             VirtualPath = virtualPath;
             Watermark = watermark;
+            serialized = null;
         }
         public string Name { get; }
         public string VirtualPath { get; }
         public WatermarkOptions Watermark { get; }
         
         
-        private string serialized = null;
+        private string serialized;
 
         internal string Serialized()
         {

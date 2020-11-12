@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -17,9 +18,9 @@ namespace Imageflow.Server
 {
     internal class GlobalInfoProvider: IInfoProvider
     {
-        private IWebHostEnvironment env;
-        private ImageflowMiddlewareOptions options;
-        private List<string> pluginNames;
+        private readonly IWebHostEnvironment env;
+        private readonly ImageflowMiddlewareOptions options;
+        private readonly List<string> pluginNames;
         public GlobalInfoProvider(ImageflowMiddlewareOptions options,IWebHostEnvironment env, ILogger<ImageflowMiddleware> logger,  ISqliteCache sqliteCache,  IMemoryCache memoryCache, IDistributedCache distributedCache,
             IClassicDiskCache diskCache, IList<IBlobProvider> blobProviders)
         {
@@ -62,6 +63,17 @@ namespace Imageflow.Server
             }
             
         }
+        
+        private static string GetNetCoreVersion()
+        {
+            var assembly = typeof(System.Runtime.GCSettings).GetTypeInfo().Assembly;
+            var assemblyPath = assembly.CodeBase?.Split(new[] {'/', '\\'}, StringSplitOptions.RemoveEmptyEntries) ??
+                               new string[0];
+            var netCoreAppIndex = Array.IndexOf(assemblyPath, "Microsoft.NETCore.App");
+            if (netCoreAppIndex > 0 && netCoreAppIndex < assemblyPath.Length - 2)
+                return assemblyPath[netCoreAppIndex + 1];
+            return null;
+        }
 
         public void Add(IInfoAccumulator query)
         {
@@ -82,6 +94,7 @@ namespace Imageflow.Server
 
             if (env.ContentRootPath != null)
             {
+                // ReSharper disable once StringLiteralTypo
                 q.Add("apppath_hash", Utilities.Sha256TruncatedBase64(env.ContentRootPath, 6));
             }
 

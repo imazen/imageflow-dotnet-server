@@ -1,5 +1,3 @@
-using System;
-
 namespace Imageflow.Server.Extensibility
 {
     public class SqliteCacheEntry

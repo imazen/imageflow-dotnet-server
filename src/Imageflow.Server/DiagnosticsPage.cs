@@ -5,21 +5,17 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Security;
 using System.Text;
 using System.Threading.Tasks;
 using Imageflow.Server.Extensibility;
 using Imazen.Common.Extensibility.ClassicDiskCache;
-using Imazen.Common.Instrumentation;
-using Imazen.Common.Instrumentation.Support;
 using Imazen.Common.Issues;
 using Imazen.Common.Storage;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Net.Http.Headers;
 
@@ -28,7 +24,6 @@ namespace Imageflow.Server
     internal class DiagnosticsPage
     {
         private readonly IWebHostEnvironment env;
-        private ILogger<ImageflowMiddleware> logger;
         private readonly IMemoryCache memoryCache;
         private readonly IDistributedCache distributedCache;
         private readonly IClassicDiskCache diskCache;
@@ -39,34 +34,25 @@ namespace Imageflow.Server
         {
             this.options = options;
             this.env = env;
-            this.logger = logger;
             this.memoryCache = memoryCache;
             this.distributedCache = distributedCache;
             this.diskCache = diskCache;
             this.blobProviders = blobProviders;
         }
 
-        public bool MatchesPath(string path) => "/imageflow.debug".Equals(path, StringComparison.Ordinal);
-        
-        public static bool IsLocalRequest(HttpContext context)
-        {
-            if (context.Connection.RemoteIpAddress.Equals(context.Connection.LocalIpAddress))
-            {
-                return true;
-            }
-            if (IPAddress.IsLoopback(context.Connection.RemoteIpAddress))
-            {
-                return true;
-            }
-            return false;
-        }
+        public static bool MatchesPath(string path) => "/imageflow.debug".Equals(path, StringComparison.Ordinal);
+
+        private static bool IsLocalRequest(HttpContext context) =>
+            context.Connection.RemoteIpAddress.Equals(context.Connection.LocalIpAddress) || 
+            IPAddress.IsLoopback(context.Connection.RemoteIpAddress);
+
         public async Task Invoke(HttpContext context)
         {
             var providedPassword = context.Request.Query["password"].ToString();
             var passwordMatch = !string.IsNullOrEmpty(options.DiagnosticsPassword)
                                 && options.DiagnosticsPassword == providedPassword;
             
-            string s = "";
+            string s;
             if (passwordMatch || 
                 (options.ShowDiagnosticsLocalhost && IsLocalRequest(context))){
                 s = await GeneratePage(context);
@@ -111,7 +97,7 @@ namespace Imageflow.Server
             
             try
             {
-                using var job = new Imageflow.Bindings.JobContext();
+                using var job = new Bindings.JobContext();
                 var version = job.GetVersionInfo();
                 s.AppendLine($"libimageflow {version.LongVersionString}");
             }
@@ -212,8 +198,6 @@ namespace Imageflow.Server
 
     internal static class AssemblyExtensions
     {
-        public static string IntoString(this IEnumerable<char> c) => string.Concat(c);
-
         private static T GetFirstAttribute<T>(this ICustomAttributeProvider a)
         {
             try
@@ -224,14 +208,15 @@ namespace Imageflow.Server
             catch(FileNotFoundException) {
                 //Missing dependencies
             }
+            // ReSharper disable once EmptyGeneralCatchClause
             catch (Exception) { }
-            return default(T);
+            return default;
         }
 
         public static Exception GetExceptionForReading<T>(this Assembly a)
         {
             try {
-                var nah = a.GetCustomAttributes(typeof(T), false);
+                var unused = a.GetCustomAttributes(typeof(T), false);
             } catch (Exception e) {
                 return e;
             }

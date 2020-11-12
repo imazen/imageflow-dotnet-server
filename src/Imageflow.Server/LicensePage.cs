@@ -1,22 +1,8 @@
 using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Security;
 using System.Text;
 using System.Threading.Tasks;
-using Imazen.Common.Extensibility.ClassicDiskCache;
-using Imazen.Common.Issues;
-using Imazen.Common.Storage;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Caching.Distributed;
-using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.Net.Http.Headers;
 
 namespace Imageflow.Server
@@ -54,18 +40,6 @@ namespace Imageflow.Server
             return Task.FromResult(s.ToString());
         }
         
-        private static string GetNetCoreVersion()
-        {
-            var assembly = typeof(System.Runtime.GCSettings).GetTypeInfo().Assembly;
-            var assemblyPath = assembly.CodeBase?.Split(new[] {'/', '\\'}, StringSplitOptions.RemoveEmptyEntries) ??
-                               new string[0];
-            var netCoreAppIndex = Array.IndexOf(assemblyPath, "Microsoft.NETCore.App");
-            if (netCoreAppIndex > 0 && netCoreAppIndex < assemblyPath.Length - 2)
-                return assemblyPath[netCoreAppIndex + 1];
-            return null;
-        }
-
-
     }
 
 }
