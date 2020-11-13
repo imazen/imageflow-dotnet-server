@@ -40,6 +40,7 @@ namespace Imageflow.Server.ExampleMinimal
             //app.UseHttpsRedirection();
 
             app.UseImageflow(new ImageflowMiddlewareOptions()
+                .SetMyOpenSourceProjectUrl("https://please-support-imageflow-with-a-license.com")
                 .SetMapWebRoot(true)
                 .MapPath("/images", Path.Combine(Env.ContentRootPath, "images"))
                 .SetAllowDiskCaching(true)
