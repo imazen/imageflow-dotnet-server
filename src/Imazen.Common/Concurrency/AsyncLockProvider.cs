@@ -4,10 +4,8 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Imazen.DiskCache {
-
-    internal delegate void LockCallback();
-    internal delegate Task AsyncLockCallback();
+namespace Imazen.Common.Concurrency {
+    
     /// <summary>
     /// Provides locking based on a string key. 
     /// Locks are local to the LockProvider instance.
@@ -17,7 +15,8 @@ namespace Imazen.DiskCache {
     /// Thread-safe.
     /// Uses SemaphoreSlim instead of locks to be thread-context agnostic.
     /// </summary>
-    internal class AsyncLockProvider {
+    public class AsyncLockProvider {
+        
 
         /// <summary>
         /// The only objects in this collection should be for open files. 
@@ -28,6 +27,14 @@ namespace Imazen.DiskCache {
         /// Synchronization object for modifications to the 'locks' dictionary
         /// </summary>
         private readonly object createLock = new object();
+
+        internal int GetActiveLockCount()
+        {
+            lock (createLock)
+            {
+                return locks.Count;
+            }
+        }
 
         /// <summary>
         /// Returns true if the given key *might* be locked.
@@ -52,7 +59,7 @@ namespace Imazen.DiskCache {
         /// <param name="timeoutMs"></param>
         /// <param name="success"></param>
         /// <returns></returns>
-        public bool TryExecuteSynchronous(string key, int timeoutMs, LockCallback success)
+        public bool TryExecuteSynchronous(string key, int timeoutMs, Action success)
         {
             var task = TryExecuteAsync(key, timeoutMs, () => { success();  return Task.FromResult(false); });
             task.RunSynchronously();
@@ -68,7 +75,7 @@ namespace Imazen.DiskCache {
         /// <param name="key"></param>
         /// <param name="success"></param>
         /// <param name="timeoutMs"></param>
-        public async Task<bool> TryExecuteAsync(string key, int timeoutMs, AsyncLockCallback success)
+        public async Task<bool> TryExecuteAsync(string key, int timeoutMs, Func<Task> success)
         {
             //Record when we started. We don't want an infinite loop.
             DateTime startedAt = DateTime.UtcNow;

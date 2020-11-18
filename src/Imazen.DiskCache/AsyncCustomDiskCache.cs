@@ -4,6 +4,7 @@ using System.IO;
 using System.Diagnostics;
 using System.Globalization;
 using System.Threading.Tasks;
+using Imazen.Common.Concurrency;
 using Imazen.Common.Extensibility.ClassicDiskCache;
 using Imazen.DiskCache.Index;
 using Microsoft.Extensions.Logging;

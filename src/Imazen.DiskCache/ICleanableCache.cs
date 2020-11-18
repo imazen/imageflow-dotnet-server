@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Imazen.Common.Concurrency;
 using Imazen.DiskCache.Index;
 
 namespace Imazen.DiskCache
