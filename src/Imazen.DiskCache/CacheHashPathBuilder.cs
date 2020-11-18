@@ -6,9 +6,11 @@ using System.Globalization;
 
 namespace Imazen.DiskCache {
 
-    public class UrlHasher {
+    internal class CacheHashPathBuilder
+    {
+   
         /// <summary>
-        /// Builds a key for the cached version, using the hashcode of the normalized URL.
+        /// Builds a key for the cached version, using the hashcode of `data`.
         /// if subfolders > 1, dirSeparator will be used to separate the subfolder and the key. 
         /// No extension is appended.
         /// I.e, a13514\124211ab132592 or 12412ab12141
@@ -17,11 +19,11 @@ namespace Imazen.DiskCache {
         /// <param name="subfolders"></param>
         /// <param name="dirSeparator"></param>
         /// <returns></returns>
-        public string Hash(string data, int subfolders, string dirSeparator) {
+        public string BuildRelativePathForData(byte[] data, int subfolders, string dirSeparator) {
 
             using (var h = System.Security.Cryptography.SHA256.Create())
             {
-                var hash = h.ComputeHash(new UTF8Encoding().GetBytes(data));
+                var hash = h.ComputeHash(data);
 
                 //If configured, place files in subfolders.
                 var subfolder = "";

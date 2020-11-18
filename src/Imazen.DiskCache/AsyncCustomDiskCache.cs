@@ -3,6 +3,7 @@ using System;
 using System.IO;
 using System.Diagnostics;
 using System.Globalization;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Imazen.Common.Concurrency;
@@ -78,7 +79,8 @@ namespace Imazen.DiskCache {
             if (logger != null) { sw = Stopwatch.StartNew(); }
 
             //Relative to the cache directory. Not relative to the app or domain root
-            var relativePath = new UrlHasher().Hash(keyBasis, subfolders, "/") + '.' + extension;
+            var keyBasisBytes = new UTF8Encoding().GetBytes(keyBasis);
+            var relativePath = new CacheHashPathBuilder().BuildRelativePathForData(keyBasisBytes, subfolders, "/") + '.' + extension;
 
             //Physical path
             var physicalPath = PhysicalCachePath.TrimEnd('\\', '/') + Path.DirectorySeparatorChar +
