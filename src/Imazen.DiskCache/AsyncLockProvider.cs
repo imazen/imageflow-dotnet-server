@@ -1,7 +1,6 @@
 ﻿/* Copyright (c) 2014 Imazen See license.txt for your rights. */
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -42,9 +41,22 @@ namespace Imazen.DiskCache {
             }
         }
 
+        /// <summary>
+        /// A synchronous wrapper for TryExecuteAsync.
+        /// Attempts to execute the 'success' callback inside a lock based on 'key'.  If successful, returns true.
+        /// If the lock cannot be acquired within 'timeoutMs', returns false
+        /// In a worst-case scenario, it could take up to twice as long as 'timeoutMs' to return false.
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="timeoutMs"></param>
+        /// <param name="success"></param>
+        /// <returns></returns>
         public bool TryExecute(string key, int timeoutMs, LockCallback success)
         {
-            return TryExecuteAsync(key, timeoutMs, delegate() { success();  return Task.FromResult(false); }).Result;
+            var task = TryExecuteAsync(key, timeoutMs, () => { success();  return Task.FromResult(false); });
+            task.RunSynchronously();
+            task.Wait();
+            return task.Result;
         }
 
         /// <summary>
