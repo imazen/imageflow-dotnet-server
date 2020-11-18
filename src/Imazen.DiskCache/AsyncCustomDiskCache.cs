@@ -23,7 +23,7 @@ namespace Imazen.DiskCache {
         private readonly int subfolders;
         private readonly ILogger logger;
 
-        public AsyncCustomDiskCache(ILogger logger, string physicalCachePath, int subfolders, long asyncMaxQueuedBytes = 1024*1024*10)
+        public AsyncCustomDiskCache(ILogger logger, string physicalCachePath, int subfolders, long asyncMaxQueuedBytes = 1024*1024*100)
         {
             Locks = new AsyncLockProvider();
             QueueLocks = new AsyncLockProvider();

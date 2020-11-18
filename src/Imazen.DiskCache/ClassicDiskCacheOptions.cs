@@ -92,7 +92,7 @@ namespace Imazen.DiskCache
         }
 
 
-        private int asyncBufferSize = 1024 * 1024 * 10;
+        private int asyncBufferSize = 1024 * 1024 * 100;
         /// <summary>
         /// If more than this amount of memory (in bytes) is currently allocated by queued writes, the request will be processed synchronously instead of asynchronously.
         /// </summary>

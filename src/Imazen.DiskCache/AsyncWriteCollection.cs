@@ -10,7 +10,7 @@ namespace Imazen.DiskCache {
     internal class AsyncWriteCollection {
 
         public AsyncWriteCollection() {
-            MaxQueueBytes = 1024 * 1024 * 10;
+            MaxQueueBytes = 1024 * 1024 * 100;
         }
 
         private readonly object sync = new object();
