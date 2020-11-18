@@ -3,6 +3,7 @@ using System;
 using System.IO;
 using System.Diagnostics;
 using System.Globalization;
+using System.Threading;
 using System.Threading.Tasks;
 using Imazen.Common.Concurrency;
 using Imazen.Common.Extensibility.ClassicDiskCache;
@@ -110,7 +111,7 @@ namespace Imazen.DiskCache {
                 //This prevents two identical requests from duplicating efforts. Different requests don't lock.
 
                 //Lock execution using relativePath as the sync basis. Ignore casing differences. This prevents duplicate entries in the write queue and wasted CPU/RAM usage.
-                if (!await QueueLocks.TryExecuteAsync(relativePath.ToUpperInvariant(), timeoutMs,
+                if (!await QueueLocks.TryExecuteAsync(relativePath.ToUpperInvariant(), timeoutMs, CancellationToken.None, 
                     async () => {
 
                         //Now, if the item we seek is in the queue, we have a memcached hit. If not, we should check the index. It's possible the item has been written to disk already.
@@ -222,7 +223,7 @@ namespace Imazen.DiskCache {
                
 
             //Lock execution using relativePath as the sync basis. Ignore casing differences. This locking is process-local, but we also have code to handle file locking.
-            return await Locks.TryExecuteAsync(relativePath.ToUpperInvariant(), timeoutMs,
+            return await Locks.TryExecuteAsync(relativePath.ToUpperInvariant(), timeoutMs, CancellationToken.None, 
                 async () => {
 
                     //On the second check, use cached data for speed. The cached data should be updated if another thread updated a file (but not if another process did).

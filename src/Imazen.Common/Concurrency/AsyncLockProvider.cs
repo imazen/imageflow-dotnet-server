@@ -52,30 +52,32 @@ namespace Imazen.Common.Concurrency {
         /// <summary>
         /// A synchronous wrapper for TryExecuteAsync.
         /// Attempts to execute the 'success' callback inside a lock based on 'key'.  If successful, returns true.
-        /// If the lock cannot be acquired within 'timeoutMs', returns false
+        /// If the lock cannot be acquired within 'timeoutMs' or cancellation token is triggered, returns false
         /// In a worst-case scenario, it could take up to twice as long as 'timeoutMs' to return false.
         /// </summary>
         /// <param name="key"></param>
         /// <param name="timeoutMs"></param>
+        /// <param name="cancellationToken"></param>
         /// <param name="success"></param>
         /// <returns></returns>
-        public bool TryExecuteSynchronous(string key, int timeoutMs, Action success)
+        public bool TryExecuteSynchronous(string key, int timeoutMs, CancellationToken cancellationToken, Action success)
         {
-            var task = TryExecuteAsync(key, timeoutMs, () => { success();  return Task.FromResult(false); });
+            var task = TryExecuteAsync(key, timeoutMs, cancellationToken, () => { success();  return Task.FromResult(false); });
             task.RunSynchronously();
-            task.Wait();
+            task.Wait(cancellationToken);
             return task.Result;
         }
 
         /// <summary>
         /// Attempts to execute the 'success' callback inside a lock based on 'key'.  If successful, returns true.
-        /// If the lock cannot be acquired within 'timeoutMs', returns false
+        /// If the lock cannot be acquired within 'timeoutMs' or cancellation token is triggered, returns false
         /// In a worst-case scenario, it could take up to twice as long as 'timeoutMs' to return false.
         /// </summary>
         /// <param name="key"></param>
+        /// <param name="cancellationToken"></param>
         /// <param name="success"></param>
         /// <param name="timeoutMs"></param>
-        public async Task<bool> TryExecuteAsync(string key, int timeoutMs, Func<Task> success)
+        public async Task<bool> TryExecuteAsync(string key, int timeoutMs, CancellationToken cancellationToken, Func<Task> success)
         {
             //Record when we started. We don't want an infinite loop.
             DateTime startedAt = DateTime.UtcNow;
@@ -103,7 +105,7 @@ namespace Imazen.Common.Concurrency {
                     // insert a new value for 'itemLock' into the dictionary... etc, etc..
 
                     // 2) Execute phase
-                    if (await itemLock.WaitAsync(timeoutMs)) {
+                    if (await itemLock.WaitAsync(timeoutMs, cancellationToken)) {
                         try {
                             // May take minutes to acquire this lock. 
 

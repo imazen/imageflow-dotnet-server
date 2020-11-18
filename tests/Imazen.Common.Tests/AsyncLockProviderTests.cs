@@ -18,19 +18,19 @@ namespace Imazen.Common.Tests
         public async void TestActiveLockCount()
         {
             var provider = new AsyncLockProvider();
-            var task = provider.TryExecuteAsync("1", 1500, async () =>
+            var task = provider.TryExecuteAsync("1", 1500,CancellationToken.None,  async () =>
             {
                 await Task.Delay(50);
             });
-            var task2 = provider.TryExecuteAsync("2", 1500, async () =>
+            var task2 = provider.TryExecuteAsync("2", 1500, CancellationToken.None, async () =>
             {
                 await Task.Delay(50);
             });
-            var task2B = provider.TryExecuteAsync("2", 1500, async () =>
+            var task2B = provider.TryExecuteAsync("2", 1500,CancellationToken.None,  async () =>
             {
                 await Task.Delay(50);
             });
-            var task3 = provider.TryExecuteAsync("3", 1500, async () =>
+            var task3 = provider.TryExecuteAsync("3", 1500,CancellationToken.None,  async () =>
             {
                 await Task.Delay(50);
                 throw new Exception();
@@ -52,7 +52,7 @@ namespace Imazen.Common.Tests
             var provider = new AsyncLockProvider();
             int sharedValue = 0;
             var tasks = Enumerable.Range(0, 10).Select(async unused =>
-                Assert.True(await provider.TryExecuteAsync("1", 15000, async () =>
+                Assert.True(await provider.TryExecuteAsync("1", 15000, CancellationToken.None, async () =>
                 {
                     var oldValue = sharedValue;
                     sharedValue++;
