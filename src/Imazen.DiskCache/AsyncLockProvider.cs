@@ -135,7 +135,7 @@ namespace Imazen.DiskCache {
                         // (but may be preparing to, see loophole)
                         // Only remove the lock object if it 
                         // still exists in the dictionary as-is
-                        if (itemLock.CurrentCount > 0 &&
+                        if (itemLock != null && itemLock.CurrentCount > 0 &&
                             locks.TryGetValue(key, out var existingLock)
                             && existingLock == itemLock)
                         {
