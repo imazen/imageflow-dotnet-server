@@ -110,7 +110,7 @@ namespace Imazen.DiskCache {
 
         public void UsedFile(string relativePath, string physicalPath) {
             //Bump the date in memory
-            cache.Index.bumpDateIfExists(relativePath);
+            cache.Index.BumpDateIfExists(relativePath);
             
             Task.Run(async () =>
             {

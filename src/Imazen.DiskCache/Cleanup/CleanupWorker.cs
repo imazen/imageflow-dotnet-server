@@ -8,6 +8,7 @@ using System.Diagnostics;
 
 using System.Globalization;
 using Imazen.Common.Issues;
+using Imazen.DiskCache.Index;
 using Microsoft.Extensions.Logging;
 
 namespace Imazen.DiskCache {
@@ -270,16 +271,16 @@ namespace Imazen.DiskCache {
                 if (logger != null) {
                     Stopwatch sw = new Stopwatch();
                     sw.Start();
-                    cache.Index.populate(item.RelativePath, item.PhysicalPath);
+                    cache.Index.Populate(item.RelativePath, item.PhysicalPath);
                     sw.Stop();
                     logger.LogTrace("{0}ms: Querying file system about {1}", sw.ElapsedMilliseconds.ToString(NumberFormatInfo.InvariantInfo).PadLeft(4), item.RelativePath);
                 } else 
-                    cache.Index.populate(item.RelativePath, item.PhysicalPath);
+                    cache.Index.Populate(item.RelativePath, item.PhysicalPath);
             }
 
             if (recursive) {
                 //Queue the recursive work.
-                IList<string> names = cache.Index.getSubfolders(item.RelativePath);
+                IList<string> names = cache.Index.GetSubfolders(item.RelativePath);
                 List<CleanupWorkItem> childWorkItems = new List<CleanupWorkItem>(names.Count);
                 foreach (string n in names)
                     childWorkItems.Add(new CleanupWorkItem(CleanupWorkItem.Kind.PopulateFolderRecursive, addSlash(item.RelativePath,false) + n, addSlash(item.PhysicalPath,true) + n));
@@ -300,13 +301,13 @@ namespace Imazen.DiskCache {
 
                 //If the file is already gone, consider the mission a success.
                 if (!System.IO.File.Exists(item.PhysicalPath)) {
-                    cache.Index.setCachedFileInfo(item.RelativePath, null);
+                    cache.Index.SetCachedFileInfo(item.RelativePath, null);
                     removedFile = true;
                     return;
                 }
                 //Cool, we got a lock on the file.
                 //Remove it from the cache. Better a miss than an invalidation.
-                cache.Index.setCachedFileInfo(item.RelativePath, null);
+                cache.Index.SetCachedFileInfo(item.RelativePath, null);
                 try {
                     System.IO.File.Delete(item.PhysicalPath);
                 } catch (IOException) {
@@ -315,7 +316,7 @@ namespace Imazen.DiskCache {
                     return; //Invalid NTFS permissions or readonly file.  - try the next file
                 }
 
-                cache.Index.setCachedFileInfo(item.RelativePath, null); //In case it crossed paths.
+                cache.Index.SetCachedFileInfo(item.RelativePath, null); //In case it crossed paths.
                 removedFile = true;
             });
 
@@ -341,7 +342,7 @@ namespace Imazen.DiskCache {
             //Ok, it's valid.
             //Queue the recursive work.
             if (item.Task == CleanupWorkItem.Kind.CleanFolderRecursive) {
-                IList<string> names = cache.Index.getSubfolders(item.RelativePath);
+                IList<string> names = cache.Index.GetSubfolders(item.RelativePath);
                 List<CleanupWorkItem> childWorkItems = new List<CleanupWorkItem>(names.Count);
                 foreach (string n in names)
                     childWorkItems.Add(new CleanupWorkItem(CleanupWorkItem.Kind.CleanFolderRecursive, baseRelative + n, basePhysical + n));
@@ -349,7 +350,7 @@ namespace Imazen.DiskCache {
             }
 
             //Now do the local work
-            int files = cache.Index.getFileCount(item.RelativePath);
+            int files = cache.Index.GetFileCount(item.RelativePath);
 
             //How much are we over?
             int overMax = Math.Max(0, files - cs.MaximumItemsPerFolder);
@@ -361,7 +362,7 @@ namespace Imazen.DiskCache {
 
             //Make a linked list, like a queue of files. 
             LinkedList<KeyValuePair<string, CachedFileInfo>> sortedList = new LinkedList<KeyValuePair<string, CachedFileInfo>>(
-                    cache.Index.getSortedSubfiles(item.RelativePath));
+                    cache.Index.GetSortedSubFiles(item.RelativePath));
 
             //This callback will execute (overMax) number of times
             CleanupWorkItem obsessive = new CleanupWorkItem(CleanupWorkItem.Kind.RemoveFile, delegate() {
@@ -395,7 +396,7 @@ namespace Imazen.DiskCache {
         }
 
         public void FlushAccessedDate(CleanupWorkItem item) {
-            CachedFileInfo c = cache.Index.getCachedFileInfo(item.RelativePath);
+            CachedFileInfo c = cache.Index.GetCachedFileInfo(item.RelativePath);
             if (c == null) return; //File was already deleted, nothing to do.
             try{
                 cache.Locks.TryExecute(item.RelativePath.ToUpperInvariant(), 1, delegate ()

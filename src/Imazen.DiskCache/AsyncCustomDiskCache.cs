@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Threading.Tasks;
 using Imazen.Common.Extensibility.ClassicDiskCache;
+using Imazen.DiskCache.Index;
 using Microsoft.Extensions.Logging;
 
 namespace Imazen.DiskCache {
@@ -101,7 +102,7 @@ namespace Imazen.DiskCache {
                     result.Result = CacheQueryResult.Failed;
                 }
             }
-            else if (!Index.existsCertain(relativePath, physicalPath) || mayBeLocked)
+            else if (!Index.ExistsCertain(relativePath, physicalPath) || mayBeLocked)
             {
                 
                 //Looks like a miss. Let's enter a lock for the creation of the file. This is a different locking system than for writing to the file - far less contention, as it doesn't include the 
@@ -122,7 +123,7 @@ namespace Imazen.DiskCache {
 
                         //On the second check, use cached data for speed. The cached data should be updated if another thread updated a file (but not if another process did).
                         //When t == null, and we're inside QueueLocks, all work on the file must be finished, so we have no need to consult mayBeLocked.
-                        if (t == null && !Index.exists(relativePath, physicalPath))
+                        if (t == null && !Index.Exists(relativePath, physicalPath))
                         {
 
                             result.Result = CacheQueryResult.Miss;
@@ -214,7 +215,7 @@ namespace Imazen.DiskCache {
             // ReSharper disable once InvertIf
             if (recheckFileSystem)
             {
-                var miss = !Index.existsCertain(relativePath, physicalPath);
+                var miss = !Index.ExistsCertain(relativePath, physicalPath);
                 if (!miss && !Locks.MayBeLocked(relativePath.ToUpperInvariant())) return true;
             }
                
@@ -224,7 +225,7 @@ namespace Imazen.DiskCache {
                 async () => {
 
                     //On the second check, use cached data for speed. The cached data should be updated if another thread updated a file (but not if another process did).
-                    if (!Index.exists(relativePath, physicalPath))
+                    if (!Index.Exists(relativePath, physicalPath))
                     {
 
                         var subdirectoryPath = Path.GetDirectoryName(physicalPath);
@@ -299,7 +300,7 @@ namespace Imazen.DiskCache {
                                 File.SetCreationTimeUtc(physicalPath, createdUtc);
                                 //Update index
                                 //TODO: what should sourceModifiedUtc be when there is no modified date?
-                                Index.setCachedFileInfo(relativePath, new CachedFileInfo(createdUtc, createdUtc, createdUtc));
+                                Index.SetCachedFileInfo(relativePath, new CachedFileInfo(createdUtc, createdUtc));
                                 //This was a cache miss
                                 if (result != null) result.Result = CacheQueryResult.Miss;
                             }

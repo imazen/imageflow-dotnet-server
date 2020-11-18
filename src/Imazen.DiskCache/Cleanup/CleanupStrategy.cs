@@ -6,6 +6,7 @@ using System.Collections.Specialized;
 using System.Reflection;
 using System.Globalization;
 using Imazen.Common.Issues;
+using Imazen.DiskCache.Index;
 
 namespace Imazen.DiskCache {
     public class CleanupStrategy :IssueSink

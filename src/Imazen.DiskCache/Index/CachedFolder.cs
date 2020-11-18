@@ -1,11 +1,11 @@
 ﻿/* Copyright (c) 2014 Imazen See license.txt for your rights. */
+
 using System;
 using System.Collections.Generic;
-using System.Text;
-using System.IO;
 using System.Diagnostics;
+using System.IO;
 
-namespace Imazen.DiskCache {
+namespace Imazen.DiskCache.Index {
     internal delegate void FileDisappearedHandler(string relativePath, string physicalPath);
 
     /// <summary>
@@ -14,9 +14,9 @@ namespace Imazen.DiskCache {
     internal class CachedFolder {
         protected CachedFolder() { }
 
-        private readonly object _sync = new object();
+        private readonly object sync = new object();
 
-        private volatile bool isValid = false;
+        private volatile bool isValid;
         /// <summary>
         /// Defaults to false. Set to true immediately after being refreshed from the file system.
         /// Set to false if a file disappears from the file system cache without the cache index being notified first.
@@ -35,7 +35,7 @@ namespace Imazen.DiskCache {
         /// </summary>
         public event FileDisappearedHandler FileDisappeared;
 
-        private StringComparer KeyComparer { get { return StringComparer.OrdinalIgnoreCase; } }
+        private static StringComparer KeyComparer => StringComparer.OrdinalIgnoreCase;
 
 
         private Dictionary<string, CachedFolder> folders = new Dictionary<string, CachedFolder>(StringComparer.OrdinalIgnoreCase);
@@ -43,8 +43,8 @@ namespace Imazen.DiskCache {
         private Dictionary<string, CachedFileInfo> files = new Dictionary<string, CachedFileInfo>(StringComparer.OrdinalIgnoreCase);
 
 
-        protected virtual void clear() {
-            lock (_sync) {
+        private void Clear() {
+            lock (sync) {
                 IsValid = false;
                 folders.Clear();
                 files.Clear();
@@ -56,20 +56,18 @@ namespace Imazen.DiskCache {
         /// </summary>
         /// <param name="relativePath"></param>
         /// <returns></returns>
-        public virtual CachedFileInfo getCachedFileInfo(string relativePath) {
-            relativePath = checkRelativePath(relativePath);
-            lock (_sync) {
+        public CachedFileInfo GetCachedFileInfo(string relativePath) {
+            relativePath = CheckRelativePath(relativePath);
+            lock (sync) {
                 int slash = relativePath.IndexOf('/');
                 if (slash < 0) {
-                    CachedFileInfo f;
-                    if (files.TryGetValue(relativePath, out f)) return f; //cache hit
+                    if (files.TryGetValue(relativePath, out var f)) return f; //cache hit
                 } else {
                     //Try to access subfolder
                     string folder = relativePath.Substring(0, slash);
-                    CachedFolder f;
-                    if (!folders.TryGetValue(folder, out f)) f = null;
+                    folders.TryGetValue(folder, out var f);
                     //Recurse if possible
-                    if (f != null) return f.getCachedFileInfo(relativePath.Substring(slash + 1));
+                    if (f != null) return f.GetCachedFileInfo(relativePath.Substring(slash + 1));
                 }
                 return null; //cache miss or file not found
             }
@@ -81,9 +79,9 @@ namespace Imazen.DiskCache {
         /// </summary>
         /// <param name="relativePath"></param>
         /// <param name="info"></param>
-        public virtual void setCachedFileInfo(string relativePath, CachedFileInfo info) {
-            relativePath = checkRelativePath(relativePath);
-            lock (_sync) {
+        public void SetCachedFileInfo(string relativePath, CachedFileInfo info) {
+            relativePath = CheckRelativePath(relativePath);
+            lock (sync) {
                 int slash = relativePath.IndexOf('/');
                 if (slash < 0) {
                     //Set or remove the file
@@ -94,15 +92,13 @@ namespace Imazen.DiskCache {
                 } else {
                     //Try to access subfolder
                     string folder = relativePath.Substring(0, slash);
-                    CachedFolder f;
-                    if (!folders.TryGetValue(folder, out f)) f = null;
-
-
+                    folders.TryGetValue(folder, out var f);
+                    
                     if (info == null && f == null) return; //If the folder doesn't exist, the file definitely doesn't. Already accomplished.
                     //Create it if it doesn't exist
                     if (f == null) f = folders[folder] = new CachedFolder();
                     //Recurse if possible
-                    f.setCachedFileInfo(relativePath.Substring(slash + 1), info);
+                    f.SetCachedFileInfo(relativePath.Substring(slash + 1), info);
                 }
             }
         }
@@ -111,24 +107,25 @@ namespace Imazen.DiskCache {
         /// </summary>
         /// <param name="relativePath"></param>
         /// <returns></returns>
-        public bool bumpDateIfExists(string relativePath) {
-            relativePath = checkRelativePath(relativePath);
-            lock (_sync) {
+        public bool BumpDateIfExists(string relativePath) {
+            relativePath = CheckRelativePath(relativePath);
+            lock (sync) {
                 int slash = relativePath.IndexOf('/');
                 if (slash < 0) {
                     //Update the accessed date.
-                    CachedFileInfo old;
-                    if (files.TryGetValue(relativePath,out old)) files[relativePath] = new CachedFileInfo(old, DateTime.UtcNow);
+                    if (files.TryGetValue(relativePath, out var old))
+                    {
+                        files[relativePath] = new CachedFileInfo(old, DateTime.UtcNow);
+                    }
                     return true; //We updated it!
                 } else {
                     //Try to access subfolder
                     string folder = relativePath.Substring(0, slash);
-                    CachedFolder f = null;
-                    if (!folders.TryGetValue(folder, out f)) return false;//If the folder doesn't exist, quit
+                    if (!folders.TryGetValue(folder, out var f)) return false;//If the folder doesn't exist, quit
                     if (f == null) return false; //If the folder is null, quit!
 
                     //Recurse if possible
-                    return f.bumpDateIfExists(relativePath.Substring(slash + 1));
+                    return f.BumpDateIfExists(relativePath.Substring(slash + 1));
                 }
             }
         }
@@ -139,16 +136,16 @@ namespace Imazen.DiskCache {
         /// <param name="relativePath"></param>
         /// <param name="physicalPath"></param>
         /// <returns></returns>
-        public virtual CachedFileInfo getFileInfo(string relativePath, string physicalPath) {
-            relativePath = checkRelativePath(relativePath);
-            lock (_sync) {
-                CachedFileInfo f = getCachedFileInfo(relativePath);
+        private CachedFileInfo GetFileInfo(string relativePath, string physicalPath) {
+            relativePath = CheckRelativePath(relativePath);
+            lock (sync) {
+                CachedFileInfo f = GetCachedFileInfo(relativePath);
                 //On cache miss or no file
-                if (f == null && System.IO.File.Exists(physicalPath)) {
+                if (f == null && File.Exists(physicalPath)) {
                     //on cache miss
-                    f = new CachedFileInfo(new System.IO.FileInfo(physicalPath));
+                    f = new CachedFileInfo(new FileInfo(physicalPath));
                     //Populate cache
-                    setCachedFileInfo(relativePath, f);
+                    SetCachedFileInfo(relativePath, f);
                 }
                 return f;//Null only if the file doesn't exist.
             }
@@ -160,30 +157,30 @@ namespace Imazen.DiskCache {
         /// <param name="relativePath"></param>
         /// <param name="physicalPath"></param>
         /// <returns></returns>
-        public virtual CachedFileInfo getFileInfoCertainExists(string relativePath, string physicalPath) {
-            relativePath = checkRelativePath(relativePath);
+        private CachedFileInfo GetFileInfoCertainExists(string relativePath, string physicalPath) {
+            relativePath = CheckRelativePath(relativePath);
             bool fireEvent = false;
-            CachedFileInfo f = null;
-            lock (_sync) {
-                bool exists = System.IO.File.Exists(physicalPath);
+            CachedFileInfo f;
+            lock (sync) {
+                bool exists = File.Exists(physicalPath);
 
-                f = getCachedFileInfo(relativePath);
+                f = GetCachedFileInfo(relativePath);
                 //cache miss
                 if (f == null && exists) {
                     //on cache miss
-                    f = new CachedFileInfo(new System.IO.FileInfo(physicalPath));
+                    f = new CachedFileInfo(new FileInfo(physicalPath));
                     //Populate cache
-                    setCachedFileInfo(relativePath, f);
+                    SetCachedFileInfo(relativePath, f);
                 }
                 //cache wrong, discrepancy. File deleted by external actor
                 if (f != null && !exists) {
                     f = null;
-                    clear(); //Clear the cache completely.
+                    Clear(); //Clear the cache completely.
                     fireEvent = true;
                 }
             }
             //Fire the event outside of the lock.
-            if (fireEvent && FileDisappeared != null) FileDisappeared(relativePath, physicalPath);
+            if (fireEvent) FileDisappeared?.Invoke(relativePath, physicalPath);
 
             return f;//Null only if the file doesn't exist.
         }
@@ -194,8 +191,8 @@ namespace Imazen.DiskCache {
         /// <param name="relativePath"></param>
         /// <returns></returns>
         public bool GetIsValid(string relativePath) {
-            lock (_sync) {
-                CachedFolder f = getFolder(relativePath);
+            lock (sync) {
+                CachedFolder f = GetFolder(relativePath);
                 if (f != null) return f.IsValid;
                 return false;
             }
@@ -205,11 +202,12 @@ namespace Imazen.DiskCache {
         /// </summary>
         /// <param name="relativePath"></param>
         /// <returns></returns>
-        protected CachedFolder getFolder(string relativePath) {
-            return getOrCreateFolder(relativePath, false);
+        private CachedFolder GetFolder(string relativePath) {
+            return GetOrCreateFolder(relativePath, false);
         }
-        protected CachedFolder getOrCreateFolder(string relativePath, bool createIfMissing) {
-            relativePath = checkRelativePath(relativePath);
+
+        private CachedFolder GetOrCreateFolder(string relativePath, bool createIfMissing) {
+            relativePath = CheckRelativePath(relativePath);
             if (string.IsNullOrEmpty(relativePath)) return this;
 
             int slash = relativePath.IndexOf('/');
@@ -225,10 +223,8 @@ namespace Imazen.DiskCache {
                 else f = folders[folder] = new CachedFolder();
             }
             //Recurse if possible
-            if (f != null) return f.getFolder(relativePath);
+            return f?.GetFolder(relativePath);
             //Not found
-            return null;
-
         }
 
         /// <summary>
@@ -236,32 +232,21 @@ namespace Imazen.DiskCache {
         /// </summary>
         /// <param name="relativePath"></param>
         /// <returns></returns>
-        public IList<string> getSubfolders(string relativePath) {
-            lock (_sync) {
-                CachedFolder f = getFolder(relativePath);
+        public IList<string> GetSubfolders(string relativePath) {
+            lock (sync) {
+                CachedFolder f = GetFolder(relativePath);
                 return new List<string>(f.folders.Keys);
             }
         }
-
+        
         /// <summary>
         /// returns a dictionary of files. 
         /// </summary>
         /// <param name="relativePath"></param>
         /// <returns></returns>
-        public Dictionary<string, CachedFileInfo> getSubfilesCopy(string relativePath) {
-            lock (_sync) {
-                CachedFolder f = getFolder(relativePath);
-                return new Dictionary<string, CachedFileInfo>(f.files, f.files.Comparer);
-            }
-        }
-        /// <summary>
-        /// returns a dictionary of files. 
-        /// </summary>
-        /// <param name="relativePath"></param>
-        /// <returns></returns>
-        public ICollection<KeyValuePair<string, CachedFileInfo>> getSortedSubfiles(string relativePath) {
-            lock (_sync) {
-                CachedFolder f = getFolder(relativePath);
+        public ICollection<KeyValuePair<string, CachedFileInfo>> GetSortedSubFiles(string relativePath) {
+            lock (sync) {
+                CachedFolder f = GetFolder(relativePath);
                 if (f == null || f.files.Count < 1) return null;
                 //Copy pairs to an array.
                 KeyValuePair<string, CachedFileInfo>[] items = new KeyValuePair<string, CachedFileInfo>[f.files.Count];
@@ -271,9 +256,9 @@ namespace Imazen.DiskCache {
                     i++;
                 }
                 //Sort the pairs on accessed date
-                Array.Sort<KeyValuePair<string, CachedFileInfo>>(items, delegate(KeyValuePair<string, CachedFileInfo> a, KeyValuePair<string, CachedFileInfo> b) {
-                    return DateTime.Compare(a.Value.AccessedUtc, b.Value.AccessedUtc);
-                });
+                Array.Sort(items,
+                    (a, b) => 
+                        DateTime.Compare(a.Value.AccessedUtc, b.Value.AccessedUtc));
 
 
                 return items;
@@ -281,9 +266,9 @@ namespace Imazen.DiskCache {
         }
 
 
-        public int getFileCount(string relativePath) {
-            lock (_sync) {
-                CachedFolder f = getFolder(relativePath);
+        public int GetFileCount(string relativePath) {
+            lock (sync) {
+                CachedFolder f = GetFolder(relativePath);
                 return f.files.Count;
             }
         }
@@ -293,31 +278,31 @@ namespace Imazen.DiskCache {
         /// </summary>
         /// <param name="relativePath"></param>
         /// <param name="physicalPath"></param>
-        public void populate(string relativePath, string physicalPath) {
+        public void Populate(string relativePath, string physicalPath) {
             //NDJ-added May 29,2011
             //Nothing was setting IsValue=true before.
-            populateSubfolders(relativePath, physicalPath);
-            populateFiles(relativePath, physicalPath);
-            getOrCreateFolder(relativePath, true).IsValid = true;
+            PopulateSubfolders(relativePath, physicalPath);
+            PopulateFiles(relativePath, physicalPath);
+            GetOrCreateFolder(relativePath, true).IsValid = true;
         }
         /// <summary>
         /// Updates  the 'folders' dictionary to match the folders that exist on disk. ONLY UPDATES THE LOCAL FOLDER
         /// </summary>
         /// <param name="relativePath"></param>
         /// <param name="physicalPath"></param>
-        protected void populateSubfolders(string relativePath, string physicalPath) {
-            relativePath = checkRelativePath(relativePath);
-            string[] dirs = null;
+        private void PopulateSubfolders(string relativePath, string physicalPath) {
+            relativePath = CheckRelativePath(relativePath);
+            string[] dirs;
             try {
-                 dirs = System.IO.Directory.GetDirectories(physicalPath);
+                 dirs = Directory.GetDirectories(physicalPath);
             } catch (DirectoryNotFoundException) {
                 dirs = new string[]{}; //Pretend it's empty. We don't care, the next recursive will get rid of it.
             }
-            lock (_sync) {
-                CachedFolder f = getOrCreateFolder(relativePath, true);
+            lock (sync) {
+                CachedFolder f = GetOrCreateFolder(relativePath, true);
                 Dictionary<string, CachedFolder> newFolders = new Dictionary<string, CachedFolder>(dirs.Length, KeyComparer);
                 foreach (string s in dirs) {
-                    string local = s.Substring(s.LastIndexOf(System.IO.Path.DirectorySeparatorChar) + 1);
+                    string local = s.Substring(s.LastIndexOf(Path.DirectorySeparatorChar) + 1);
                     if (local.StartsWith(".")) continue; //Skip folders that start with a period.
                     if (f.folders.ContainsKey(local)) 
                         newFolders[local] = f.folders[local]; //What if the value is null? Does ContainsKey work?
@@ -332,63 +317,45 @@ namespace Imazen.DiskCache {
         /// </summary>
         /// <param name="relativePath"></param>
         /// <param name="physicalPath"></param>
-        protected void populateFiles(string relativePath, string physicalPath) {
-            relativePath = checkRelativePath(relativePath);
-            string[] physicalFiles = null;
+        private void PopulateFiles(string relativePath, string physicalPath) {
+            relativePath = CheckRelativePath(relativePath);
+            string[] physicalFiles;
             try {
-                physicalFiles = System.IO.Directory.GetFiles(physicalPath);
+                physicalFiles = Directory.GetFiles(physicalPath);
             } catch (DirectoryNotFoundException) {
                 physicalFiles = new string[] { }; //Pretend it's empty. We don't care, the next recursive will get rid of it.
             }
             Dictionary<string, CachedFileInfo> newFiles = new Dictionary<string, CachedFileInfo>(physicalFiles.Length, KeyComparer);
 
-            CachedFolder f = getOrCreateFolder(relativePath, true);
+            CachedFolder f = GetOrCreateFolder(relativePath, true);
             foreach (string s in physicalFiles) {
-                string local = s.Substring(s.LastIndexOf(System.IO.Path.DirectorySeparatorChar) + 1);
+                string local = s.Substring(s.LastIndexOf(Path.DirectorySeparatorChar) + 1);
                 
                 //Todo, add a callback that handles exclusion of files
                 if (local.EndsWith(".config", StringComparison.OrdinalIgnoreCase)) continue;
                 if (local.StartsWith(".")) continue; //Skip files that start with a period
 
                 //What did we have on file?
-                CachedFileInfo old = null;
-                lock (_sync) {
-                    if (!f.files.TryGetValue(relativePath, out old)) old = null;
+                CachedFileInfo old;
+                lock (sync) {
+                    if (!f.files.TryGetValue(relativePath, out old))
+                    {
+                    }
                 }
                 newFiles[local] = new CachedFileInfo(new FileInfo(s), old);
             }
-            lock (_sync) {
+            lock (sync) {
                 f.files = newFiles;
             }
         }
 
 
 
-        public bool existsCertain(string relativePath, string physicalPath) {
-            return getFileInfoCertainExists(relativePath, physicalPath) != null;
+        public bool ExistsCertain(string relativePath, string physicalPath) {
+            return GetFileInfoCertainExists(relativePath, physicalPath) != null;
         }
-        public bool exists(string relativePath, string physicalPath) {
-            return getFileInfo(relativePath, physicalPath) != null;
-        }
-        public bool modifiedDateMatches(DateTime utc, string relativePath, string physicalPath) {
-            CachedFileInfo f = getFileInfo(relativePath, physicalPath);
-            if (f == null) return false;
-            return roughCompare(f.ModifiedUtc, utc);
-        }
-        public bool modifiedDateMatchesCertainExists(DateTime utc, string relativePath, string physicalPath) {
-            CachedFileInfo f = getFileInfoCertainExists(relativePath, physicalPath);
-            if (f == null) return false;
-            return roughCompare(f.ModifiedUtc, utc);
-        }
-
-        /// <summary>
-        /// Returns true if both dates are equal to the nearest 200th of a second.
-        /// </summary>
-        /// <param name="d1"></param>
-        /// <param name="d2"></param>
-        /// <returns></returns>
-        protected bool roughCompare(DateTime d1, DateTime d2) {
-            return Math.Abs(d1.Ticks - d2.Ticks) < TimeSpan.TicksPerMillisecond * 5;
+        public bool Exists(string relativePath, string physicalPath) {
+            return GetFileInfo(relativePath, physicalPath) != null;
         }
 
         /// <summary>
@@ -396,8 +363,8 @@ namespace Imazen.DiskCache {
         /// </summary>
         /// <param name="relativePath"></param>
         /// <returns></returns>
-        protected string checkRelativePath(string relativePath) {
-            if (relativePath == null) return relativePath;
+        private static string CheckRelativePath(string relativePath) {
+            if (relativePath == null) return null;
             if (relativePath.StartsWith("/") || relativePath.EndsWith("/")) {
                 Debug.WriteLine("Invalid relativePath value - should never have leading slash!");
             }
