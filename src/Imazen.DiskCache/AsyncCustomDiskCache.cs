@@ -346,10 +346,12 @@ namespace Imazen.DiskCache {
                 });
         }
 
-        // ReSharper disable once SuggestBaseTypeForParameter
         private static bool IsFileLocked(IOException exception) {
-            var errorCode = System.Runtime.InteropServices.Marshal.GetHRForException(exception) & ((1 << 16) - 1);
-            return errorCode == 32 || errorCode == 33;
+            // See https://docs.microsoft.com/en-us/dotnet/standard/io/handling-io-errors
+            const int errorSharingViolation = 0x20; 
+            const int errorLockViolation = 0x21; 
+            var errorCode = exception.HResult & 0x0000FFFF; 
+            return errorCode == errorSharingViolation || errorCode == errorLockViolation;
         }
 
 
