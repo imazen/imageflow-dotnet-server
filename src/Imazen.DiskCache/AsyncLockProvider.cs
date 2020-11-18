@@ -52,7 +52,7 @@ namespace Imazen.DiskCache {
         /// <param name="timeoutMs"></param>
         /// <param name="success"></param>
         /// <returns></returns>
-        public bool TryExecute(string key, int timeoutMs, LockCallback success)
+        public bool TryExecuteSynchronous(string key, int timeoutMs, LockCallback success)
         {
             var task = TryExecuteAsync(key, timeoutMs, () => { success();  return Task.FromResult(false); });
             task.RunSynchronously();

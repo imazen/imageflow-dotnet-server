@@ -297,7 +297,7 @@ namespace Imazen.DiskCache {
 
             bool removedFile = false;
 
-            cache.Locks.TryExecute(item.RelativePath.ToUpperInvariant(), 10, delegate() {
+            cache.Locks.TryExecuteSynchronous(item.RelativePath.ToUpperInvariant(), 10, delegate() {
 
                 //If the file is already gone, consider the mission a success.
                 if (!System.IO.File.Exists(item.PhysicalPath)) {
@@ -399,7 +399,7 @@ namespace Imazen.DiskCache {
             CachedFileInfo c = cache.Index.GetCachedFileInfo(item.RelativePath);
             if (c == null) return; //File was already deleted, nothing to do.
             try{
-                cache.Locks.TryExecute(item.RelativePath.ToUpperInvariant(), 1, delegate ()
+                cache.Locks.TryExecuteSynchronous(item.RelativePath.ToUpperInvariant(), 1, delegate ()
                 {
                     File.SetLastAccessTimeUtc(item.PhysicalPath, c.AccessedUtc);
                 });
