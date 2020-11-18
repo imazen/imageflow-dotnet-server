@@ -3,11 +3,7 @@
 // propagated, or distributed except as permitted in COPYRIGHT.txt.
 // Licensed under the GNU Affero General Public License, Version 3.0.
 // Commercial licenses available at http://imageresizing.net/
-using System;
 using System.Collections.Generic;
-using System.Text;
-using System.Threading;
-using System.Globalization;
 using System.Threading.Tasks;
 
 namespace Imazen.DiskCache {
@@ -17,9 +13,9 @@ namespace Imazen.DiskCache {
             MaxQueueBytes = 1024 * 1024 * 10;
         }
 
-        private object _sync = new object();
+        private readonly object sync = new object();
 
-        private Dictionary<string, AsyncWrite> c = new Dictionary<string, AsyncWrite>();
+        private readonly Dictionary<string, AsyncWrite> c = new Dictionary<string, AsyncWrite>();
 
         /// <summary>
         /// How many bytes of buffered file data to hold in memory before refusing further queue requests and forcing them to be executed synchronously.
@@ -32,9 +28,8 @@ namespace Imazen.DiskCache {
         /// <param name="key"></param>
         /// <returns></returns>
         public AsyncWrite Get(string key) {
-            lock (_sync) {
-                AsyncWrite result;
-                return c.TryGetValue(key, out result) ? result : null;
+            lock (sync) {
+                return c.TryGetValue(key, out var result) ? result : null;
             }
         }
 
@@ -42,8 +37,8 @@ namespace Imazen.DiskCache {
         /// Returns how many bytes are allocated by buffers in the queue. May be 2x the amount of data. Represents how much ram is being used by the queue, not the amount of encoded bytes that will actually be written.
         /// </summary>
         /// <returns></returns>
-        public long GetQueuedBufferBytes() {
-            lock (_sync) {
+        private long GetQueuedBufferBytes() {
+            lock (sync) {
                 long total = 0;
                 foreach (AsyncWrite value in c.Values) {
                     if (value == null) continue;
@@ -54,11 +49,11 @@ namespace Imazen.DiskCache {
         }
 
         /// <summary>
-        /// Removes the specified object based on its relativepath and modifieddateutc values.
+        /// Removes the specified object based on its relativePath and modifiedDateUtc values.
         /// </summary>
         /// <param name="w"></param>
         public void Remove(AsyncWrite w) {
-            lock (_sync) {
+            lock (sync) {
                 c.Remove(w.Key);
             }
         }
@@ -69,7 +64,7 @@ namespace Imazen.DiskCache {
         /// <param name="writerDelegate"></param>
         /// <returns></returns>
         public bool Queue(AsyncWrite w, WriterDelegate writerDelegate){
-            lock (_sync) {
+            lock (sync) {
                 if (GetQueuedBufferBytes() + w.GetBufferLength() > MaxQueueBytes) return false; //Because we would use too much ram.
                 if (c.ContainsKey(w.Key)) return false; //We already have a queued write for this data.
                 c.Add(w.Key, w);

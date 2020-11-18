@@ -132,7 +132,7 @@ namespace Imazen.DiskCache {
                             await writeCallback(ms);
                             ms.Position = 0;
 
-                            AsyncWrite w = new AsyncWrite(CurrentWrites,ms, physicalPath, relativePath);
+                            AsyncWrite w = new AsyncWrite(ms, physicalPath, relativePath);
                             if (CurrentWrites.Queue(w, async delegate(AsyncWrite job) {
                                 try
                                 {
