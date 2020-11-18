@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace Imazen.DiskCache {
 
+    internal delegate void LockCallback();
     internal delegate Task AsyncLockCallback();
     /// <summary>
     /// Provides locking based on a string key. 
@@ -16,7 +17,7 @@ namespace Imazen.DiskCache {
     /// Thread-safe.
     /// Uses SemaphoreSlim instead of locks to be thread-context agnostic.
     /// </summary>
-    internal class AsyncLockProvider:ILockProvider {
+    internal class AsyncLockProvider {
 
         /// <summary>
         /// The only objects in this collection should be for open files. 

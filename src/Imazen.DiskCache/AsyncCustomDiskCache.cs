@@ -44,12 +44,12 @@ namespace Imazen.DiskCache {
         /// <summary>
         /// Provides string-based locking for file write access.
         /// </summary>
-        public ILockProvider Locks {get; private set;}
+        public AsyncLockProvider Locks {get; private set;}
 
         /// <summary>
         /// Provides string-based locking for image resizing (not writing, just processing). Prevents duplication of efforts in asynchronous mode, where 'Locks' is not being used.
         /// </summary>
-        private ILockProvider QueueLocks { get; set; }
+        private AsyncLockProvider QueueLocks { get; set; }
 
         /// <summary>
         /// Contains all the queued and in-progress writes to the cache. 

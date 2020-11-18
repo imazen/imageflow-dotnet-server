@@ -20,6 +20,6 @@ namespace Imazen.DiskCache
          CacheIndex Index { get; }
          string PhysicalCachePath { get;  }
 
-         ILockProvider Locks { get;}
+         AsyncLockProvider Locks { get;}
     }
 }
