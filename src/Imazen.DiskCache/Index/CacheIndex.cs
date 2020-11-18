@@ -8,8 +8,5 @@ namespace Imazen.DiskCache.Index
     /// </summary>
     internal class CacheIndex : CachedFolder
     {
-        public CacheIndex()
-        {
-        }
     }
 }

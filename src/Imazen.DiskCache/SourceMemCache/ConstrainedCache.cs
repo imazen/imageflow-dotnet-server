@@ -5,47 +5,47 @@
 // Commercial licenses available at http://imageresizing.net/
 using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace Imazen.DiskCache.SourceMemCache {
-    internal class ConstrainedCache<K,V> {
+    internal class ConstrainedCache<TK,TV> {
 
-        public delegate long SizeCalculationDelegate(K key, V value);
-        public ConstrainedCache(IEqualityComparer<K> keyComparer, SizeCalculationDelegate calculator, long maxBytes, TimeSpan usageWindow, TimeSpan minCleanupInterval) {
-            EventCountingStrategy s = new EventCountingStrategy();
-            s.MaxBytesUsed = maxBytes;
-            s.MinimumCleanupInterval = minCleanupInterval;
-            s.CounterGranularity = 16;
-            usage = new EventCountingDictionary<K>(keyComparer, usageWindow, s);
-            usage.CounterRemoved += new EventCountingDictionary<K>.EventKeyRemoved(usage_CounterRemoved);
+        public delegate long SizeCalculationDelegate(TK key, TV value);
+        public ConstrainedCache(IEqualityComparer<TK> keyComparer, SizeCalculationDelegate calculator, long maxBytes, TimeSpan usageWindow, TimeSpan minCleanupInterval) {
+            EventCountingStrategy s = new EventCountingStrategy
+            {
+                MaxBytesUsed = maxBytes, 
+                MinimumCleanupInterval = minCleanupInterval, 
+                CounterGranularity = 16
+            };
+            usage = new EventCountingDictionary<TK>(keyComparer, usageWindow, s);
+            usage.CounterRemoved += usage_CounterRemoved;
 
-            data = new Dictionary<K, V>(keyComparer);
+            data = new Dictionary<TK, TV>(keyComparer);
 
             this.calculator = calculator;
         }
 
-        SizeCalculationDelegate calculator;
-        private EventCountingDictionary<K> usage;
+        private readonly SizeCalculationDelegate calculator;
+        private readonly EventCountingDictionary<TK> usage;
 
-        private Dictionary<K,V> data;
+        private readonly Dictionary<TK,TV> data;
 
         /// <summary>
         /// The estimated ram usage for the entire cache. Relies upon the accuracy of the calculator delegate
         /// </summary>
-        public long ReportedBytesUsed { get { return usage.ReportedBytesUsed; } }
+        public long ReportedBytesUsed => usage.ReportedBytesUsed;
 
-        private object lockSync = new object();
+        private readonly object lockSync = new object();
 
-        public V Get(K key) {
+        public TV Get(TK key) {
             lock (lockSync) {
-                V val;
-                bool found = data.TryGetValue(key, out val);
+                bool found = data.TryGetValue(key, out var val);
                 if (found) usage.Increment(key, 0);
-                return found ? val : default(V);
+                return found ? val : default;
             }
         }
 
-        public void Set(K key, V val) {
+        public void Set(TK key, TV val) {
             lock (lockSync) {
                 data[key] = val;
                 usage.Increment(key, calculator(key, val) + 32);
@@ -54,7 +54,7 @@ namespace Imazen.DiskCache.SourceMemCache {
 
         public void PingCleanup() { usage.PingCleanup(); }
 
-        void usage_CounterRemoved(EventCountingDictionary<K> sender, K key, int value) {
+        void usage_CounterRemoved(EventCountingDictionary<TK> sender, TK key, int value) {
             //May be expected inside usage.lockSync AND lockSync
             lock (lockSync) {
                 data.Remove(key);

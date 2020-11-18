@@ -1,38 +1,27 @@
 ﻿/* Copyright (c) 2014 Imazen See license.txt for your rights. */
-using System;
-using System.Collections.Generic;
-using System.Text;
+
 using System.IO;
-using System.Threading.Tasks;
 using Imazen.Common.Extensibility.ClassicDiskCache;
 
 namespace Imazen.DiskCache {
-    
-  
-
     public class CacheResult : ICacheResult
     {
         public CacheResult(CacheQueryResult result, string physicalPath, string relativePath) {
-            this.Result = result;
-            this.PhysicalPath = physicalPath;
-            this.RelativePath = relativePath;
+            Result = result;
+            PhysicalPath = physicalPath;
+            RelativePath = relativePath;
         }
-        public CacheResult(CacheQueryResult result, Stream data, string relativePath) {
-            this.Result = result;
-            this.Data = data;
-            this.RelativePath = relativePath;
-        }
-
+        
         /// <summary>
         /// The physical path to the cached item. Verify .Data is null before trying to read from this file.
         /// </summary>
-        public string PhysicalPath { get; } = null;
+        public string PhysicalPath { get; }
 
         /// <summary>
         /// Provides a read-only stream to the data. Usually a MemoryStream instance, but you should dispose it once you are done. 
         /// If this value is not null, it indicates that the file has not yet been written to disk, and you should read it from this stream instead.
         /// </summary>
-        public Stream Data { get; set; } = null;
+        public Stream Data { get; set; }
 
 
         /// <summary>

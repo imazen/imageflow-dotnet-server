@@ -1,22 +1,17 @@
 ﻿/* Copyright (c) 2014 Imazen See license.txt */
 using System;
-using System.Collections.Generic;
 using System.Text;
 using System.Diagnostics;
-using System.Security.Cryptography;
 using System.Globalization;
 
 namespace Imazen.DiskCache {
 
     public class UrlHasher {
-        public UrlHasher() {
-        }
-
         /// <summary>
         /// Builds a key for the cached version, using the hashcode of the normalized URL.
         /// if subfolders > 1, dirSeparator will be used to separate the subfolder and the key. 
         /// No extension is appended.
-        /// I.e, a13514\124211ab132592 or 12412ababc12141
+        /// I.e, a13514\124211ab132592 or 12412ab12141
         /// </summary>
         /// <param name="data"></param>
         /// <param name="subfolders"></param>
@@ -26,7 +21,7 @@ namespace Imazen.DiskCache {
 
             using (var h = System.Security.Cryptography.SHA256.Create())
             {
-                var hash = h.ComputeHash(new System.Text.UTF8Encoding().GetBytes(data));
+                var hash = h.ComputeHash(new UTF8Encoding().GetBytes(data));
 
                 //If configured, place files in subfolders.
                 var subfolder = "";
@@ -53,9 +48,9 @@ namespace Imazen.DiskCache {
             Debug.Assert(bits > 0);
             Debug.Assert(bits <= hash.Length * 8);
 
-            var subfolder = new byte[(int)Math.Ceiling((double)bits / 8.0)]; //Round up to bytes.
+            var subfolder = new byte[(int)Math.Ceiling(bits / 8.0)]; //Round up to bytes.
             Array.Copy(hash, hash.Length - subfolder.Length, subfolder, 0, subfolder.Length);
-            subfolder[0] = (byte)((int)subfolder[0] >> ((subfolder.Length * 8) - bits)); //Set extra bits to 0.
+            subfolder[0] = (byte)(subfolder[0] >> ((subfolder.Length * 8) - bits)); //Set extra bits to 0.
             return Base16Encode(subfolder);
             
         }

@@ -1,14 +1,13 @@
 ﻿/* Copyright (c) 2014 Imazen See license.txt for your rights. */
+
 using System;
 using System.Collections.Generic;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using Imazen.Common.Extensibility.ClassicDiskCache;
 using Imazen.Common.Issues;
 using Microsoft.Extensions.Logging;
 
-namespace Imazen.DiskCache {
+namespace Imazen.DiskCache.Cleanup {
 
     internal static class TaskExtensions
     {
@@ -41,16 +40,18 @@ namespace Imazen.DiskCache {
     }
     
     internal class CleanupManager:IIssueProvider, IDisposable {
-        private readonly ICleanableCache cache = null;
-        private readonly CleanupStrategy cs = null;
-        private readonly CleanupQueue queue = null;
-        private readonly CleanupWorker worker = null;
+        private readonly ICleanableCache cache;
+        private readonly CleanupStrategy cs;
+        private readonly CleanupQueue queue;
+        private readonly CleanupWorker worker;
 
-        private readonly ILogger logger = null;
+        private readonly ILogger logger;
         public CleanupManager(ILogger logger, ICleanableCache cache, CleanupStrategy cs) {
             this.cache = cache;
             this.cs = cs;
             this.logger = logger;
+            worker = null;
+            queue = null;
             queue = new CleanupQueue();
             //Called each request
             cache.CacheResultReturned += delegate(ICleanableCache sender, CacheResult r) {

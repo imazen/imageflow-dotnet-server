@@ -3,6 +3,8 @@
 // propagated, or distributed except as permitted in COPYRIGHT.txt.
 // Licensed under the GNU Affero General Public License, Version 3.0.
 // Commercial licenses available at http://imageresizing.net/
+
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -63,7 +65,7 @@ namespace Imazen.DiskCache {
         /// <param name="w"></param>
         /// <param name="writerDelegate"></param>
         /// <returns></returns>
-        public bool Queue(AsyncWrite w, WriterDelegate writerDelegate){
+        public bool Queue(AsyncWrite w, Func<AsyncWrite, Task> writerDelegate){
             lock (sync) {
                 if (GetQueuedBufferBytes() + w.GetBufferLength() > MaxQueueBytes) return false; //Because we would use too much ram.
                 if (c.ContainsKey(w.Key)) return false; //We already have a queued write for this data.
@@ -76,8 +78,6 @@ namespace Imazen.DiskCache {
                 return true;
             }
         }
-
-        public delegate Task WriterDelegate(AsyncWrite w);
-
+        
     }
 }
