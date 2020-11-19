@@ -6,7 +6,7 @@ using System.Globalization;
 
 namespace Imazen.DiskCache {
 
-    internal class CacheHashPathBuilder
+    internal class HashBasedPathBuilder
     {
    
         /// <summary>
@@ -19,7 +19,7 @@ namespace Imazen.DiskCache {
         /// <param name="subfolders"></param>
         /// <param name="dirSeparator"></param>
         /// <returns></returns>
-        public string BuildRelativePathForData(byte[] data, int subfolders, string dirSeparator) {
+        public string BuildPath(byte[] data, int subfolders, string dirSeparator) {
 
             using (var h = System.Security.Cryptography.SHA256.Create())
             {
@@ -49,14 +49,18 @@ namespace Imazen.DiskCache {
             var bits = (int)Math.Ceiling(Math.Log(subfolders, 2)); //Log2 to find the number of bits. round up.
             Debug.Assert(bits > 0);
             Debug.Assert(bits <= hash.Length * 8);
-
-            var subfolder = new byte[(int)Math.Ceiling(bits / 8.0)]; //Round up to bytes.
-            Array.Copy(hash, hash.Length - subfolder.Length, subfolder, 0, subfolder.Length);
-            subfolder[0] = (byte)(subfolder[0] >> ((subfolder.Length * 8) - bits)); //Set extra bits to 0.
-            return Base16Encode(subfolder);
+            
+            return Base16Encode(GetTrailingBits(hash, bits));
             
         }
-
+        internal static byte[] GetTrailingBits(byte[] data, int bits)
+        {
+            var trailingBytes = new byte[(int) Math.Ceiling(bits / 8.0)]; //Round up to bytes.
+            Array.Copy(data, data.Length - trailingBytes.Length, trailingBytes, 0, trailingBytes.Length);
+            var bitsToClear = (trailingBytes.Length * 8) - bits;
+            trailingBytes[0] = (byte) ((byte)(trailingBytes[0] << bitsToClear) >> bitsToClear); //Set extra bits to 0.
+            return trailingBytes;
+        }
 
         private string Base16Encode(byte[] bytes) {
             var sb = new StringBuilder(bytes.Length * 2);

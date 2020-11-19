@@ -80,7 +80,7 @@ namespace Imazen.DiskCache {
 
             //Relative to the cache directory. Not relative to the app or domain root
             var keyBasisBytes = new UTF8Encoding().GetBytes(keyBasis);
-            var relativePath = new CacheHashPathBuilder().BuildRelativePathForData(keyBasisBytes, subfolders, "/") + '.' + extension;
+            var relativePath = new HashBasedPathBuilder().BuildPath(keyBasisBytes, subfolders, "/") + '.' + extension;
 
             //Physical path
             var physicalPath = PhysicalCachePath.TrimEnd('\\', '/') + Path.DirectorySeparatorChar +
