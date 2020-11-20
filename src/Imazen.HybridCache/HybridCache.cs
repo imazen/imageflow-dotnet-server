@@ -22,13 +22,8 @@ namespace Imazen.HybridCache
         {
             throw new System.NotImplementedException();
         }
-
-        public Task<IStreamCacheResult> GetOrCreateStream(byte[] key, AsyncStreamWriteResult writeCallback)
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public Task<IStreamCacheResult> GetOrCreateBytes(byte[] key, AsyncBytesResult writeCallback)
+        
+        public Task<IStreamCacheResult> GetOrCreateBytes(byte[] key, AsyncBytesResult writeCallback, CancellationToken cancellationToken, bool retrieveContentType)
         {
             throw new System.NotImplementedException();
         }

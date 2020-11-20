@@ -6,7 +6,7 @@ namespace Imazen.Common.Extensibility.StreamCache
     public interface IStreamCacheResult
     {
         /// <summary>
-        /// An open stream to the data. Must be disposed.
+        /// An open stream to the data. Must be disposed by caller.
         /// </summary>
         Stream Data { get; set; }
 

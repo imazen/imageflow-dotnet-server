@@ -5,7 +5,7 @@ namespace Imazen.Common.Extensibility.StreamCache
         /// <summary>
         /// Failed to acquire a lock on the cached item within the timeout period
         /// </summary>
-        Timeout,
+        Failed,
 
         /// <summary>
         /// The item wasn't cached, but was successfully added to the cache
@@ -15,6 +15,6 @@ namespace Imazen.Common.Extensibility.StreamCache
         /// <summary>
         /// The item was already in the cache.
         /// </summary>
-        Hit
+        Hit,
     }
 }
