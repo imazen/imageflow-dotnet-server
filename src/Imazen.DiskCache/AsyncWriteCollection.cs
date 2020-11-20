@@ -59,23 +59,35 @@ namespace Imazen.DiskCache {
                 c.Remove(w.Key);
             }
         }
+        public enum AsyncQueueResult
+        {
+            Enqueued,
+            AlreadyPresent,
+            QueueFull
+        }
         /// <summary>
-        /// Returns false when (a) the specified AsyncWrite value already exists, (b) the queue is full, or (c) the thread pool queue is full
+        /// Tries to enqueue the given async write and callback
         /// </summary>
         /// <param name="w"></param>
         /// <param name="writerDelegate"></param>
         /// <returns></returns>
-        public bool Queue(AsyncWrite w, Func<AsyncWrite, Task> writerDelegate){
+        public AsyncQueueResult Queue(AsyncWrite w, Func<AsyncWrite, Task> writerDelegate){
             lock (sync) {
-                if (GetQueuedBufferBytes() + w.GetBufferLength() > MaxQueueBytes) return false; //Because we would use too much ram.
-                if (c.ContainsKey(w.Key)) return false; //We already have a queued write for this data.
+                if (GetQueuedBufferBytes() + w.GetBufferLength() > MaxQueueBytes) return AsyncQueueResult.QueueFull; //Because we would use too much ram.
+                if (c.ContainsKey(w.Key)) return AsyncQueueResult.AlreadyPresent; //We already have a queued write for this data.
                 c.Add(w.Key, w);
                 Task.Run(
                     async () => {
-                        await writerDelegate(w);
-                        Remove(w);
+                        try
+                        {
+                            await writerDelegate(w);
+                        }
+                        finally
+                        {
+                            Remove(w);
+                        }
                     }).ConfigureAwait(false);
-                return true;
+                return AsyncQueueResult.Enqueued;
             }
         }
         

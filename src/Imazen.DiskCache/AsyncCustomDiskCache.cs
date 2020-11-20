@@ -64,7 +64,7 @@ namespace Imazen.DiskCache {
         
         /// <summary>
         /// May return either a physical file name or a MemoryStream with the data. 
-        /// Faster than GetCachedFile, as writes are (usually) asynchronous. If the write queue is full, the write is forced to be synchronous again.
+        /// Writes are (usually) asynchronous. If the write queue is full, the write is forced to be synchronous again.
         /// Identical to GetCachedFile() when asynchronous=false
         /// </summary>
         /// <param name="keyBasis"></param>
@@ -138,34 +138,49 @@ namespace Imazen.DiskCache {
                             ms.Position = 0;
 
                             AsyncWrite w = new AsyncWrite(ms, physicalPath, relativePath);
-                            if (CurrentWrites.Queue(w, async delegate(AsyncWrite job) {
+                            var queueResult = CurrentWrites.Queue(w, async delegate(AsyncWrite job)
+                            {
                                 try
                                 {
                                     var swIo = Stopwatch.StartNew();
                                     //We want this to run synchronously, since it's in a background thread already.
-                                    if (!(await TryWriteFile(null, job.PhysicalPath, job.Key, 
-                                        delegate(Stream s) {
+                                    if (!(await TryWriteFile(null, job.PhysicalPath, job.Key,
+                                        delegate(Stream s)
+                                        {
                                             var fromStream = job.GetReadonlyStream();
                                             return fromStream.CopyToAsync(s);
                                         }, timeoutMs, true)))
                                     {
                                         swIo.Stop();
                                         //We failed to lock the file.
-                                        logger?.LogWarning("Failed to flush async write, timeout exceeded after {0}ms - {1}",  swIo.ElapsedMilliseconds, result.RelativePath);
+                                        logger?.LogWarning(
+                                            "Failed to flush async write, timeout exceeded after {0}ms - {1}",
+                                            swIo.ElapsedMilliseconds, result.RelativePath);
 
-                                    } else {
+                                    }
+                                    else
+                                    {
                                         swIo.Stop();
-                                        logger?.LogTrace("{0}ms: Async write started {1}ms after enqueue for {2}", swIo.ElapsedMilliseconds.ToString().PadLeft(4), DateTime.UtcNow.Subtract(w.JobCreatedAt).Subtract(swIo.Elapsed).TotalMilliseconds, result.RelativePath);
+                                        logger?.LogTrace("{0}ms: Async write started {1}ms after enqueue for {2}",
+                                            swIo.ElapsedMilliseconds.ToString().PadLeft(4),
+                                            DateTime.UtcNow.Subtract(w.JobCreatedAt).Subtract(swIo.Elapsed)
+                                                .TotalMilliseconds, result.RelativePath);
                                     }
 
-                                } catch (Exception ex)
+                                }
+                                catch (Exception ex)
                                 {
-                                    logger?.LogError("Failed to flush async write, {0} {1}\n{2}",ex.ToString(), result.RelativePath,ex.StackTrace);
-                                } finally {
+                                    logger?.LogError("Failed to flush async write, {0} {1}\n{2}", ex.ToString(),
+                                        result.RelativePath, ex.StackTrace);
+                                }
+                                finally
+                                {
                                     CurrentWrites.Remove(job); //Remove from the queue, it's done or failed. 
                                 }
 
-                            })) {
+                            });
+                            if (queueResult == AsyncWriteCollection.AsyncQueueResult.Enqueued ||
+                                queueResult == AsyncWriteCollection.AsyncQueueResult.AlreadyPresent){
                                 //We queued it! Send back a read-only memory stream
                                 result.Data = w.GetReadonlyStream();
                             } else {
