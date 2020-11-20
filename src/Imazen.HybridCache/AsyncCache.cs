@@ -39,7 +39,7 @@ namespace Imazen.HybridCache
             Logger = logger;
             Locks = new AsyncLockProvider();
             QueueLocks = new AsyncLockProvider();
-            CurrentWrites = new AsyncWriteCollection();
+            CurrentWrites = new AsyncWriteCollection(options.MaxQueuedBytes);
             FileWriter = new CacheFileWriter(Locks);
         }
 
@@ -67,18 +67,21 @@ namespace Imazen.HybridCache
         /// </summary>
         private AsyncWriteCollection CurrentWrites {get; }
 
-        private string GetPhysicalPathForRelativePath(string relativePath) =>
-            Options.PhysicalCachePath.TrimEnd('\\', '/') + Path.DirectorySeparatorChar +
-                               relativePath.Replace('/', Path.DirectorySeparatorChar);
-        
-        
+
+        public Task AwaitEnqueuedTasks()
+        {
+            return CurrentWrites.AwaitAllCurrentTasks();
+        }
         private CacheEntry BuildCacheEntry(byte[] keyBasis)
         {
             //Relative to the cache directory. Not relative to the app or domain root
             //We use .jpg for all file types. If it's an image of any type it will display properly
             var relativePath = PathBuilder.BuildRelativePathForData(keyBasis, "/") + ".jpg";
             
-            return new CacheEntry(GetPhysicalPathForRelativePath(relativePath), relativePath, keyBasis);
+            var physicalPath = Options.PhysicalCachePath.TrimEnd('\\', '/') + Path.DirectorySeparatorChar +
+                               relativePath.Replace('/', Path.DirectorySeparatorChar);
+            
+            return new CacheEntry(physicalPath, relativePath, keyBasis);
         }
         
         private async Task<AsyncCacheResult> TryGetFileBasedResult(CacheEntry entry, bool retrieveContentType, CancellationToken cancellationToken)
@@ -124,7 +127,7 @@ namespace Imazen.HybridCache
         /// <returns></returns>
         /// <exception cref="OperationCanceledException"></exception>
         /// <exception cref="ArgumentOutOfRangeException"></exception>
-        public async Task<IStreamCacheResult> GetOrCreateBytes(
+        public async Task<AsyncCacheResult> GetOrCreateBytes(
             byte[] key,
             AsyncBytesResult dataProviderCallback,
             CancellationToken cancellationToken,

@@ -5,6 +5,7 @@
 // Commercial licenses available at http://imageresizing.net/
 using System;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace Imazen.HybridCache {
     internal class AsyncWrite {
@@ -20,6 +21,7 @@ namespace Imazen.HybridCache {
         
         public string ContentType { get; }
 
+        public Task RunningTask { get; set; }
         public string Key { get; }
         /// <summary>
         /// Returns the UTC time this AsyncWrite object was created.

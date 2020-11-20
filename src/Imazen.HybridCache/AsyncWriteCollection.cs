@@ -6,13 +6,15 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Imazen.HybridCache {
     internal class AsyncWriteCollection {
 
-        public AsyncWriteCollection() {
-            MaxQueueBytes = 1024 * 1024 * 100;
+        public AsyncWriteCollection(long maxQueueBytes) {
+            MaxQueueBytes = maxQueueBytes;
         }
 
         private readonly object sync = new object();
@@ -22,7 +24,7 @@ namespace Imazen.HybridCache {
         /// <summary>
         /// How many bytes of buffered file data to hold in memory before refusing further queue requests and forcing them to be executed synchronously.
         /// </summary>
-        public long MaxQueueBytes { get; set; }
+        public long MaxQueueBytes { get; }
 
         /// <summary>
         /// If the collection contains the specified item, it is returned. Otherwise, null is returned.
@@ -77,7 +79,7 @@ namespace Imazen.HybridCache {
                 if (GetQueuedBufferBytes() + w.GetBufferLength() > MaxQueueBytes) return AsyncQueueResult.QueueFull; //Because we would use too much ram.
                 if (c.ContainsKey(w.Key)) return AsyncQueueResult.AlreadyPresent; //We already have a queued write for this data.
                 c.Add(w.Key, w);
-                Task.Run(
+                w.RunningTask = Task.Run(
                     async () => {
                         try
                         {
@@ -87,10 +89,18 @@ namespace Imazen.HybridCache {
                         {
                             Remove(w);
                         }
-                    }).ConfigureAwait(false);
+                    });
                 return AsyncQueueResult.Enqueued;
             }
         }
-        
+
+        public Task AwaitAllCurrentTasks()
+        {
+            lock (sync)
+            {
+                var tasks = c.Values.Select(w => w.RunningTask).ToArray();
+                return Task.WhenAll(tasks);
+            }
+        }
     }
 }
