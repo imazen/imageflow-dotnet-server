@@ -19,17 +19,16 @@ namespace Imageflow.Server.Storage.RemoteReader
         // ReSharper disable once NotAccessedField.Local
         private readonly ILogger<RemoteReaderService> logger;
 
-        public RemoteReaderService(RemoteReaderServiceOptions options
-            , ILogger<RemoteReaderService> logger
-            , HttpClient http
-            )
+        public RemoteReaderService(RemoteReaderServiceOptions options, ILogger<RemoteReaderService> logger)
         {
             this.options = options;
             this.logger = logger;
-            this.http = http;
 
             prefixes.AddRange(this.options.Prefixes);
             prefixes.Sort((a, b) => b.Length.CompareTo(a.Length));
+
+            http = new HttpClient();
+            http.DefaultRequestHeaders.Add("user-agent", this.options.UserAgent);
         }
 
         /// <summary>
@@ -57,7 +56,6 @@ namespace Imageflow.Server.Storage.RemoteReader
 
             try
             {
-
                 var resp = await http.GetAsync(url);
 
                 var redirectCount = 0;
