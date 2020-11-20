@@ -15,6 +15,11 @@ namespace Imazen.HybridCache.Tests
             public Task<string> GetContentType(CacheEntry cacheEntry, CancellationToken cancellationToken) => null;
             public Task<bool> TryReserveSpace(CacheEntry cacheEntry, string contentType, int byteCount, bool allowEviction,
                 CancellationToken cancellationToken) => Task.FromResult(true);
+
+            public Task MarkFileCreated(CacheEntry cacheEntry)
+            {
+                return Task.FromResult(true);
+            }
         }
 
         [Fact]
@@ -22,7 +27,7 @@ namespace Imazen.HybridCache.Tests
         {
             var path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}");
             Directory.CreateDirectory(path);
-            AsyncCache cache= null;
+            AsyncCache cache = null;
             try
             {
                 var asyncCacheOptions = new AsyncCacheOptions()

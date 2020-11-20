@@ -31,7 +31,7 @@ namespace Imazen.HybridCache
             public AsyncCacheDetailResult Detail { get; set; }
         }
         
-        public AsyncCache(AsyncCacheOptions options, ICacheCleanupManager cleanupManager, ILogger logger)
+        public AsyncCache(AsyncCacheOptions options, ICacheCleanupManager cleanupManager, ILogger<HybridCache> logger)
         {
             Options = options;
             //We use .jpg for all file types. If it's an image of any type it will display properly
@@ -47,7 +47,7 @@ namespace Imazen.HybridCache
         
         private AsyncCacheOptions Options { get; }
         private HashBasedPathBuilder PathBuilder { get; }
-        private ILogger Logger { get; }
+        private ILogger<HybridCache> Logger { get; }
 
         private ICacheCleanupManager CleanupManager { get; }
         
@@ -225,6 +225,9 @@ namespace Imazen.HybridCache
                             return fromStream.CopyToAsync(s, 81920, ct2);
                         }, !queueFull, Options.WaitForIdenticalDiskWritesMs, ct);
 
+                        // Mark the file as created so it can be deleted
+                        await CleanupManager.MarkFileCreated(entry);
+                        
                         swIo.Stop();
                         switch (fileWriteResult.Status)
                         {

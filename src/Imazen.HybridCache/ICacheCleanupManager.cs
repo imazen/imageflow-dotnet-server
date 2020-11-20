@@ -8,5 +8,7 @@ namespace Imazen.HybridCache
         void NotifyUsed(CacheEntry cacheEntry);
         Task<string> GetContentType(CacheEntry cacheEntry, CancellationToken cancellationToken);
         Task<bool> TryReserveSpace(CacheEntry cacheEntry, string contentType, int byteCount, bool allowEviction, CancellationToken cancellationToken);
+
+        Task MarkFileCreated(CacheEntry cacheEntry);
     }
 }

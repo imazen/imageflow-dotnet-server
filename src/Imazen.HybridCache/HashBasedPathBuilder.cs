@@ -12,22 +12,18 @@ namespace Imazen.HybridCache
         private readonly int subfolderBits;
 
         public int SubfolderBits => subfolderBits;
-        private char DisplayDirSeparator { get; }
+        private char RelativeDirSeparator { get; }
         private string FileExtension { get; }
         private string PhysicalCacheDir { get; }
-        public HashBasedPathBuilder(string physicalCacheDir, int subfolders, char displayDirSeparator, string fileExtension)
+        public HashBasedPathBuilder(string physicalCacheDir, int subfolders, char relativeDirSeparator, string fileExtension)
         {
             PhysicalCacheDir = physicalCacheDir.TrimEnd('\\', '/');
             FileExtension = fileExtension;
-            DisplayDirSeparator = displayDirSeparator;
+            RelativeDirSeparator = relativeDirSeparator;
             subfolderBits = (int) Math.Ceiling(Math.Log(subfolders, 2)); //Log2 to find the number of bits. round up.
             if (subfolderBits < 1) subfolderBits = 1;
         }
-
-        public int GetHashLengthInBytes()
-        {
-            return 256 / 8;
-        }
+        
         public byte[] HashKeyBasis(byte[] keyBasis)
         {
             using (var h = System.Security.Cryptography.SHA256.Create())
@@ -47,14 +43,16 @@ namespace Imazen.HybridCache
         
         public string GetPhysicalPathFromHash(byte[] hash)
         {
-            var relativePath = BuildRelativePathForHash(hash, Path.DirectorySeparatorChar);
-            return Path.Combine(PhysicalCacheDir, relativePath);
+            var relativePath = GetRelativePathFromHash(hash);
+            return GetPhysicalPathFromRelativePath(relativePath);
         }
-        
-        public string GetDisplayPathFromHash(byte[] hash)
+
+        public string GetPhysicalPathFromRelativePath(string relativePath)
         {
-            return BuildRelativePathForHash(hash, '/');
+            var fixSlashes = relativePath.Replace(RelativeDirSeparator, Path.DirectorySeparatorChar);
+            return Path.Combine(PhysicalCacheDir, fixSlashes);
         }
+    
 
         /// <summary>
         /// Builds a key for the cached version, using the hashcode of `data`.
@@ -64,9 +62,8 @@ namespace Imazen.HybridCache
         /// We use trailing bytes so filenames that start the same aren't grouped together, which slows down some filesystems.
         /// </summary>
         /// <param name="hash"></param>
-        /// <param name="dirSeparator"></param>
         /// <returns></returns>
-        private string BuildRelativePathForHash(byte[] hash, char dirSeparator)
+        public string GetRelativePathFromHash(byte[] hash)
         {
             var allBits = GetTrailingBits(hash, subfolderBits);
 
@@ -74,14 +71,14 @@ namespace Imazen.HybridCache
             //Start with the subfolder distribution in bits, so we can easily delete old folders
             //When we change the subfolder size
             sb.Append(subfolderBits.ToString("D", NumberFormatInfo.InvariantInfo));
-            sb.Append(dirSeparator);
+            sb.Append(Path.DirectorySeparatorChar);
             //If subfolders is set above 256, it will nest files in multiple directories, one for each byte
             foreach (var b in allBits)
             {
                 sb.Append(b
                     .ToString("x", NumberFormatInfo.InvariantInfo)
                     .PadLeft(2, '0'));
-                sb.Append(dirSeparator);
+                sb.Append(Path.DirectorySeparatorChar);
             }
 
             foreach (var b in hash)
@@ -104,7 +101,7 @@ namespace Imazen.HybridCache
         public string GetDisplayPathForKeyBasis(byte[] keyBasis)
         {
             var hash = HashKeyBasis(keyBasis);
-            return GetDisplayPathFromHash(hash);
+            return GetRelativePathFromHash(hash);
         }
     }
 }
