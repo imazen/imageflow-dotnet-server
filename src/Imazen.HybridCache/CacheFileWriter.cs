@@ -53,10 +53,10 @@ namespace Imazen.HybridCache
             if (recheckFileSystemFirst)
             {
                 var miss = !File.Exists(entry.PhysicalPath);
-                if (!miss && !WriteLocks.MayBeLocked(entry.LockingKey)) return result;
+                if (!miss && !WriteLocks.MayBeLocked(entry.StringKey)) return result;
             }
             
-            var lockingSucceeded = await WriteLocks.TryExecuteAsync(entry.LockingKey, timeoutMs, cancellationToken,
+            var lockingSucceeded = await WriteLocks.TryExecuteAsync(entry.StringKey, timeoutMs, cancellationToken,
                 async () =>
                 {
                     if (cancellationToken.IsCancellationRequested)

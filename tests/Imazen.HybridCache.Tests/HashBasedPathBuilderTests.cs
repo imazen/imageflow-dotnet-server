@@ -10,33 +10,33 @@ namespace Imazen.HybridCache.Tests
             var data1 = new byte[] {0, 1, 2, 3};
             var data2 = new byte[] {4, 3, 5, 3};
             Assert.StartsWith("1/00/054", 
-                new HashBasedPathBuilder(2).BuildRelativePathForData(data1,"/"));
+                new HashBasedPathBuilder("",2, '/', "").GetDisplayPathForKeyBasis(data1));
             Assert.StartsWith("1/01/723", 
-                new HashBasedPathBuilder(2).BuildRelativePathForData(data2,"/"));
+                new HashBasedPathBuilder("",2, '/', "").GetDisplayPathForKeyBasis(data2));
 
             Assert.StartsWith("2/00/054", 
-                new HashBasedPathBuilder(4).BuildRelativePathForData(data1,"/"));
+                new HashBasedPathBuilder("",4, '/', "").GetDisplayPathForKeyBasis(data1));
             Assert.StartsWith("2/03/723", 
-                new HashBasedPathBuilder(4).BuildRelativePathForData(data2,"/"));
+                new HashBasedPathBuilder("",4, '/', "").GetDisplayPathForKeyBasis(data2));
   
             Assert.StartsWith("13/10/d8/054", 
-                new HashBasedPathBuilder(8192).BuildRelativePathForData(data1,"/"));
+                new HashBasedPathBuilder("",8192, '/', "").GetDisplayPathForKeyBasis(data1));
             Assert.StartsWith("13/00/e3/723", 
-                new HashBasedPathBuilder(8192).BuildRelativePathForData(data2,"/"));
+                new HashBasedPathBuilder("",8192, '/', "").GetDisplayPathForKeyBasis(data2));
 
         }
 
         [Fact]
         public void TestSubfolderBits()
         {
-            Assert.Equal(1, new HashBasedPathBuilder(-1).SubfolderBits);
-            Assert.Equal(1, new HashBasedPathBuilder(0).SubfolderBits);
-            Assert.Equal(1, new HashBasedPathBuilder(2).SubfolderBits);
-            Assert.Equal(8, new HashBasedPathBuilder(129).SubfolderBits);
-            Assert.Equal(8, new HashBasedPathBuilder(256).SubfolderBits);
-            Assert.Equal(9, new HashBasedPathBuilder(257).SubfolderBits);
-            Assert.Equal(12, new HashBasedPathBuilder(4096).SubfolderBits);
-            Assert.Equal(13, new HashBasedPathBuilder(8192).SubfolderBits);
+            Assert.Equal(1, new HashBasedPathBuilder("",-1,'/',"").SubfolderBits);
+            Assert.Equal(1, new HashBasedPathBuilder("",0,'/',"").SubfolderBits);
+            Assert.Equal(1, new HashBasedPathBuilder("",2,'/',"").SubfolderBits);
+            Assert.Equal(8, new HashBasedPathBuilder("",129,'/',"").SubfolderBits);
+            Assert.Equal(8, new HashBasedPathBuilder("",256,'/',"").SubfolderBits);
+            Assert.Equal(9, new HashBasedPathBuilder("",257,'/',"").SubfolderBits);
+            Assert.Equal(12, new HashBasedPathBuilder("",4096,'/',"").SubfolderBits);
+            Assert.Equal(13, new HashBasedPathBuilder("",8192,'/',"").SubfolderBits);
         }
 
         [Fact]

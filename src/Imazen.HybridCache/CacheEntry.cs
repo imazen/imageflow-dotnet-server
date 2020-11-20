@@ -2,18 +2,17 @@ namespace Imazen.HybridCache
 {
     internal readonly struct CacheEntry
     {
-        public CacheEntry(string physicalPath, string relativePath, byte[] keyBasis)
+        public CacheEntry(byte[] keyBasis, HashBasedPathBuilder builder)
         {
-            KeyBasis = keyBasis;
-            PhysicalPath = physicalPath;
-            RelativePath = relativePath;
-            //Lock execution using relativePath as the sync basis. Ignore casing differences.
-            LockingKey = relativePath.ToUpperInvariant();
+            Hash = builder.HashKeyBasis(keyBasis);
+            PhysicalPath = builder.GetPhysicalPathFromHash(Hash);
+            DisplayPath = builder.GetDisplayPathFromHash(Hash);
+            StringKey = builder.GetStringFromHash(Hash);
         }
 
-        public byte[] KeyBasis { get; }
+        public byte[] Hash { get; }
         public string PhysicalPath { get; }
-        public string RelativePath { get; }
-        public string LockingKey { get; }
+        public string DisplayPath { get; }
+        public string StringKey { get; }
     }
 }

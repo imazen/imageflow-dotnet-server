@@ -12,13 +12,13 @@ namespace Imazen.HybridCache.Tests
         internal class NullCacheManager : ICacheCleanupManager
         {
             public void NotifyUsed(CacheEntry cacheEntry){}
-            public Task<string> GetContentType(string relativePath, CancellationToken cancellationToken) => null;
+            public Task<string> GetContentType(CacheEntry cacheEntry, CancellationToken cancellationToken) => null;
             public Task<bool> TryReserveSpace(CacheEntry cacheEntry, string contentType, int byteCount, bool allowEviction,
                 CancellationToken cancellationToken) => Task.FromResult(true);
         }
 
         [Fact]
-        public async void SmokeTest()
+        public async void SmokeTestAsyncMissHit()
         {
             var path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}");
             Directory.CreateDirectory(path);
@@ -50,10 +50,12 @@ namespace Imazen.HybridCache.Tests
                     CancellationToken.None, false);
                 Assert.NotNull(result2.Data);
                 Assert.Equal(StreamCacheQueryResult.Hit, result2.Result);
-                var expectedRelativePath = new HashBasedPathBuilder(asyncCacheOptions.CacheSubfolders)
-                    .BuildRelativePathForData(keyBasis, Path.DirectorySeparatorChar.ToString()) + ".jpg";
 
-                Assert.True(File.Exists(Path.Combine(asyncCacheOptions.PhysicalCachePath, expectedRelativePath)));
+                var builder = new HashBasedPathBuilder(asyncCacheOptions.PhysicalCachePath,
+                    asyncCacheOptions.CacheSubfolders, '/', ".jpg");
+                var hash = builder.HashKeyBasis(keyBasis);
+                var expectedPhysicalPath = builder.GetPhysicalPathFromHash(hash);
+                Assert.True(File.Exists(expectedPhysicalPath));
             }
             finally
             {
@@ -61,5 +63,51 @@ namespace Imazen.HybridCache.Tests
             }
         }
         
+        
+        [Fact]
+        public async void SmokeTestSyncMissHit()
+        {
+            var path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}");
+            Directory.CreateDirectory(path);
+            try
+            {
+                var asyncCacheOptions = new AsyncCacheOptions()
+                {
+                    PhysicalCachePath = path,
+                    MaxQueuedBytes = 0
+                };
+                var cache = new AsyncCache(asyncCacheOptions, new NullCacheManager(), null);
+
+                var keyBasis = new byte[] {6,1,2};
+                var result = await cache.GetOrCreateBytes(keyBasis, (token) =>
+                    {
+                        return Task.FromResult(new Tuple<string, ArraySegment<byte>>(
+                            null, new ArraySegment<byte>(new byte[] {3, 2, 1})));
+                    },
+                    CancellationToken.None, false);
+                Assert.NotNull(result.Data);
+                Assert.Equal(StreamCacheQueryResult.Miss, result.Result);
+
+                await cache.AwaitEnqueuedTasks();
+
+                var result2 = await cache.GetOrCreateBytes(keyBasis, (token) =>
+                    {
+                        return Task.FromResult(new Tuple<string, ArraySegment<byte>>(
+                            null, new ArraySegment<byte>(new byte[] {3, 2, 1})));
+                    },
+                    CancellationToken.None, false);
+                Assert.NotNull(result2.Data);
+                Assert.Equal(StreamCacheQueryResult.Hit, result2.Result);
+                var builder = new HashBasedPathBuilder(asyncCacheOptions.PhysicalCachePath,
+                    asyncCacheOptions.CacheSubfolders, '/', ".jpg");
+                var hash = builder.HashKeyBasis(keyBasis);
+                var expectedPhysicalPath = builder.GetPhysicalPathFromHash(hash);
+            }
+            finally
+            {
+                Directory.Delete(path, true);
+            }
+        }
+
     }
 }

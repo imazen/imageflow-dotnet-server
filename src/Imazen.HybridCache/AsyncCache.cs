@@ -34,7 +34,8 @@ namespace Imazen.HybridCache
         public AsyncCache(AsyncCacheOptions options, ICacheCleanupManager cleanupManager, ILogger logger)
         {
             Options = options;
-            PathBuilder = new HashBasedPathBuilder(options.CacheSubfolders);
+            //We use .jpg for all file types. If it's an image of any type it will display properly
+            PathBuilder = new HashBasedPathBuilder(options.PhysicalCachePath, options.CacheSubfolders,'/', ".jpg");
             CleanupManager = cleanupManager;
             Logger = logger;
             Locks = new AsyncLockProvider();
@@ -44,7 +45,7 @@ namespace Imazen.HybridCache
         }
 
         
-        public AsyncCacheOptions Options { get; }
+        private AsyncCacheOptions Options { get; }
         private HashBasedPathBuilder PathBuilder { get; }
         private ILogger Logger { get; }
 
@@ -72,25 +73,14 @@ namespace Imazen.HybridCache
         {
             return CurrentWrites.AwaitAllCurrentTasks();
         }
-        private CacheEntry BuildCacheEntry(byte[] keyBasis)
-        {
-            //Relative to the cache directory. Not relative to the app or domain root
-            //We use .jpg for all file types. If it's an image of any type it will display properly
-            var relativePath = PathBuilder.BuildRelativePathForData(keyBasis, "/") + ".jpg";
-            
-            var physicalPath = Options.PhysicalCachePath.TrimEnd('\\', '/') + Path.DirectorySeparatorChar +
-                               relativePath.Replace('/', Path.DirectorySeparatorChar);
-            
-            return new CacheEntry(physicalPath, relativePath, keyBasis);
-        }
-        
+
         private async Task<AsyncCacheResult> TryGetFileBasedResult(CacheEntry entry, bool retrieveContentType, CancellationToken cancellationToken)
         {
             if (cancellationToken.IsCancellationRequested)
                 throw new OperationCanceledException(cancellationToken);
 
             var contentType = retrieveContentType
-                ? await CleanupManager.GetContentType(entry.RelativePath, cancellationToken)
+                ? await CleanupManager.GetContentType(entry, cancellationToken)
                 : null;
 
             if (cancellationToken.IsCancellationRequested)
@@ -136,7 +126,7 @@ namespace Imazen.HybridCache
             if (cancellationToken.IsCancellationRequested)
                 throw new OperationCanceledException(cancellationToken);
 
-            var entry = BuildCacheEntry(key);
+            var entry = new CacheEntry(key, PathBuilder);
             
             // Tell cleanup what we're using
             CleanupManager.NotifyUsed(entry);
@@ -160,7 +150,7 @@ namespace Imazen.HybridCache
             //This prevents two identical requests from duplicating efforts. Different requests don't lock.
 
             //Lock execution using relativePath as the sync basis. Ignore casing differences. This prevents duplicate entries in the write queue and wasted CPU/RAM usage.
-            var queueLockComplete = await QueueLocks.TryExecuteAsync(entry.LockingKey,
+            var queueLockComplete = await QueueLocks.TryExecuteAsync(entry.StringKey,
                 Options.WaitForIdenticalRequestsTimeoutMs, cancellationToken,
                 async () =>
                 {
@@ -170,7 +160,7 @@ namespace Imazen.HybridCache
                     // If both are a miss, we should see if there is enough room in the write queue.
                     // If not, switch to in-thread writing. 
 
-                    var existingQueuedWrite = CurrentWrites.Get(entry.LockingKey);
+                    var existingQueuedWrite = CurrentWrites.Get(entry.StringKey);
 
                     if (existingQueuedWrite != null)
                     {
@@ -200,7 +190,7 @@ namespace Imazen.HybridCache
                     var result = await dataProviderCallback(cancellationToken);
 
                     //Create AsyncWrite object to enqueue
-                    var w = new AsyncWrite(entry.LockingKey, result.Item2, result.Item1);
+                    var w = new AsyncWrite(entry.StringKey, result.Item2, result.Item1);
 
                     cacheResult.Result = StreamCacheQueryResult.Miss;
                     cacheResult.ContentType = w.ContentType;
@@ -220,7 +210,7 @@ namespace Imazen.HybridCache
                         if (!reserveSpaceResult)
                         {
                             //We failed to lock the file.
-                            Logger?.LogError("HybridCache (queueFull={0}) write failed; could not evict enough space from cache. Time taken: {1}ms - {2}", queueFull, swReserveSpace.ElapsedMilliseconds, entry.RelativePath);
+                            Logger?.LogError("HybridCache (queueFull={0}) write failed; could not evict enough space from cache. Time taken: {1}ms - {2}", queueFull, swReserveSpace.ElapsedMilliseconds, entry.DisplayPath);
                             return AsyncCacheDetailResult.CacheEvictionFailed;
                         }
 
@@ -240,19 +230,19 @@ namespace Imazen.HybridCache
                         {
                             case CacheFileWriter.FileWriteStatus.LockTimeout:
                                 //We failed to lock the file.
-                                Logger?.LogWarning("HybridCache (queueFull={0}) write failed; disk lock timeout exceeded after {1}ms - {2}", queueFull, swIo.ElapsedMilliseconds, entry.RelativePath);
+                                Logger?.LogWarning("HybridCache (queueFull={0}) write failed; disk lock timeout exceeded after {1}ms - {2}", queueFull, swIo.ElapsedMilliseconds, entry.DisplayPath);
                                 return AsyncCacheDetailResult.WriteTimedOut;
                             case CacheFileWriter.FileWriteStatus.FileAlreadyExists:
-                                Logger?.LogTrace("HybridCache (queueFull={0}) write found file already exists in {1}ms, after a {2}ms delay - {3}", queueFull, swIo.ElapsedMilliseconds, delegateStartedAt.Subtract(w.JobCreatedAt).TotalMilliseconds, entry.RelativePath);
+                                Logger?.LogTrace("HybridCache (queueFull={0}) write found file already exists in {1}ms, after a {2}ms delay - {3}", queueFull, swIo.ElapsedMilliseconds, delegateStartedAt.Subtract(w.JobCreatedAt).TotalMilliseconds, entry.DisplayPath);
                                 return AsyncCacheDetailResult.FileAlreadyExists;
                             case CacheFileWriter.FileWriteStatus.FileCreated:
                                 if (queueFull)
                                 {
-                                    Logger?.LogTrace("HybridCache synchronous write succeeded in {0}ms with {1}ms spent on eviction - {2}", swIo.ElapsedMilliseconds, swReserveSpace.ElapsedMilliseconds, entry.RelativePath);
+                                    Logger?.LogTrace("HybridCache synchronous write succeeded in {0}ms with {1}ms spent on eviction - {2}", swIo.ElapsedMilliseconds, swReserveSpace.ElapsedMilliseconds, entry.DisplayPath);
                                 }
                                 else
                                 {
-                                    Logger?.LogTrace("HybridCache async write complete. Write {0}ms. Eviction {1}ms. Delay {2}ms. - {3}", swIo.ToString().PadLeft(4), swReserveSpace.ToString().PadLeft(4), delegateStartedAt.Subtract(w.JobCreatedAt).TotalMilliseconds.ToString(CultureInfo.InvariantCulture).PadLeft(4), entry.RelativePath);
+                                    Logger?.LogTrace("HybridCache async write complete. Write {0}ms. Eviction {1}ms. Delay {2}ms. - {3}", swIo.ToString().PadLeft(4), swReserveSpace.ToString().PadLeft(4), delegateStartedAt.Subtract(w.JobCreatedAt).TotalMilliseconds.ToString(CultureInfo.InvariantCulture).PadLeft(4), entry.DisplayPath);
                                 }
 
                                 return AsyncCacheDetailResult.WriteSucceeded;
@@ -271,7 +261,7 @@ namespace Imazen.HybridCache
                         catch (Exception ex)
                         {
                             Logger?.LogError("HybridCache failed to flush async write, {0} {1}\n{2}", ex.ToString(),
-                                entry.RelativePath, ex.StackTrace);
+                                entry.DisplayPath, ex.StackTrace);
                         }
                         finally
                         {
