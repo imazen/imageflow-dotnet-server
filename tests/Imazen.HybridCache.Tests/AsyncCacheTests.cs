@@ -22,13 +22,14 @@ namespace Imazen.HybridCache.Tests
         {
             var path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}");
             Directory.CreateDirectory(path);
+            AsyncCache cache= null;
             try
             {
                 var asyncCacheOptions = new AsyncCacheOptions()
                 {
                     PhysicalCachePath = path
                 };
-                var cache = new AsyncCache(asyncCacheOptions, new NullCacheManager(), null);
+                cache = new AsyncCache(asyncCacheOptions, new NullCacheManager(), null);
 
                 var keyBasis = new byte[] {6,1,2};
                 var result = await cache.GetOrCreateBytes(keyBasis, (token) =>
@@ -59,7 +60,14 @@ namespace Imazen.HybridCache.Tests
             }
             finally
             {
-                Directory.Delete(path, true);
+                try
+                {
+                    cache?.AwaitEnqueuedTasks();
+                }
+                finally
+                {
+                    Directory.Delete(path, true);
+                }
             }
         }
         
@@ -69,6 +77,7 @@ namespace Imazen.HybridCache.Tests
         {
             var path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}");
             Directory.CreateDirectory(path);
+            AsyncCache cache= null;
             try
             {
                 var asyncCacheOptions = new AsyncCacheOptions()
@@ -76,7 +85,7 @@ namespace Imazen.HybridCache.Tests
                     PhysicalCachePath = path,
                     MaxQueuedBytes = 0
                 };
-                var cache = new AsyncCache(asyncCacheOptions, new NullCacheManager(), null);
+                cache = new AsyncCache(asyncCacheOptions, new NullCacheManager(), null);
 
                 var keyBasis = new byte[] {6,1,2};
                 var result = await cache.GetOrCreateBytes(keyBasis, (token) =>
@@ -102,10 +111,18 @@ namespace Imazen.HybridCache.Tests
                     asyncCacheOptions.CacheSubfolders, '/', ".jpg");
                 var hash = builder.HashKeyBasis(keyBasis);
                 var expectedPhysicalPath = builder.GetPhysicalPathFromHash(hash);
+                Assert.True(File.Exists(expectedPhysicalPath));
             }
             finally
             {
-                Directory.Delete(path, true);
+                try
+                {
+                    cache?.AwaitEnqueuedTasks();
+                }
+                finally
+                {
+                    Directory.Delete(path, true);
+                }
             }
         }
 
