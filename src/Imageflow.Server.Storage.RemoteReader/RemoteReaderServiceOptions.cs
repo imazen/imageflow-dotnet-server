@@ -10,8 +10,10 @@ namespace Imageflow.Server.Storage.RemoteReader
 
         public int RedirectLimit { get; set; } = 5;
         public string SigningKey { get; set; }
+        public string HttpClientName { get; set; }
+
+        [Obsolete("Use named HttpClient")]
         public string UserAgent { get; set; } = "ImageFlow-DotNet-Server";
-        
         public bool IgnorePrefixCase { get; set; }
 
         public RemoteReaderServiceOptions AddPrefix(string prefix)

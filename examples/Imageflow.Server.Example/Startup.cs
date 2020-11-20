@@ -31,10 +31,18 @@ namespace Imageflow.Server.Example
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllersWithViews();
-            
-            services.AddImageflowRemoteReaderService(new RemoteReaderServiceOptions { SigningKey = "ChangeMe"}
-                .AddPrefix("/remote/")
-                );
+
+            services.AddHttpClient("RemoteReaderHttpClient", config => 
+            {
+                config.DefaultRequestHeaders.Add("user-agent", "ImageFlow-DotNet-Server");
+            });
+
+            services.AddImageflowRemoteReaderService(new RemoteReaderServiceOptions
+            {
+                SigningKey = "ChangeMe",
+                HttpClientName = "RemoteReaderHttpClient"
+            }
+            .AddPrefix("/remote/"));
 
             // Make S3 containers available at /ri/ and /imageflow-resources/
             // If you use credentials, do not check them into your repository
