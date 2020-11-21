@@ -15,7 +15,7 @@ namespace Imageflow.Server.HybridSqliteCache
         private readonly HybridCache cache;
         public HybridSqliteCacheService(HybridSqliteCacheOptions options, ILogger<HybridSqliteCacheService> logger)
         {
-            var database = new SqliteCacheDatabase(new SqliteCacheDatabaseOptions(options.DatabaseDir), null);
+            var database = new SqliteCacheDatabase(new SqliteCacheDatabaseOptions(options.DatabaseDir), logger);
             cache = new HybridCache(database, new HybridCacheOptions(options.DiskCacheDir)
             {
                 AsyncCacheOptions = new AsyncCacheOptions()
@@ -27,7 +27,7 @@ namespace Imageflow.Server.HybridSqliteCache
                 {
                     MaxCacheBytes = options.CacheSizeLimitInBytes
                 }
-            }, null);
+            }, logger);
         }
 
         public IEnumerable<IIssue> GetIssues()

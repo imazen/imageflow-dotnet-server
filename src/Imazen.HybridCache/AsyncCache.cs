@@ -33,7 +33,7 @@ namespace Imazen.HybridCache
             public AsyncCacheDetailResult Detail { get; set; }
         }
         
-        public AsyncCache(AsyncCacheOptions options, ICacheCleanupManager cleanupManager,HashBasedPathBuilder pathBuilder, ILogger<HybridCache> logger)
+        public AsyncCache(AsyncCacheOptions options, ICacheCleanupManager cleanupManager,HashBasedPathBuilder pathBuilder, ILogger logger)
         {
             Options = options;
             PathBuilder = pathBuilder;
@@ -48,7 +48,7 @@ namespace Imazen.HybridCache
         
         private AsyncCacheOptions Options { get; }
         private HashBasedPathBuilder PathBuilder { get; }
-        private ILogger<HybridCache> Logger { get; }
+        private ILogger Logger { get; }
 
         private ICacheCleanupManager CleanupManager { get; }
         

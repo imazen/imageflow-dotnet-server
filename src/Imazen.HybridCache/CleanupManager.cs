@@ -20,8 +20,8 @@ namespace Imazen.HybridCache
         private CleanupManagerOptions Options { get; }
         
         private HashBasedPathBuilder PathBuilder { get; }
-        private ILogger<HybridCache> Logger { get; }
-        public CleanupManager(CleanupManagerOptions options, ICacheDatabase database, ILogger<HybridCache> logger, HashBasedPathBuilder pathBuilder)
+        private ILogger Logger { get; }
+        public CleanupManager(CleanupManagerOptions options, ICacheDatabase database, ILogger logger, HashBasedPathBuilder pathBuilder)
         {
             PathBuilder = pathBuilder;
             Logger = logger;

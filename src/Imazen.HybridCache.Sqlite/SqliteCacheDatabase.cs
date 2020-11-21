@@ -19,10 +19,10 @@ namespace Imazen.HybridCache.Sqlite
         private readonly bool databaseInMemory;
         private SQLiteConnection connection;
         private bool isOpen;
-        private ILogger<HybridCache> Logger { get; }
+        private ILogger Logger { get; }
 
         private DisposableAsyncLock Lock = new DisposableAsyncLock();
-        public SqliteCacheDatabase(SqliteCacheDatabaseOptions options, ILogger<HybridCache> logger)
+        public SqliteCacheDatabase(SqliteCacheDatabaseOptions options, ILogger logger)
         {
             Logger = logger;
             Options = options;

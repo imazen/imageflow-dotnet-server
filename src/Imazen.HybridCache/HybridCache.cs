@@ -17,7 +17,7 @@ namespace Imazen.HybridCache
         internal AsyncCache AsyncCache { get; }
         internal CleanupManager CleanupManager { get; }
         internal ICacheDatabase Database { get; }
-        public HybridCache(ICacheDatabase cacheDatabase, HybridCacheOptions options, ILogger<HybridCache> logger)
+        public HybridCache(ICacheDatabase cacheDatabase, HybridCacheOptions options, ILogger logger)
         {
             Database = cacheDatabase;
             PathBuilder = new HashBasedPathBuilder(options.PhysicalCacheDir, options.Subfolders,
