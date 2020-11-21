@@ -1,18 +1,20 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Hosting;
 
 namespace Imazen.HybridCache
 {
-    internal interface ICacheDatabaseRecord
+    public interface ICacheDatabaseRecord
     {
         int AccessCountKey { get; }
         DateTime CreatedAt { get; }
         DateTime LastDeletionAttempt { get;  }
         long DiskSize { get; }
         string RelativePath { get; }
+        string ContentType { get; }
     }
-    internal interface ICacheDatabase
+    public interface ICacheDatabase: IHostedService
     {
         Task UpdateLastDeletionAttempt(string relativePath, DateTime when);
 
@@ -52,7 +54,7 @@ namespace Imazen.HybridCache
         int EstimateRecordDiskSpace(int stringKeyLength);
 
         /// <summary>
-        /// Within a transaction, checks if Sum(DiskBytes) + recordDiskSpace &lt; diskSpaceLimit, then
+        /// Within a lock or transaction, checks if Sum(DiskBytes) + recordDiskSpace &lt; diskSpaceLimit, then
         /// creates a new record with the given key, content-type, record disk space, createdDate
         /// and last deletion attempt time set to the lowest possible value
         /// </summary>
@@ -66,6 +68,15 @@ namespace Imazen.HybridCache
         Task<bool> CreateRecordIfSpace(string relativePath, string contentType, long recordDiskSpace, DateTime createdDate, int accessCountKey, long diskSpaceLimit);
 
         Task UpdateCreatedDate(string relativePath, DateTime createdDate);
-        Task ReplaceRelativePathAndUpdateLastDeletion(string relativePath, string movedRelativePath, DateTime lastDeletionAttempt);
+        
+        /// <summary>
+        /// May require creation of new record and deletion of old, since we are changing the primary key
+        /// 
+        /// </summary>
+        /// <param name="record"></param>
+        /// <param name="movedRelativePath"></param>
+        /// <param name="lastDeletionAttempt"></param>
+        /// <returns></returns>
+        Task ReplaceRelativePathAndUpdateLastDeletion(ICacheDatabaseRecord record, string movedRelativePath, DateTime lastDeletionAttempt);
     }
 }

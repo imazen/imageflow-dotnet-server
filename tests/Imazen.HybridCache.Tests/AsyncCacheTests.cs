@@ -30,11 +30,10 @@ namespace Imazen.HybridCache.Tests
             AsyncCache cache = null;
             try
             {
-                var asyncCacheOptions = new AsyncCacheOptions()
-                {
-                    PhysicalCachePath = path
-                };
-                cache = new AsyncCache(asyncCacheOptions, new NullCacheManager(), null);
+                var builder = new HashBasedPathBuilder(path,
+                    8192, '/', ".jpg");
+                
+                cache = new AsyncCache(new AsyncCacheOptions(), new NullCacheManager(), builder,null);
 
                 var keyBasis = new byte[] {6,1,2};
                 var result = await cache.GetOrCreateBytes(keyBasis, (token) =>
@@ -57,8 +56,7 @@ namespace Imazen.HybridCache.Tests
                 Assert.NotNull(result2.Data);
                 Assert.Equal(StreamCacheQueryResult.Hit, result2.Result);
 
-                var builder = new HashBasedPathBuilder(asyncCacheOptions.PhysicalCachePath,
-                    asyncCacheOptions.CacheSubfolders, '/', ".jpg");
+                
                 var hash = builder.HashKeyBasis(keyBasis);
                 var expectedPhysicalPath = builder.GetPhysicalPathFromHash(hash);
                 Assert.True(File.Exists(expectedPhysicalPath));
@@ -87,10 +85,12 @@ namespace Imazen.HybridCache.Tests
             {
                 var asyncCacheOptions = new AsyncCacheOptions()
                 {
-                    PhysicalCachePath = path,
                     MaxQueuedBytes = 0
                 };
-                cache = new AsyncCache(asyncCacheOptions, new NullCacheManager(), null);
+                var builder = new HashBasedPathBuilder(path,
+                    8192, '/', ".jpg");
+                
+                cache = new AsyncCache(asyncCacheOptions, new NullCacheManager(), builder,null);
 
                 var keyBasis = new byte[] {6,1,2};
                 var result = await cache.GetOrCreateBytes(keyBasis, (token) =>
@@ -112,8 +112,6 @@ namespace Imazen.HybridCache.Tests
                     CancellationToken.None, false);
                 Assert.NotNull(result2.Data);
                 Assert.Equal(StreamCacheQueryResult.Hit, result2.Result);
-                var builder = new HashBasedPathBuilder(asyncCacheOptions.PhysicalCachePath,
-                    asyncCacheOptions.CacheSubfolders, '/', ".jpg");
                 var hash = builder.HashKeyBasis(keyBasis);
                 var expectedPhysicalPath = builder.GetPhysicalPathFromHash(hash);
                 Assert.True(File.Exists(expectedPhysicalPath));
@@ -122,7 +120,7 @@ namespace Imazen.HybridCache.Tests
             {
                 try
                 {
-                    cache?.AwaitEnqueuedTasks();
+                    await cache?.AwaitEnqueuedTasks();
                 }
                 finally
                 {

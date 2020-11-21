@@ -31,11 +31,10 @@ namespace Imazen.HybridCache
             public AsyncCacheDetailResult Detail { get; set; }
         }
         
-        public AsyncCache(AsyncCacheOptions options, ICacheCleanupManager cleanupManager, ILogger<HybridCache> logger)
+        public AsyncCache(AsyncCacheOptions options, ICacheCleanupManager cleanupManager,HashBasedPathBuilder pathBuilder, ILogger<HybridCache> logger)
         {
             Options = options;
-            //We use .jpg for all file types. If it's an image of any type it will display properly
-            PathBuilder = new HashBasedPathBuilder(options.PhysicalCachePath, options.CacheSubfolders,'/', ".jpg");
+            PathBuilder = pathBuilder;
             CleanupManager = cleanupManager;
             Logger = logger;
             Locks = new AsyncLockProvider();

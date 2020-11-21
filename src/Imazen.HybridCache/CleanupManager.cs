@@ -48,25 +48,9 @@ namespace Imazen.HybridCache
             return withFileDescriptor;
         }
 
-        public async Task<bool> TryReserveSpace(CacheEntry cacheEntry, string contentType, int byteCount,
-            bool allowEviction,
-            CancellationToken cancellationToken)
+        private async Task<bool> EvictSpace(int diskSpace, CancellationToken cancellationToken)
         {
-            var diskSpace = EstimateEntryBytesWithOverhead(byteCount) +
-                            Database.EstimateRecordDiskSpace(cacheEntry.RelativePath.Length);
-
-            var farFuture = DateTime.UtcNow.AddYears(100);
-            var recordCreated =
-                await Database.CreateRecordIfSpace(cacheEntry.RelativePath, 
-                    contentType, 
-                    diskSpace, 
-                    farFuture, 
-                    AccessCounter.GetHash(cacheEntry.Hash),
-                    Options.MaxCacheBytes);
-
-            // Return true if we created the record
-            if (recordCreated) return true;
-
+            
             var bytesToDeleteOptimally = Math.Max(Options.MinCleanupBytes, diskSpace);
             var bytesToDeleteMin = diskSpace;
 
@@ -76,8 +60,7 @@ namespace Imazen.HybridCache
             {
                 var deletionCutoff = DateTime.UtcNow.Subtract(Options.RetryDeletionAfter);
                 var creationCutoff = DateTime.UtcNow.Subtract(Options.MinAgeToDelete);
-                // var unixDateTimeCutoff = (DateTime.UtcNow - new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc))
-                //     .TotalSeconds;
+                
                 var records =
                     (await Database.GetOldestRecords(deletionCutoff, creationCutoff, Options.CleanupSelectBatchSize))
                     .Select(r =>
@@ -102,6 +85,38 @@ namespace Imazen.HybridCache
                 }
             }
             return true; 
+        }
+
+        public async Task<bool> TryReserveSpace(CacheEntry cacheEntry, string contentType, int byteCount,
+            bool allowEviction,
+            CancellationToken cancellationToken)
+        {
+            var diskSpace = EstimateEntryBytesWithOverhead(byteCount) +
+                            Database.EstimateRecordDiskSpace(cacheEntry.RelativePath.Length);
+
+            var farFuture = DateTime.UtcNow.AddYears(100);
+
+            for (var attempts = 0; attempts < 3; attempts++)
+            {
+                var recordCreated =
+                    await Database.CreateRecordIfSpace(cacheEntry.RelativePath,
+                        contentType,
+                        diskSpace,
+                        farFuture,
+                        AccessCounter.GetHash(cacheEntry.Hash),
+                        Options.MaxCacheBytes);
+
+                // Return true if we created the record
+                if (recordCreated) return true;
+
+                // We need to evict but we are not permitted
+                if (!allowEviction) return false;
+
+                // Evict space 
+                await EvictSpace(diskSpace, cancellationToken);
+            }
+
+            return false;
         }
 
         public Task MarkFileCreated(CacheEntry cacheEntry)
@@ -140,7 +155,7 @@ namespace Imazen.HybridCache
                 {
                     //Move it so it usage will decrease and it can be deleted later
                     File.Move(physicalPath, movedPath);
-                    await Database.ReplaceRelativePathAndUpdateLastDeletion(record.RelativePath, movedRelativePath,
+                    await Database.ReplaceRelativePathAndUpdateLastDeletion(record, movedRelativePath,
                         DateTime.Now);
                     return 0;
                 }

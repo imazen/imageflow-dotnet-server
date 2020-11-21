@@ -48,6 +48,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imazen.HybridCache", "src\I
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imazen.HybridCache.Tests", "tests\Imazen.HybridCache.Tests\Imazen.HybridCache.Tests.csproj", "{4494AC86-6BC5-489E-BBDF-534670916D43}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imazen.HybridCache.Sqlite", "src\Imazen.HybridCache.Sqlite\Imazen.HybridCache.Sqlite.csproj", "{A600D7C8-80BB-4B85-9C86-C9D312BD049D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -126,6 +128,10 @@ Global
 		{4494AC86-6BC5-489E-BBDF-534670916D43}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4494AC86-6BC5-489E-BBDF-534670916D43}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4494AC86-6BC5-489E-BBDF-534670916D43}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A600D7C8-80BB-4B85-9C86-C9D312BD049D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A600D7C8-80BB-4B85-9C86-C9D312BD049D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A600D7C8-80BB-4B85-9C86-C9D312BD049D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A600D7C8-80BB-4B85-9C86-C9D312BD049D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
