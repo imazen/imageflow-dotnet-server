@@ -21,7 +21,7 @@ namespace Imazen.HybridCache.Sqlite
         private bool isOpen;
         private ILogger Logger { get; }
 
-        private DisposableAsyncLock Lock = new DisposableAsyncLock();
+        private readonly DisposableAsyncLock Lock = new DisposableAsyncLock();
         public SqliteCacheDatabase(SqliteCacheDatabaseOptions options, ILogger logger)
         {
             Logger = logger;
@@ -47,7 +47,6 @@ namespace Imazen.HybridCache.Sqlite
             using (var unused = await Lock.LockAsync())
             {
                 var cancellationToken = CancellationToken.None;
-                var lookupTime = Stopwatch.StartNew();
                 AssertOpen();
                 using (var read = connection.CreateCommand())
                 {
@@ -76,10 +75,7 @@ namespace Imazen.HybridCache.Sqlite
                         };
                         rows.Add(row);
                     }
-
-                    lookupTime.Stop();
-                    Logger?.LogInformation(
-                        $"HybridCache.Sqlite GetOldestRecords time {lookupTime.ElapsedMilliseconds}ms");
+                    
                     return rows;
                 }
             }
@@ -230,7 +226,7 @@ namespace Imazen.HybridCache.Sqlite
             var cancellationToken = CancellationToken.None;
             using (var unused = await Lock.LockAsync())
             {
-                var newRecord = new CacheDatabaseRecord()
+                var newRecord = new CacheDatabaseRecord
                 {
                     RelativePath = movedRelativePath,
                     AccessCountKey = record.AccessCountKey,
@@ -239,15 +235,10 @@ namespace Imazen.HybridCache.Sqlite
                     DiskSize = record.DiskSize,
                     LastDeletionAttempt = lastDeletionAttempt
                 };
-                // Even if it wasn't deleted, we still create the new record
-                try
-                {
-                    await DeleteRecordUnsynchronized(record.RelativePath, cancellationToken);
-                }
-                finally
-                {
-                    await CreateRecordUnsynchronized(newRecord, cancellationToken);
-                }
+                // We create the new record first, since the new file already exists
+                await CreateRecordUnsynchronized(newRecord, cancellationToken);
+                // Then we delete the old
+                await DeleteRecordUnsynchronized(record.RelativePath, cancellationToken);
             }
         }
 
@@ -335,7 +326,6 @@ namespace Imazen.HybridCache.Sqlite
                 isOpen = false;
                 connection.Close();
                 Logger?.LogInformation("Imazen.HybridCache.Sqlite stopped successfully.");
-                return;
             }
         }
     }

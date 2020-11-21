@@ -114,7 +114,10 @@ namespace Imazen.HybridCache
 
                 var missingSpace = Math.Max(0, await Database.GetTotalBytes() + entryDiskSpace - Options.MaxCacheBytes);
                 // Evict space 
-                await EvictSpace(missingSpace, cancellationToken);
+                if (!await EvictSpace(missingSpace, cancellationToken))
+                {
+                    return false; //We failed to evict enough space from the cache
+                }
             }
 
             return false;
@@ -145,7 +148,7 @@ namespace Imazen.HybridCache
                 }
                 return 0;
             }
-            catch (IOException ioException)
+            catch (IOException)
             {
                 if (physicalPath.Contains(".moving_"))
                 {
@@ -164,7 +167,7 @@ namespace Imazen.HybridCache
                         DateTime.Now);
                     return 0;
                 }
-                catch (IOException ioException2)
+                catch (IOException)
                 {
                     await Database.UpdateLastDeletionAttempt(record.RelativePath, DateTime.Now);
                     return 0;

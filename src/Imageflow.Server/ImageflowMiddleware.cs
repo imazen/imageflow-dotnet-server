@@ -274,7 +274,7 @@ namespace Imageflow.Server
             {
                 if (info.HasParams)
                 {
-                    logger?.LogInformation($"{typeName} cache miss: Processing image {info.FinalVirtualPath}?{info}");
+                    logger?.LogDebug($"Cache miss: Processing image {info.FinalVirtualPath}?{info}");
                     var result = await info.ProcessUncached();
                     if (result.ResultBytes.Array == null)
                     {
@@ -284,7 +284,7 @@ namespace Imageflow.Server
                 }
                 else
                 {
-                    logger?.LogInformation($"{typeName} cache miss: Proxying image {info.FinalVirtualPath}");
+                    logger?.LogDebug($"Cache miss: Proxying image {info.FinalVirtualPath}");
                     var bytes = await info.GetPrimaryBlobBytesAsync();
                     return new Tuple<string, ArraySegment<byte>>(null, bytes);
                 }
@@ -299,7 +299,7 @@ namespace Imageflow.Server
                 SetCachingHeaders(context, cacheKey);
                 await MagicBytes.ProxyToStream(cacheResult.Data, context.Response);
                 
-                logger?.LogInformation("Serving {0}?{1} from cache {2}", info.FinalVirtualPath, info.CommandString, typeName);
+                logger?.LogDebug("Serving from cache {0}?{1}", info.FinalVirtualPath, info.CommandString, typeName);
             }
             else
             {
