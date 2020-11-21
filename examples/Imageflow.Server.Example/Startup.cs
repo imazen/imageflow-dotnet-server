@@ -85,7 +85,8 @@ namespace Imageflow.Server.Example
                 new HybridSqliteCacheOptions(Path.Combine(homeFolder, "imageflow_example_hybrid_cache"))
                 {
                     MaxWriteQueueBytes = 0,
-                    CacheSizeLimitInBytes = 1024 * 1024 * 10
+                    CacheSizeLimitInBytes = 1024 * 1024 * 10,
+                    MinCleanupBytes = 1024
                 });
 
         }

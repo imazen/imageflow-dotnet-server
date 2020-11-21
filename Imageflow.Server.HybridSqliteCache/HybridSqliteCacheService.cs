@@ -25,7 +25,8 @@ namespace Imageflow.Server.HybridSqliteCache
                 },
                 CleanupManagerOptions = new CleanupManagerOptions()
                 {
-                    MaxCacheBytes = options.CacheSizeLimitInBytes
+                    MaxCacheBytes = options.CacheSizeLimitInBytes,
+                    MinCleanupBytes = options.MinCleanupBytes
                 }
             }, logger);
         }

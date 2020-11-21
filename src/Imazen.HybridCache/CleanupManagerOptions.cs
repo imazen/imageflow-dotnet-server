@@ -21,9 +21,9 @@ namespace Imazen.HybridCache
         public long MaxCacheBytes { get; set; } = 1024 * 1024 * 1024;
 
         /// <summary>
-        /// The minimum number of bytes to free when running a cleanup task. Defaults to 10MiB;
+        /// The minimum number of bytes to free when running a cleanup task. Defaults to 1MiB;
         /// </summary>
-        public long MinCleanupBytes { get; set; } = 10 * 1024 * 1024;
+        public long MinCleanupBytes { get; set; } = 1 * 1024 * 1024;
 
         /// <summary>
         /// The minimum age of files to delete. Must be long enough for new files to be written to disk after their
