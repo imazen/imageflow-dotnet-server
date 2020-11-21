@@ -47,25 +47,38 @@ namespace Imageflow.Server.Storage.RemoteReader
 
             var urlBase64 = remote[0];
             var hmac = remote[1];
-            var sig =  Signatures.SignString(urlBase64, options.SigningKey,8);
+            var sig = Signatures.SignString(urlBase64, options.SigningKey, 8);
 
-            if (hmac != sig) 
+            if (hmac != sig)
                 throw new BlobMissingException($"Missing or Invalid signature on remote path: {virtualPath}");
 
             var url = EncodingUtils.FromBase64UToString(urlBase64);
 
-            var resp = await http.GetAsync(url);
-
-            var redirectCount = 0;
-
-            while (resp.StatusCode == System.Net.HttpStatusCode.Redirect 
-                && redirectCount++ < options.RedirectLimit
-                && resp.Headers.Location != null
-                )
+            try
             {
-                resp = await http.GetAsync(resp.Headers.Location);
+                var resp = await http.GetAsync(url);
+
+                var redirectCount = 0;
+
+                while (resp.StatusCode == System.Net.HttpStatusCode.Redirect
+                    && redirectCount++ < options.RedirectLimit
+                    && resp.Headers.Location != null
+                    )
+                {
+                    resp = await http.GetAsync(resp.Headers.Location);
+                }
+
+                if (!resp.IsSuccessStatusCode)
+                {
+                    throw new BlobMissingException($"RemoteReader blob \"{virtualPath}\" not found.");
+                }
+
+                return new RemoteReaderBlob(resp);
             }
-            return new RemoteReaderBlob(resp);
+            catch (Exception ex)
+            {
+                throw new BlobMissingException($"RemoteReader blob error retrieving \"{virtualPath}\" .", ex);
+            }
         }
 
         public IEnumerable<string> GetPrefixes()
