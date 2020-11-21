@@ -22,6 +22,10 @@ namespace Imageflow.Server.HybridSqliteCache
                 {
                     MaxQueuedBytes = options.MaxWriteQueueBytes,
                     WriteSynchronouslyWhenQueueFull = true,
+                },
+                CleanupManagerOptions = new CleanupManagerOptions()
+                {
+                    MaxCacheBytes = options.CacheSizeLimitInBytes
                 }
             }, null);
         }

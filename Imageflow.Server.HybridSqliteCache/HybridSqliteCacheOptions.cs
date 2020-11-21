@@ -8,6 +8,8 @@
         
         public long MaxWriteQueueBytes { get; set; }
         
+        public long CacheSizeLimitInBytes { get; set; }
+        
         public HybridSqliteCacheOptions(string cacheDir)
         {
             DatabaseDir = cacheDir;
