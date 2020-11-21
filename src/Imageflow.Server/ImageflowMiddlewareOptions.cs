@@ -21,6 +21,8 @@ namespace Imageflow.Server
 
         public TimeSpan MemoryCacheSlidingExpiration { get; set; } = TimeSpan.FromHours(24);
         public TimeSpan DistributedCacheSlidingExpiration { get; set; } = TimeSpan.FromHours(24);
+        
+        public bool AllowCaching { get; set; } = true;
         public bool AllowDiskCaching { get; set; } = true;
         public bool AllowDistributedCaching { get; set; }
         
@@ -92,7 +94,6 @@ namespace Imageflow.Server
         /// Control when and where the diagnostics page is accessible when no password is used
         /// </summary>
         /// <param name="accessDiagnosticsFrom"></param>
-        /// <param name="optionalPassword"></param>
         /// <returns></returns>
         public ImageflowMiddlewareOptions SetDiagnosticsPageAccess(AccessDiagnosticsFrom accessDiagnosticsFrom)
         {
@@ -182,7 +183,7 @@ namespace Imageflow.Server
         }
         
         /// <summary>
-        /// If true, querystrings will be discarded except for their preset key/value. Querystrings without a preset key will throw an error. 
+        /// If true, query strings will be discarded except for their preset key/value. Query strings without a preset key will throw an error. 
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
@@ -210,6 +211,14 @@ namespace Imageflow.Server
             namedWatermarks.Add(watermark);
             return this;
         }
+        
+        public ImageflowMiddlewareOptions SetAllowCaching(bool value)
+        {
+            this.AllowCaching = value;
+            return this;
+        }
+
+        
         public ImageflowMiddlewareOptions SetAllowMemoryCaching(bool value)
         {
             this.AllowMemoryCaching = value;

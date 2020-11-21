@@ -12,6 +12,6 @@ namespace Imazen.Common.Extensibility.StreamCache
     
     public interface IStreamCache : IIssueProvider, IHostedService
     {
-        Task<IStreamCacheResult> GetOrCreateBytes(byte[] key, AsyncBytesResult writeCallback, CancellationToken cancellationToken, bool retrieveContentType);
+        Task<IStreamCacheResult> GetOrCreateBytes(byte[] key, AsyncBytesResult dataProviderCallback, CancellationToken cancellationToken, bool retrieveContentType);
     }
 }

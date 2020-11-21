@@ -6,6 +6,7 @@ namespace Imageflow.Server
         SqliteCache,
         MemoryCache,
         DistributedCache,
+        StreamCache,
         NoCache,
     }
 }

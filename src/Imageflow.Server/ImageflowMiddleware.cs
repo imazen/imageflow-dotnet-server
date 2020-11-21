@@ -11,6 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Imageflow.Server.Extensibility;
 using Imazen.Common.Extensibility.ClassicDiskCache;
+using Imazen.Common.Extensibility.StreamCache;
 using Imazen.Common.Instrumentation;
 using Imazen.Common.Instrumentation.Support.InfoAccumulators;
 using Imazen.Common.Licensing;
@@ -30,6 +31,7 @@ namespace Imageflow.Server
         private readonly IMemoryCache memoryCache;
         private readonly IDistributedCache distributedCache;
         private readonly IClassicDiskCache diskCache;
+        private readonly IStreamCache streamCache;
         private readonly ISqliteCache sqliteCache;
         private readonly BlobProvider blobProvider;
         private readonly DiagnosticsPage diagnosticsPage;
@@ -40,10 +42,11 @@ namespace Imageflow.Server
             RequestDelegate next, 
             IWebHostEnvironment env, 
             IEnumerable<ILogger<ImageflowMiddleware>> logger, 
-            IEnumerable<IMemoryCache> memoryCache, 
-            IEnumerable<IDistributedCache> distributedCache, 
+            IEnumerable<IMemoryCache> memoryCaches, 
+            IEnumerable<IDistributedCache> distributedCaches, 
             IEnumerable<ISqliteCache> sqliteCaches,
-            IEnumerable<IClassicDiskCache> diskCache, 
+            IEnumerable<IClassicDiskCache> diskCaches, 
+            IEnumerable<IStreamCache> streamCaches, 
             IEnumerable<IBlobProvider> blobProviders, 
             ImageflowMiddlewareOptions options)
         {
@@ -53,10 +56,11 @@ namespace Imageflow.Server
             this.options = options;
             this.env = env;
             this.logger = logger.FirstOrDefault();
-            this.memoryCache = memoryCache.FirstOrDefault();
-            this.diskCache = diskCache.FirstOrDefault();
-            this.distributedCache = distributedCache.FirstOrDefault();
-            this.sqliteCache = sqliteCaches.FirstOrDefault();
+            memoryCache = memoryCaches.FirstOrDefault();
+            diskCache = diskCaches.FirstOrDefault();
+            distributedCache = distributedCaches.FirstOrDefault();
+            sqliteCache = sqliteCaches.FirstOrDefault();
+            streamCache = streamCaches.FirstOrDefault();
             var providers = blobProviders.ToList();
             var mappedPaths = options.MappedPaths.ToList();
             if (options.MapWebRoot)
@@ -67,12 +71,16 @@ namespace Imageflow.Server
             }
             
             //Determine the active cache backend
+            var streamCacheEnabled = streamCache != null && options.AllowCaching;
+
             var memoryCacheEnabled = this.memoryCache != null && options.AllowMemoryCaching;
             var diskCacheEnabled = this.diskCache != null && options.AllowDiskCaching;
             var distributedCacheEnabled = this.distributedCache != null && options.AllowDistributedCaching;
             var sqliteCacheEnabled = this.sqliteCache != null && options.AllowSqliteCaching;
-            
-            if (sqliteCacheEnabled)
+
+            if (streamCacheEnabled)
+                options.ActiveCacheBackend = CacheBackend.StreamCache;
+            else if (sqliteCacheEnabled)
                 options.ActiveCacheBackend = CacheBackend.SqliteCache;
             else if (diskCacheEnabled)
                 options.ActiveCacheBackend = CacheBackend.ClassicDiskCache;
@@ -194,6 +202,9 @@ namespace Imageflow.Server
                     case CacheBackend.NoCache:
                         await ProcessWithNoCache(context, imageJobInfo);
                         break;
+                    case CacheBackend.StreamCache:
+                        await ProcessWithStreamCache(context, cacheKey, imageJobInfo);
+                        break;
                     default:
                         throw new ArgumentOutOfRangeException();
                 }
@@ -255,6 +266,62 @@ namespace Imageflow.Server
             await context.Response.Body.WriteAsync(bytes, 0, bytes.Length);
         }
 
+        private async Task ProcessWithStreamCache(HttpContext context, string cacheKey, ImageJobInfo info)
+        {
+            var keyBytes = Encoding.UTF8.GetBytes(cacheKey);
+            var typeName = streamCache.GetType().Name;
+            var cacheResult = await streamCache.GetOrCreateBytes(keyBytes, async (cancellationToken) =>
+            {
+                if (info.HasParams)
+                {
+                    logger?.LogInformation($"{typeName} cache miss: Processing image {info.FinalVirtualPath}?{info}");
+                    var result = await info.ProcessUncached();
+                    if (result.ResultBytes.Array == null)
+                    {
+                        throw new InvalidOperationException("Image job returned zero bytes.");
+                    }
+                    return new Tuple<string, ArraySegment<byte>>(result.ContentType, result.ResultBytes);
+                }
+                else
+                {
+                    logger?.LogInformation($"{typeName} cache miss: Proxying image {info.FinalVirtualPath}");
+                    var bytes = await info.GetPrimaryBlobBytesAsync();
+                    return new Tuple<string, ArraySegment<byte>>(null, bytes);
+                }
+            },CancellationToken.None,false);
+            
+            if (cacheResult.Result == StreamCacheQueryResult.Miss)
+            {
+                GlobalPerf.Singleton.IncrementCounter("cache_miss");
+            }
+            else if (cacheResult.Result == StreamCacheQueryResult.Hit)
+            {
+                GlobalPerf.Singleton.IncrementCounter("cache_hit");
+            }
+            else if (cacheResult.Result == StreamCacheQueryResult.Failed)
+            {
+                GlobalPerf.Singleton.IncrementCounter("cache_failed");
+            }
+            
+            if (cacheResult.Data != null)
+            {
+                if (cacheResult.Data.Length < 1)
+                {
+                    throw new InvalidOperationException("DiskCache returned cache entry with zero bytes");
+                }
+                SetCachingHeaders(context, cacheKey);
+                await MagicBytes.ProxyToStream(cacheResult.Data, context.Response);
+                
+                logger?.LogInformation("Serving {0}?{1} from cache {2}", info.FinalVirtualPath, info.CommandString, typeName);
+            }
+            else
+            {
+                // TODO explore this failure path better
+                throw new NullReferenceException("Caching failed");
+            }
+        }
+
+        
         private async Task ProcessWithDiskCache(HttpContext context, string cacheKey, ImageJobInfo info)
         {
             var cacheResult = await diskCache.GetOrCreate(cacheKey, info.EstimatedFileExtension, async (stream) =>
