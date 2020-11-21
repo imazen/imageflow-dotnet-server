@@ -48,7 +48,7 @@ namespace Imazen.HybridCache
             return withFileDescriptor;
         }
 
-        private async Task<bool> EvictSpace(int diskSpace, CancellationToken cancellationToken)
+        private async Task<bool> EvictSpace(long diskSpace, CancellationToken cancellationToken)
         {
             
             var bytesToDeleteOptimally = Math.Max(Options.MinCleanupBytes, diskSpace);
@@ -91,7 +91,7 @@ namespace Imazen.HybridCache
             bool allowEviction,
             CancellationToken cancellationToken)
         {
-            var diskSpace = EstimateEntryBytesWithOverhead(byteCount) +
+            var entryDiskSpace = EstimateEntryBytesWithOverhead(byteCount) +
                             Database.EstimateRecordDiskSpace(cacheEntry.RelativePath.Length);
 
             var farFuture = DateTime.UtcNow.AddYears(100);
@@ -101,7 +101,7 @@ namespace Imazen.HybridCache
                 var recordCreated =
                     await Database.CreateRecordIfSpace(cacheEntry.RelativePath,
                         contentType,
-                        diskSpace,
+                        entryDiskSpace,
                         farFuture,
                         AccessCounter.GetHash(cacheEntry.Hash),
                         Options.MaxCacheBytes);
@@ -112,8 +112,9 @@ namespace Imazen.HybridCache
                 // We need to evict but we are not permitted
                 if (!allowEviction) return false;
 
+                var missingSpace = Math.Max(0, await Database.GetTotalBytes() + entryDiskSpace - Options.MaxCacheBytes);
                 // Evict space 
-                await EvictSpace(diskSpace, cancellationToken);
+                await EvictSpace(missingSpace, cancellationToken);
             }
 
             return false;
@@ -130,7 +131,11 @@ namespace Imazen.HybridCache
             try
             {
                 File.Delete(physicalPath);
-                return record.DiskSize;
+                if (await Database.DeleteRecord(record.RelativePath))
+                {
+                    return record.DiskSize;
+                }
+                return 0;
             }
             catch (FileNotFoundException)
             {
