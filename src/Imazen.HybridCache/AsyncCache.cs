@@ -201,9 +201,10 @@ namespace Imazen.HybridCache
                     {
                         var delegateStartedAt = DateTime.UtcNow;
                         var swReserveSpace = Stopwatch.StartNew();
-                        //We only permit eviction proceedings from within the queue
-                        //But we always record/reserve new files 
-                        var reserveSpaceResult = await CleanupManager.TryReserveSpace(entry, w.ContentType, w.GetUsedBytes(), !queueFull, ct);
+                        //We only permit eviction proceedings from within the queue or if the queue is disabled
+                        var allowEviction = !queueFull || CurrentWrites.MaxQueueBytes <= 0;
+                        var reserveSpaceResult = await CleanupManager.TryReserveSpace(entry, w.ContentType, 
+                            w.GetUsedBytes(), allowEviction, ct);
                         swReserveSpace.Stop();
 
                         if (!reserveSpaceResult)
