@@ -16,17 +16,19 @@ namespace Imazen.HybridCache
         {
             MemoryHit,
             DiskHit,
-            QueueLockTimeout,
-            CacheEvictionFailed,
             WriteSucceeded,
+            QueueLockTimeoutAndCreated,
+            FileAlreadyExists,
+            Miss,
+            CacheEvictionFailed,
             WriteTimedOut,
-            FileAlreadyExists
+            QueueLockTimeoutAndFailed
         }
         public class AsyncCacheResult : IStreamCacheResult
         {
             public Stream Data { get; set; }
             public string ContentType { get; set; }
-            public StreamCacheQueryResult Result { get; set; }
+            public string Status => Detail.ToString();
             
             public AsyncCacheDetailResult Detail { get; set; }
         }
@@ -89,7 +91,6 @@ namespace Imazen.HybridCache
             {
                 return new AsyncCacheResult
                 {
-                    Result = StreamCacheQueryResult.Hit,
                     Detail = AsyncCacheDetailResult.DiskHit,
                     ContentType = contentType,
                     Data = new FileStream(entry.PhysicalPath, FileMode.Open, FileAccess.Read, FileShare.Read)
@@ -165,7 +166,6 @@ namespace Imazen.HybridCache
                     {
                         cacheResult.Data = existingQueuedWrite.GetReadonlyStream();
                         cacheResult.ContentType = existingQueuedWrite.ContentType;
-                        cacheResult.Result = StreamCacheQueryResult.Hit;
                         cacheResult.Detail = AsyncCacheDetailResult.MemoryHit;
                         return;
                     }
@@ -191,7 +191,7 @@ namespace Imazen.HybridCache
                     //Create AsyncWrite object to enqueue
                     var w = new AsyncWrite(entry.StringKey, result.Item2, result.Item1);
 
-                    cacheResult.Result = StreamCacheQueryResult.Miss;
+                    cacheResult.Detail = AsyncCacheDetailResult.Miss;
                     cacheResult.ContentType = w.ContentType;
                     cacheResult.Data = w.GetReadonlyStream();
 
@@ -284,20 +284,19 @@ namespace Imazen.HybridCache
             if (!queueLockComplete)
             {
                 //On queue lock failure
-                cacheResult.Detail = AsyncCacheDetailResult.QueueLockTimeout;
                 if (!Options.FailRequestsOnEnqueueLockTimeout)
                 {
                     // We run the callback with no intent of caching
                     var (contentType, arraySegment) = await dataProviderCallback(cancellationToken);
                     
-                    cacheResult.Result = StreamCacheQueryResult.Miss;
+                    cacheResult.Detail = AsyncCacheDetailResult.QueueLockTimeoutAndCreated;
                     cacheResult.ContentType = contentType;
                     cacheResult.Data = new MemoryStream(arraySegment.Array ?? throw new NullReferenceException(), 
                         arraySegment.Offset, arraySegment.Count, false, true);
                 }
                 else
                 {
-                    cacheResult.Result = StreamCacheQueryResult.Failed;
+                    cacheResult.Detail = AsyncCacheDetailResult.QueueLockTimeoutAndFailed;
                 }
             }
             return cacheResult;

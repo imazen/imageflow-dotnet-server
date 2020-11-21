@@ -8,16 +8,16 @@ namespace Imazen.Common.Extensibility.StreamCache
         /// <summary>
         /// An open stream to the data. Must be disposed by caller.
         /// </summary>
-        Stream Data { get; set; }
+        Stream Data { get; }
 
         /// <summary>
         /// null, or the content type if one was requested. 
         /// </summary>
-        string ContentType { get; set; }
+        string ContentType { get; }
 
         /// <summary>
         /// The result of the cache check
         /// </summary>
-        StreamCacheQueryResult Result { get; set; }
+        string Status { get; }
     }
 }

@@ -16,7 +16,14 @@ namespace Imageflow.Server.HybridSqliteCache
         public HybridSqliteCacheService(HybridSqliteCacheOptions options, ILogger<HybridSqliteCacheService> logger)
         {
             var database = new SqliteCacheDatabase(new SqliteCacheDatabaseOptions(options.DatabaseDir), null);
-            cache = new HybridCache(database, new HybridCacheOptions(options.DiskCacheDir), null);
+            cache = new HybridCache(database, new HybridCacheOptions(options.DiskCacheDir)
+            {
+                AsyncCacheOptions = new AsyncCacheOptions()
+                {
+                    MaxQueuedBytes = options.MaxWriteQueueBytes,
+                    WriteSynchronouslyWhenQueueFull = true,
+                }
+            }, null);
         }
 
         public IEnumerable<IIssue> GetIssues()

@@ -289,20 +289,7 @@ namespace Imageflow.Server
                     return new Tuple<string, ArraySegment<byte>>(null, bytes);
                 }
             },CancellationToken.None,false);
-            
-            if (cacheResult.Result == StreamCacheQueryResult.Miss)
-            {
-                GlobalPerf.Singleton.IncrementCounter("cache_miss");
-            }
-            else if (cacheResult.Result == StreamCacheQueryResult.Hit)
-            {
-                GlobalPerf.Singleton.IncrementCounter("cache_hit");
-            }
-            else if (cacheResult.Result == StreamCacheQueryResult.Failed)
-            {
-                GlobalPerf.Singleton.IncrementCounter("cache_failed");
-            }
-            
+
             if (cacheResult.Data != null)
             {
                 if (cacheResult.Data.Length < 1)
@@ -317,7 +304,7 @@ namespace Imageflow.Server
             else
             {
                 // TODO explore this failure path better
-                throw new NullReferenceException("Caching failed");
+                throw new NullReferenceException("Caching failed: " + cacheResult.Status);
             }
         }
 

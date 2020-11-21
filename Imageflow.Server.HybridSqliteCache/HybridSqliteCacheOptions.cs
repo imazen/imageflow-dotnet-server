@@ -6,6 +6,8 @@
         
         public string DiskCacheDir { get; set; }
         
+        public long MaxWriteQueueBytes { get; set; }
+        
         public HybridSqliteCacheOptions(string cacheDir)
         {
             DatabaseDir = cacheDir;

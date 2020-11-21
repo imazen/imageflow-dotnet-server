@@ -96,11 +96,14 @@ namespace Imazen.HybridCache.Sqlite
         {
             using (var sumDiskSize = connection.CreateCommand())
             {
+                AssertOpen();
                 sumDiskSize.CommandText = "SELECT SUM(disksize) FROM files";
-                var sizeReader = await sumDiskSize.ExecuteReaderAsync(cancellationToken);
-                if (await sizeReader.ReadAsync(cancellationToken) && sizeReader.GetValue(0) != DBNull.Value)
+                var sizeReader = await sumDiskSize.ExecuteReaderAsync(CommandBehavior.SingleRow,cancellationToken);
+                AssertOpen();
+                if (await sizeReader.ReadAsync(cancellationToken))
                 {
-                    return sizeReader.GetInt64(0);
+                    // NULL means there were no rows in the db
+                    return sizeReader.GetValue(0) != DBNull.Value ? sizeReader.GetInt64(0) : 0;
                 }
 
                 throw new InvalidOperationException("Failed to get SUM(disksize) from files");
@@ -166,7 +169,7 @@ namespace Imazen.HybridCache.Sqlite
 
         public int EstimateRecordDiskSpace(int stringKeyLength)
         {
-            return 2048 + stringKeyLength;
+            return 6000 + stringKeyLength;
         }
 
         private async Task<bool> CreateRecordUnsynchronized(CacheDatabaseRecord record, CancellationToken cancellationToken)
@@ -176,7 +179,7 @@ namespace Imazen.HybridCache.Sqlite
             {
                 create.CommandText =
                     @"INSERT INTO files(relative_path, disksize, created, last_delete_attempt, content_type, access_count_key)
-                        VALUES @relative_path, @disksize, @created, @last_delete_attempt, @content_type, @access_count_key;
+                        VALUES (@relative_path, @disksize, @created, @last_delete_attempt, @content_type, @access_count_key);
                       SELECT changes();";
                 create.Parameters.AddWithValue("@relative_path", record.RelativePath);
                 create.Parameters.AddWithValue("@disksize", record.DiskSize);

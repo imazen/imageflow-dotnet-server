@@ -17,7 +17,13 @@ namespace Imazen.HybridCache.Tests
             var path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}");
             Directory.CreateDirectory(path);
             var database = new SqliteCacheDatabase(new SqliteCacheDatabaseOptions(path), null);
-            HybridCache cache = new HybridCache(database, new HybridCacheOptions(path), null);
+            HybridCache cache = new HybridCache(database, new HybridCacheOptions(path)
+            {
+                AsyncCacheOptions = new AsyncCacheOptions()
+                {
+                    MaxQueuedBytes = 0
+                }
+            }, null);
             try
             {
                 await cache.StartAsync(cancellationToken);
@@ -32,14 +38,20 @@ namespace Imazen.HybridCache.Tests
 
                 var result = await cache.GetOrCreateBytes(key, DataProvider, cancellationToken, true);
                 
-                Assert.Equal(StreamCacheQueryResult.Miss, result.Result);
+                Assert.Equal("WriteSucceeded", result.Status);
                 
                 var result2 = await cache.GetOrCreateBytes(key, DataProvider, cancellationToken, true);
-                Assert.Equal(StreamCacheQueryResult.Hit, result2.Result);
-                Assert.Equal(contentType, result.ContentType);
-                Assert.NotNull(result.Data);
+                Assert.Equal("DiskHit", result2.Status);
+                Assert.Equal(contentType, result2.ContentType);
+                Assert.NotNull(result2.Data);
                 
                 await cache.AsyncCache.AwaitEnqueuedTasks();
+                
+                var result3 = await cache.GetOrCreateBytes(key, DataProvider, cancellationToken, true);
+                Assert.Equal("DiskHit", result3.Status);
+                Assert.Equal(contentType, result3.ContentType);
+                Assert.NotNull(result3.Data);
+
 
             }
             finally

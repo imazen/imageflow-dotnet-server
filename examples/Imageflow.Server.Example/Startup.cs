@@ -82,7 +82,10 @@ namespace Imageflow.Server.Example
             // If you're deploying to azure, provide a disk cache folder *not* inside ContentRootPath
             // to prevent the app from recycling whenever folders are created.
             services.AddImageflowHybridSqliteCache(
-                new HybridSqliteCacheOptions(Path.Combine(homeFolder, "imageflow_example_hybrid_cache")));
+                new HybridSqliteCacheOptions(Path.Combine(homeFolder, "imageflow_example_hybrid_cache"))
+                {
+                    MaxWriteQueueBytes = 0
+                });
 
         }
 

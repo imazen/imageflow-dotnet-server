@@ -43,7 +43,7 @@ namespace Imazen.HybridCache.Tests
                     },
                     CancellationToken.None, false);
                 Assert.NotNull(result.Data);
-                Assert.Equal(StreamCacheQueryResult.Miss, result.Result);
+                Assert.Equal("Miss", result.Status);
 
                 await cache.AwaitEnqueuedTasks();
 
@@ -54,7 +54,7 @@ namespace Imazen.HybridCache.Tests
                     },
                     CancellationToken.None, false);
                 Assert.NotNull(result2.Data);
-                Assert.Equal(StreamCacheQueryResult.Hit, result2.Result);
+                Assert.Equal("DiskHit", result2.Status);
 
                 
                 var hash = builder.HashKeyBasis(keyBasis);
@@ -100,7 +100,7 @@ namespace Imazen.HybridCache.Tests
                     },
                     CancellationToken.None, false);
                 Assert.NotNull(result.Data);
-                Assert.Equal(StreamCacheQueryResult.Miss, result.Result);
+                Assert.Equal("Miss", result.Status);
 
                 await cache.AwaitEnqueuedTasks();
 
@@ -111,7 +111,7 @@ namespace Imazen.HybridCache.Tests
                     },
                     CancellationToken.None, false);
                 Assert.NotNull(result2.Data);
-                Assert.Equal(StreamCacheQueryResult.Hit, result2.Result);
+                Assert.Equal("DiskHit", result2.Status);
                 var hash = builder.HashKeyBasis(keyBasis);
                 var expectedPhysicalPath = builder.GetPhysicalPathFromHash(hash);
                 Assert.True(File.Exists(expectedPhysicalPath));
