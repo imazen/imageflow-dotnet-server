@@ -310,11 +310,11 @@ namespace Imazen.HybridCache.Sqlite
                 }
 
                 await connection.OpenAsync(cancellationToken);
-                using (var cmd = connection.CreateCommand())
-                {
-                    cmd.CommandText = "PRAGMA journal_mode=WAL;";
-                    await cmd.ExecuteNonQueryAsync(cancellationToken);
-                }
+                // using (var cmd = connection.CreateCommand())
+                // {
+                //     cmd.CommandText = "PRAGMA journal_mode=WAL;";
+                //     await cmd.ExecuteNonQueryAsync(cancellationToken);
+                // }
 
                 using (var createTable = connection.CreateCommand())
                 {
