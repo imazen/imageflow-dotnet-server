@@ -68,10 +68,11 @@ namespace Imazen.HybridCache.Sqlite
                         var row = new CacheDatabaseRecord()
                         {
                             RelativePath = reader.GetString(0),
-                            CreatedAt = reader.GetInt64(1).UnixTimeUtcIntoDateTime(),
-                            LastDeletionAttempt = reader.GetInt64(2).UnixTimeUtcIntoDateTime(),
-                            ContentType = reader.GetString(3),
-                            AccessCountKey = reader.GetInt32(4),
+                            DiskSize = reader.GetInt64(1),
+                            CreatedAt = reader.GetInt64(2).UnixTimeUtcIntoDateTime(),
+                            LastDeletionAttempt = reader.GetInt64(3).UnixTimeUtcIntoDateTime(),
+                            ContentType = reader.GetString(4),
+                            AccessCountKey = reader.GetInt32(5),
                         };
                         rows.Add(row);
                     }
