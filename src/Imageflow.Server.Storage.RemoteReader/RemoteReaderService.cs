@@ -78,7 +78,7 @@ namespace Imageflow.Server.Storage.RemoteReader
 
             if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
             {
-                logger.LogWarning("RemoteReader blob \"{VirtualPath}\" not found. Invalid Uri: {Url}", virtualPath, url);
+                logger.LogWarning("RemoteReader blob {VirtualPath} not found. Invalid Uri: {Url}", virtualPath, url);
                 throw new BlobMissingException($"RemoteReader blob \"{virtualPath}\" not found. Invalid Uri: {url}");
             }
 
@@ -91,7 +91,7 @@ namespace Imageflow.Server.Storage.RemoteReader
 
                 if (!resp.IsSuccessStatusCode)
                 {
-                    logger.LogWarning("RemoteReader blob \"{VirtualPath}\" not found. The remote \"{Url}\" responded with status: {StatusCode}", virtualPath, url, resp.StatusCode);
+                    logger.LogWarning("RemoteReader blob {VirtualPath} not found. The remote {Url} responded with status: {StatusCode}", virtualPath, url, resp.StatusCode);
                     throw new BlobMissingException($"RemoteReader blob \"{virtualPath}\" not found. The remote \"{url}\" responded with status: {resp.StatusCode}");
                 }
 
@@ -103,7 +103,7 @@ namespace Imageflow.Server.Storage.RemoteReader
             }
             catch (Exception ex)
             {
-                logger.LogWarning(ex, "RemoteReader blob error retrieving \"{Url}\" for \"{VirtualPath}\".", url, virtualPath);
+                logger.LogWarning(ex, "RemoteReader blob error retrieving {Url} for {VirtualPath}.", url, virtualPath);
                 throw new BlobMissingException($"RemoteReader blob error retrieving \"{url}\" for \"{virtualPath}\".", ex);
             }
         }
