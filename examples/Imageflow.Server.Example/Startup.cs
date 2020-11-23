@@ -1,18 +1,19 @@
-using System.IO;
 using Amazon;
 using Azure.Storage.Blobs;
 using Imageflow.Fluent;
+using Imageflow.Server.DiskCache;
+using Imageflow.Server.Storage.AzureBlob;
+using Imageflow.Server.Storage.RemoteReader;
+using Imageflow.Server.Storage.S3;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Imageflow.Server.DiskCache;
-using Imageflow.Server.Storage.AzureBlob;
-using Imageflow.Server.Storage.S3;
+using Polly;
 using System;
-using Imageflow.Server.SqliteCache;
-using Imageflow.Server.Storage.RemoteReader;
+using System.IO;
+using System.Net.Http;
 
 namespace Imageflow.Server.Example
 {
@@ -31,10 +32,40 @@ namespace Imageflow.Server.Example
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllersWithViews();
-            
-            services.AddImageflowRemoteReaderService(new RemoteReaderServiceOptions { SigningKey = "ChangeMe"}
-                .AddPrefix("/remote/")
-                );
+
+            services.AddHttpClient("TrickyHttpClient", config =>
+            {
+                config.DefaultRequestHeaders.Add("user-agent", "Tricky Client");
+                config.DefaultRequestHeaders.Add("authorization", "secret");
+            });
+
+            services.AddHttpClient(nameof(RemoteReaderService), config =>
+            {
+                config.DefaultRequestHeaders.Add("user-agent", "ImageFlow-DotNet-Server");
+
+            }).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+            {
+                AllowAutoRedirect = true,
+                MaxAutomaticRedirections = 50
+
+            }).AddTransientHttpErrorPolicy(builder => builder
+                .RetryAsync()
+            );
+
+            var remoteReaderServiceOptions = new RemoteReaderServiceOptions
+            {
+                SigningKey = "ChangeMe"
+            }
+            .AddPrefix("/remote/");
+
+            services.AddImageflowRemoteReaderService(remoteReaderServiceOptions, uri =>
+            {
+                return uri.Host switch
+                {
+                    "tricky.endpoint.local" => "TrickyHttpClient",
+                    _ => nameof(RemoteReaderService)
+                };
+            });
 
             // Make S3 containers available at /ri/ and /imageflow-resources/
             // If you use credentials, do not check them into your repository
