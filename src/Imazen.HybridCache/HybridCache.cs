@@ -42,6 +42,14 @@ namespace Imazen.HybridCache
             await Database.StopAsync(cancellationToken);
         }
         
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="dataProviderCallback"></param>
+        /// <param name="cancellationToken"></param>
+        /// <param name="retrieveContentType">When true, and using Sqlite, increases execution time by 50% or more as a database call must be made</param>
+        /// <returns></returns>
         public async Task<IStreamCacheResult> GetOrCreateBytes(byte[] key, AsyncBytesResult dataProviderCallback, CancellationToken cancellationToken, bool retrieveContentType)
         {
             return await AsyncCache.GetOrCreateBytes(key, dataProviderCallback, cancellationToken, retrieveContentType);
