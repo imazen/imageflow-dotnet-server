@@ -10,12 +10,14 @@ namespace Imazen.HybridCache
 {
     internal class CleanupManager : ICacheCleanupManager
     {
-        private BucketCounter accessCounter;
+        private Lazy<BucketCounter> accessCounter;
+
         /// <summary>
         /// Creation of AccessCounter is not synchronized because we don't care if distinct references are handed out
         /// </summary>
-        private BucketCounter AccessCounter => accessCounter ?? (accessCounter = new BucketCounter(Options.AccessTrackingBits));
+        private BucketCounter AccessCounter => accessCounter.Value;
 
+      
         private ICacheDatabase Database { get; }
         private CleanupManagerOptions Options { get; }
         
@@ -27,6 +29,7 @@ namespace Imazen.HybridCache
             Logger = logger;
             Options = options;
             Database = database;
+            accessCounter = new Lazy<BucketCounter>(() => new BucketCounter(Options.AccessTrackingBits));
         }
         public void NotifyUsed(CacheEntry cacheEntry)
         {
