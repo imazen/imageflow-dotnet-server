@@ -127,12 +127,14 @@ namespace Imazen.HybridCache
             if (cancellationToken.IsCancellationRequested)
                 throw new OperationCanceledException(cancellationToken);
 
+            var swGetOrCreateBytes = Stopwatch.StartNew();
             var entry = new CacheEntry(key, PathBuilder);
             
             // Tell cleanup what we're using
             CleanupManager.NotifyUsed(entry);
             
             // Fast path on disk hit
+            var swFileExists = Stopwatch.StartNew();
             if (File.Exists(entry.PhysicalPath))
             {
                 var fileBasedResult = await TryGetFileBasedResult(entry, retrieveContentType, cancellationToken);
@@ -142,6 +144,8 @@ namespace Imazen.HybridCache
                 }
                 // Just continue on creating the file. It must have been deleted between the calls
             }
+            swFileExists.Stop();
+            
 
 
             var cacheResult = new AsyncCacheResult();
@@ -155,7 +159,8 @@ namespace Imazen.HybridCache
                 Options.WaitForIdenticalRequestsTimeoutMs, cancellationToken,
                 async () =>
                 {
-
+                    var swInsideQueueLock = Stopwatch.StartNew();
+                    
                     // Now, if the item we seek is in the queue, we have a memcached hit.
                     // If not, we should check the filesystem. It's possible the item has been written to disk already.
                     // If both are a miss, we should see if there is enough room in the write queue.
@@ -174,6 +179,7 @@ namespace Imazen.HybridCache
                     if (cancellationToken.IsCancellationRequested)
                         throw new OperationCanceledException(cancellationToken);
 
+                    swFileExists.Start();
                     // Fast path on disk hit, now that we're in a synchronized state
                     if (File.Exists(entry.PhysicalPath))
                     {
@@ -185,10 +191,13 @@ namespace Imazen.HybridCache
                         }
                         // Just continue on creating the file. It must have been deleted between the calls
                     }
-                    
+                    swFileExists.Stop();
+
+                    var swDataCreation = Stopwatch.StartNew();
                     //Read, resize, process, and encode the image. Lots of exceptions thrown here.
                     var result = await dataProviderCallback(cancellationToken);
-
+                    swDataCreation.Stop();
+                    
                     //Create AsyncWrite object to enqueue
                     var w = new AsyncWrite(entry.StringKey, result.Item2, result.Item1);
 
@@ -198,7 +207,7 @@ namespace Imazen.HybridCache
 
                     // Create a lambda which we can call either in a spawned Task (if enqueued successfully), or
                     // in this task, if our buffer is full.
-                    async Task<AsyncCacheDetailResult> EvictWriteAndLog(bool queueFull, CancellationToken ct)
+                    async Task<AsyncCacheDetailResult> EvictWriteAndLog(bool queueFull, TimeSpan dataCreationTime,  CancellationToken ct)
                     {
                         var delegateStartedAt = DateTime.UtcNow;
                         var swReserveSpace = Stopwatch.StartNew();
@@ -237,26 +246,28 @@ namespace Imazen.HybridCache
                         {
                             case CacheFileWriter.FileWriteStatus.LockTimeout:
                                 //We failed to lock the file.
-                                Logger?.LogWarning("HybridCache {0} write failed; disk lock timeout exceeded after {1}ms - {2}", 
+                                Logger?.LogWarning("HybridCache {Sync} write failed; disk lock timeout exceeded after {IoTime}ms - {DisplayPath}", 
                                     syncString, swIo.ElapsedMilliseconds, entry.DisplayPath);
                                 return AsyncCacheDetailResult.WriteTimedOut;
                             case CacheFileWriter.FileWriteStatus.FileAlreadyExists:
-                                Logger?.LogTrace("HybridCache {0} write found file already exists in {1}ms, after a {2}ms delay - {3}", 
+                                Logger?.LogTrace("HybridCache {Sync} write found file already exists in {IoTime}ms, after a {DelayTime}ms delay and {CreationTime}- {DisplayPath}", 
                                     syncString, swIo.ElapsedMilliseconds, 
-                                    delegateStartedAt.Subtract(w.JobCreatedAt).TotalMilliseconds, entry.DisplayPath);
+                                    delegateStartedAt.Subtract(w.JobCreatedAt).TotalMilliseconds, 
+                                    dataCreationTime, entry.DisplayPath);
                                 return AsyncCacheDetailResult.FileAlreadyExists;
                             case CacheFileWriter.FileWriteStatus.FileCreated:
                                 if (queueFull)
                                 {
-                                    Logger?.LogTrace(@"HybridCache synchronous write succeeded in {WriteTime}ms with {MarkCreatedTime}ms marking the file as created and {EvictionTime}ms spent on eviction - {DisplayPath}", 
-                                        
+                                    Logger?.LogTrace(@"HybridCache synchronous write complete. Create: {CreateTime}ms. Write {WriteTime}ms. Mark Created: {MarkCreatedTime}ms. Eviction: {EvictionTime}ms - {DisplayPath}", 
+                                        Math.Round(dataCreationTime.TotalMilliseconds).ToString(CultureInfo.InvariantCulture).PadLeft(4),
                                         swIo.ElapsedMilliseconds.ToString().PadLeft(4),
                                         swMarkCreated.ElapsedMilliseconds.ToString().PadLeft(4), 
                                         swReserveSpace.ElapsedMilliseconds.ToString().PadLeft(4), entry.DisplayPath);
                                 }
                                 else
                                 {
-                                    Logger?.LogTrace(@"HybridCache async write complete. Write {WriteTime}ms. Mark Created: {MarkCreatedTime}ms Eviction {EvictionTime}ms. Delay {DelayTime}ms. - {DisplayPath}", 
+                                    Logger?.LogTrace(@"HybridCache async write complete. Create: {CreateTime}ms. Write {WriteTime}ms. Mark Created: {MarkCreatedTime}ms Eviction {EvictionTime}ms. Delay {DelayTime}ms. - {DisplayPath}", 
+                                        Math.Round(dataCreationTime.TotalMilliseconds).ToString(CultureInfo.InvariantCulture).PadLeft(4),
                                         swIo.ElapsedMilliseconds.ToString().PadLeft(4), 
                                         swMarkCreated.ElapsedMilliseconds.ToString().PadLeft(4), 
                                         swReserveSpace.ElapsedMilliseconds.ToString().PadLeft(4), 
@@ -270,12 +281,12 @@ namespace Imazen.HybridCache
                         }
                     }
 
-
+                    var swEnqueue = Stopwatch.StartNew();
                     var queueResult = CurrentWrites.Queue(w, async delegate(AsyncWrite job)
                     {
                         try
                         {
-                            var unused = await EvictWriteAndLog(false, CancellationToken.None);
+                            var unused = await EvictWriteAndLog(false, swDataCreation.Elapsed, CancellationToken.None);
                         }
                         catch (Exception ex)
                         {
@@ -284,16 +295,20 @@ namespace Imazen.HybridCache
                         }
                         finally
                         {
+                            //TODO: Remove this duplicate line of code
                             CurrentWrites.Remove(job); //Remove from the queue, it's done or failed. 
                         }
 
                     });
+                    swEnqueue.Stop();
+                    swInsideQueueLock.Stop();
+                    swGetOrCreateBytes.Stop();
 
                     if (queueResult == AsyncWriteCollection.AsyncQueueResult.QueueFull)
                     {
                         if (Options.WriteSynchronouslyWhenQueueFull)
                         {
-                            var writerDelegateResult = await EvictWriteAndLog(true, cancellationToken);
+                            var writerDelegateResult = await EvictWriteAndLog(true, swDataCreation.Elapsed, cancellationToken);
                             cacheResult.Detail = writerDelegateResult;
                         }
                     }
