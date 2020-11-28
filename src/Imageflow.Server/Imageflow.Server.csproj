@@ -5,17 +5,35 @@
     <RootNamespace>Imageflow.Server</RootNamespace>
     <PackageVersion>0.1</PackageVersion>
     <Title>Imageflow .NET Server - Middleware for fetching, processing, and caching images on-demand.</Title>
-    <Description>Imageflow.Server - Middleware for fetching, processing, and caching images on-demand</Description>
-    <Authors>Imazen</Authors>
-    <PublishRepositoryUrl>true</PublishRepositoryUrl>
-    <EmbedUntrackedSources>true</EmbedUntrackedSources>
-    <IncludeSymbols>true</IncludeSymbols>
-    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <Description>Imageflow.Server - Middleware for fetching, processing, and caching images on-demand. Commercial licenses available.</Description>
     <Copyright>(c) 2020 Imazen LLC</Copyright>
+    
+    
     <PackageProjectUrl>https://github.com/imazen/imageflow-dotnet-server</PackageProjectUrl>
     <RepositoryUrl>https://github.com/imazen/imageflow-dotnet-server.git</RepositoryUrl>
+    <RepositoryBranch>main</RepositoryBranch>
+    <PackageTags>Image;Resize;Optimize;Crop;Gif;Jpg;Jpeg;Bitmap;Png;Core;WebP;ImageResizer;Imageflow;Rotate;Imaging;Crunch</PackageTags>
+    <Authors>lilith;imazen</Authors>
+    <Company>Imazen LLC</Company>
+    <RepositoryType>git</RepositoryType>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
+    <PackageIcon>icon.png</PackageIcon>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(CI)' == 'True'">
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(CI)' == 'true'">
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\icon.png" Pack="true" PackagePath=""/>
+  </ItemGroup>
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />    
   </ItemGroup>
