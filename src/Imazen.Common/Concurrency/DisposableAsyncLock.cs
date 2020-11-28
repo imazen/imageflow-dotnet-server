@@ -4,7 +4,12 @@ using System.Threading.Tasks;
 
 namespace Imazen.Common.Concurrency
 {
-    public class DisposableAsyncLock
+    public interface IDisposableAsyncLock
+    {
+        Task<IDisposable> LockAsync();
+    }
+
+    public class DisposableAsyncLock : IDisposableAsyncLock
     {
         private readonly SemaphoreSlim semaphore = new SemaphoreSlim(1, 1);
         private readonly Task<IDisposable> releaser;

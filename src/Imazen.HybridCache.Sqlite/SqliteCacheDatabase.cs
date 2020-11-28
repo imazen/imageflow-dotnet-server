@@ -20,12 +20,22 @@ namespace Imazen.HybridCache.Sqlite
         private SQLiteConnection connection;
         private bool isOpen;
         private ILogger Logger { get; }
-
-        private readonly DisposableAsyncLock Lock = new DisposableAsyncLock();
+        
+        
+        private readonly IDisposableAsyncLock Lock;
         public SqliteCacheDatabase(SqliteCacheDatabaseOptions options, ILogger logger)
         {
             Logger = logger;
             Options = options;
+            if (options.SynchronizeDatabaseCalls)
+            {
+                Lock = new DisposableAsyncLock();
+            }
+            else
+            {
+                Lock = new NonLock();
+            }
+            
             databaseInMemory = options.DatabaseDir == ":memory:";
             if (!databaseInMemory)
             {
@@ -326,6 +336,20 @@ namespace Imazen.HybridCache.Sqlite
                 isOpen = false;
                 connection.Close();
                 Logger?.LogInformation("Imazen.HybridCache.Sqlite stopped successfully.");
+            }
+        }
+        
+        private class NonLock : IDisposableAsyncLock
+        {
+            private class NonLockDisposable : IDisposable
+            {
+                public void Dispose()
+                {
+                }
+            }
+            public Task<IDisposable> LockAsync()
+            {
+                return Task.FromResult((IDisposable) new NonLockDisposable());
             }
         }
     }

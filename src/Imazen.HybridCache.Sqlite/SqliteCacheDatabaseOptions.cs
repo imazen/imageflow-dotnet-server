@@ -7,5 +7,7 @@ namespace Imazen.HybridCache.Sqlite
             DatabaseDir = databaseDir;
         }
         public string DatabaseDir { get; set; }
+
+        public bool SynchronizeDatabaseCalls { get; set; } = false;
     }
 }
