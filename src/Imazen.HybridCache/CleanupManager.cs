@@ -137,7 +137,7 @@ namespace Imazen.HybridCache
             try
             {
                 File.Delete(physicalPath);
-                if (await Database.DeleteRecord(record.RelativePath))
+                if (await Database.DeleteRecord(record))
                 {
                     return record.DiskSize;
                 }
@@ -145,7 +145,7 @@ namespace Imazen.HybridCache
             }
             catch (FileNotFoundException)
             {
-                if (await Database.DeleteRecord(record.RelativePath))
+                if (await Database.DeleteRecord(record))
                 {
                     return record.DiskSize;
                 }

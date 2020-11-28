@@ -21,6 +21,7 @@ namespace Imazen.HybridCache.Sqlite
         private bool isOpen;
         private ILogger Logger { get; }
         
+        private CacheSizeCache SizeCache { get; }
         
         private readonly IDisposableAsyncLock Lock;
         public SqliteCacheDatabase(SqliteCacheDatabaseOptions options, ILogger logger)
@@ -42,6 +43,8 @@ namespace Imazen.HybridCache.Sqlite
                 databasePath = Path.Combine(options.DatabaseDir, "imageflow_cache_index.sqlite");
             }
             isOpen = false;
+
+            SizeCache = new CacheSizeCache(() => GetTotalBytesUncached(CancellationToken.None));
         }
         
         private void AssertOpen()
@@ -91,11 +94,15 @@ namespace Imazen.HybridCache.Sqlite
             }
         }
 
-        public async Task<long> GetTotalBytes()
+        public Task<long> GetTotalBytes()
+        {
+            return SizeCache.GetTotalBytes();
+        }
+        public async Task<long> GetTotalBytesUncached(CancellationToken cancellationToken)
         {
             using (var unused = await Lock.LockAsync())
             {
-                return await GetTotalBytesInternalUnsynchronized(CancellationToken.None);
+                return await GetTotalBytesInternalUnsynchronized(cancellationToken);
             }
         }
 
@@ -117,7 +124,7 @@ namespace Imazen.HybridCache.Sqlite
             }
         }
 
-        private async Task<bool> DeleteRecordUnsynchronized(string relativePath, CancellationToken cancellationToken)
+        private async Task<bool> DeleteRecordUnsynchronized(ICacheDatabaseRecord record, CancellationToken cancellationToken)
         {
             AssertOpen();
             using (var delete = connection.CreateCommand())
@@ -125,9 +132,10 @@ namespace Imazen.HybridCache.Sqlite
                 delete.CommandText =
                     @"DELETE FROM files WHERE relative_path = @relative_path;
                       SELECT changes();";
-                delete.Parameters.AddWithValue("@relative_path", relativePath);
+                delete.Parameters.AddWithValue("@relative_path", record.RelativePath);
                 delete.Prepare();
                 AssertOpen();
+                await SizeCache.BeforeDeleted(record.DiskSize);
                 var reader = await delete.ExecuteReaderAsync(CommandBehavior.SingleRow, cancellationToken);
                 AssertOpen();
                 if (await reader.ReadAsync(cancellationToken))
@@ -138,12 +146,12 @@ namespace Imazen.HybridCache.Sqlite
                 return false;
             }
         }
-        public async Task<bool> DeleteRecord(string relativePath)
+        public async Task<bool> DeleteRecord(ICacheDatabaseRecord record)
         {
             using (var unused = await Lock.LockAsync())
             {
                 var cancellationToken = CancellationToken.None;
-                return await DeleteRecordUnsynchronized(relativePath, cancellationToken);
+                return await DeleteRecordUnsynchronized(record, cancellationToken);
             }
         }
 
@@ -196,6 +204,8 @@ namespace Imazen.HybridCache.Sqlite
                 create.Parameters.AddWithValue("@access_count_key", record.AccessCountKey);
                 create.Prepare();
                 AssertOpen();
+                await SizeCache.BeforeAdded(record.DiskSize);
+                AssertOpen();
                 var reader = await create.ExecuteReaderAsync(CommandBehavior.SingleRow, cancellationToken);
                 AssertOpen();
                 if (await reader.ReadAsync(cancellationToken))
@@ -213,7 +223,7 @@ namespace Imazen.HybridCache.Sqlite
             {
                 var cancellationToken = CancellationToken.None;
 
-                var spaceUsed = await GetTotalBytesInternalUnsynchronized(cancellationToken);
+                var spaceUsed = await GetTotalBytes();
                 if (spaceUsed + recordDiskSpace > diskSpaceLimit)
                 {
                     return false; // We're out of space
@@ -248,7 +258,7 @@ namespace Imazen.HybridCache.Sqlite
                 // We create the new record first, since the new file already exists
                 await CreateRecordUnsynchronized(newRecord, cancellationToken);
                 // Then we delete the old
-                await DeleteRecordUnsynchronized(record.RelativePath, cancellationToken);
+                await DeleteRecordUnsynchronized(record, cancellationToken);
             }
         }
 

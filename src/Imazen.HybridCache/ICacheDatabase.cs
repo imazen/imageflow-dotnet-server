@@ -23,7 +23,7 @@ namespace Imazen.HybridCache
         /// True if the record exists, false if it is already gone
         /// </summary>
         /// <returns></returns>
-        Task<bool> DeleteRecord(string relativePath);
+        Task<bool> DeleteRecord(ICacheDatabaseRecord record);
 
         /// <summary>
         /// Return the oldest (by created date) records, sorted from oldest to newest, where
