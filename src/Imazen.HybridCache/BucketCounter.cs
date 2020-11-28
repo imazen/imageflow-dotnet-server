@@ -1,8 +1,6 @@
 using System;
-using System.Collections;
 using System.Collections.Concurrent;
 using System.Security.Cryptography;
-using System.Threading;
 
 namespace Imazen.HybridCache
 {
