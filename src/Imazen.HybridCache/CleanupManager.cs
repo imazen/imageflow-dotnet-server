@@ -138,7 +138,7 @@ namespace Imazen.HybridCache
         }
 
         /// <summary>
-        /// Has a 500ms timeout if there is delete contention for a file.
+        /// Skips the record if there is delete contention for a file.
         /// Only counts bytes as deleted if the physical file is deleted successfully.
         /// Deletes db record whether file exists or not.
         /// </summary>
@@ -147,7 +147,7 @@ namespace Imazen.HybridCache
         private async Task<long> TryDeleteRecord(ICacheDatabaseRecord record)
         {
             long bytesDeleted = 0;
-            var unused = await DeleteLocks.TryExecuteAsync(record.RelativePath, 500, CancellationToken.None, async () =>
+            var unused = await DeleteLocks.TryExecuteAsync(record.RelativePath, 0, CancellationToken.None, async () =>
             {
                 var physicalPath = PathBuilder.GetPhysicalPathFromRelativePath(record.RelativePath);
                 try
