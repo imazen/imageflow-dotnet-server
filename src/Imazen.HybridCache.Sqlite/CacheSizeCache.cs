@@ -5,39 +5,43 @@ using System.Threading.Tasks;
 
 namespace Imazen.HybridCache.Sqlite
 {
-    public class CacheSizeCache
+    /// <summary>
+    /// This class uses Interlocked.Add to track changes, and refreshes the total size from the DB every 1500ms.
+    /// We tried using an AsyncLock but it drastically slowed things down.
+    /// </summary>
+    internal class CacheSizeCache
     {
-        private Func<Task<long>> getCacheSize;
+        private readonly Func<long> getCacheSize;
 
-        private long lastFetchedCacheSize = 0;
-        private long cacheSize = 0;
+        private long lastFetchedCacheSize;
+        private long cacheSize;
 
         private TimeSpan cacheExpiresAfter = TimeSpan.FromMilliseconds(1500);
-        public CacheSizeCache(Func<Task<long>> getCacheSize)
+        public CacheSizeCache(Func<long> getCacheSize)
         {
             this.getCacheSize = getCacheSize;
         }
         
-        public async Task<long> GetTotalBytes()
+        public long GetTotalBytes()
         {
             var now = Stopwatch.GetTimestamp();
             if (now > lastFetchedCacheSize + cacheExpiresAfter.Ticks)
             {
-                cacheSize = await getCacheSize();
+                cacheSize = getCacheSize();
                 lastFetchedCacheSize = now;
             }
             return cacheSize;
         }
         
-        public async Task BeforeDeleted(long bytes)
+        public void BeforeDeleted(long bytes)
         {
-            var unused = await GetTotalBytes();
+            var unused = GetTotalBytes();
             Interlocked.Add(ref cacheSize, bytes);
         }
 
-        public async Task BeforeAdded(long bytes)
+        public void BeforeAdded(long bytes)
         {
-            var unused = await GetTotalBytes();
+            var unused =  GetTotalBytes();
             Interlocked.Add(ref cacheSize, -bytes);
         }
     }
