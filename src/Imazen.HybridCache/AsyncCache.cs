@@ -271,7 +271,7 @@ namespace Imazen.HybridCache
                                         swIo.ElapsedMilliseconds.ToString().PadLeft(4), 
                                         swMarkCreated.ElapsedMilliseconds.ToString().PadLeft(4), 
                                         swReserveSpace.ElapsedMilliseconds.ToString().PadLeft(4), 
-                                        delegateStartedAt.Subtract(w.JobCreatedAt).TotalMilliseconds.ToString(CultureInfo.InvariantCulture).PadLeft(4), 
+                                        Math.Round(delegateStartedAt.Subtract(w.JobCreatedAt).TotalMilliseconds).ToString(CultureInfo.InvariantCulture).PadLeft(4), 
                                         entry.DisplayPath);
                                 }
 
