@@ -4,13 +4,14 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Imazen.Common.Concurrency;
 using Microsoft.Extensions.Logging;
 
 namespace Imazen.HybridCache
 {
     internal class CleanupManager : ICacheCleanupManager
     {
-        private Lazy<BucketCounter> accessCounter;
+        private readonly Lazy<BucketCounter> accessCounter;
 
         /// <summary>
         /// Creation of AccessCounter is not synchronized because we don't care if distinct references are handed out
@@ -23,6 +24,8 @@ namespace Imazen.HybridCache
         
         private HashBasedPathBuilder PathBuilder { get; }
         private ILogger Logger { get; }
+
+        private AsyncLockProvider DeleteLocks { get; } = new AsyncLockProvider();
         public CleanupManager(CleanupManagerOptions options, ICacheDatabase database, ILogger logger, HashBasedPathBuilder pathBuilder)
         {
             PathBuilder = pathBuilder;
@@ -74,6 +77,9 @@ namespace Imazen.HybridCache
                 
                 foreach (var record in records)
                 {
+                    if (cancellationToken.IsCancellationRequested)
+                        throw new OperationCanceledException(cancellationToken);
+                    
                     if (bytesDeleted >= bytesToDeleteOptimally) break;
 
                     var deletedBytes = await TryDeleteRecord(record);
@@ -131,51 +137,56 @@ namespace Imazen.HybridCache
             return Database.UpdateCreatedDate(cacheEntry.RelativePath, DateTime.UtcNow);
         }
 
+        /// <summary>
+        /// Has a 500ms timeout if there is delete contention for a file.
+        /// Only counts bytes as deleted if the physical file is deleted successfully.
+        /// Deletes db record whether file exists or not.
+        /// </summary>
+        /// <param name="record"></param>
+        /// <returns></returns>
         private async Task<long> TryDeleteRecord(ICacheDatabaseRecord record)
         {
-            var physicalPath = PathBuilder.GetPhysicalPathFromRelativePath(record.RelativePath);
-            try
+            long bytesDeleted = 0;
+            var unused = await DeleteLocks.TryExecuteAsync(record.RelativePath, 500, CancellationToken.None, async () =>
             {
-                File.Delete(physicalPath);
-                if (await Database.DeleteRecord(record))
-                {
-                    return record.DiskSize;
-                }
-                return 0;
-            }
-            catch (FileNotFoundException)
-            {
-                if (await Database.DeleteRecord(record))
-                {
-                    return record.DiskSize;
-                }
-                return 0;
-            }
-            catch (IOException)
-            {
-                if (physicalPath.Contains(".moving_"))
-                {
-                    // We already moved it. All we can do is update the last deletion attempt
-                    await Database.UpdateLastDeletionAttempt(record.RelativePath, DateTime.Now);
-                    return 0;
-                }
-                var movedRelativePath = record.RelativePath + ".moving_" +
-                                        new Random().Next(int.MaxValue).ToString("x", CultureInfo.InvariantCulture);
-                var movedPath = PathBuilder.GetPhysicalPathFromRelativePath(movedRelativePath);
+                var physicalPath = PathBuilder.GetPhysicalPathFromRelativePath(record.RelativePath);
                 try
                 {
-                    //Move it so it usage will decrease and it can be deleted later
-                    File.Move(physicalPath, movedPath);
-                    await Database.ReplaceRelativePathAndUpdateLastDeletion(record, movedRelativePath,
-                        DateTime.Now);
-                    return 0;
+                    File.Delete(physicalPath);
+                    await Database.DeleteRecord(record);
+                    bytesDeleted = record.DiskSize;
+                }
+                catch (FileNotFoundException)
+                {
+                    await Database.DeleteRecord(record);
                 }
                 catch (IOException)
                 {
-                    await Database.UpdateLastDeletionAttempt(record.RelativePath, DateTime.Now);
-                    return 0;
+                    if (physicalPath.Contains(".moving_"))
+                    {
+                        // We already moved it. All we can do is update the last deletion attempt
+                        await Database.UpdateLastDeletionAttempt(record.RelativePath, DateTime.Now);
+                        return;
+                    }
+
+                    var movedRelativePath = record.RelativePath + ".moving_" +
+                                            new Random().Next(int.MaxValue).ToString("x", CultureInfo.InvariantCulture);
+                    var movedPath = PathBuilder.GetPhysicalPathFromRelativePath(movedRelativePath);
+                    try
+                    {
+                        //Move it so it usage will decrease and it can be deleted later
+                        File.Move(physicalPath, movedPath);
+                        await Database.ReplaceRelativePathAndUpdateLastDeletion(record, movedRelativePath,
+                            DateTime.Now);
+                    }
+                    catch (IOException)
+                    {
+                        await Database.UpdateLastDeletionAttempt(record.RelativePath, DateTime.Now);
+                    }
                 }
-            }
+            });
+            
+            return bytesDeleted;
         }
 
     }
