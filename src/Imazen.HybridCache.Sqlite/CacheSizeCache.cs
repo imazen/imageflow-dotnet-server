@@ -14,9 +14,9 @@ namespace Imazen.HybridCache.Sqlite
         private readonly Func<long> getCacheSize;
 
         private long lastFetchedCacheSize;
-        private long cacheSize;
+        private long cacheSize = -1;
 
-        private TimeSpan cacheExpiresAfter = TimeSpan.FromMilliseconds(1500);
+        private TimeSpan cacheExpiresAfter = TimeSpan.FromMilliseconds(15000);
         public CacheSizeCache(Func<long> getCacheSize)
         {
             this.getCacheSize = getCacheSize;
@@ -25,10 +25,10 @@ namespace Imazen.HybridCache.Sqlite
         public long GetTotalBytes()
         {
             var now = Stopwatch.GetTimestamp();
-            if (now > lastFetchedCacheSize + cacheExpiresAfter.Ticks)
+            if (cacheSize == -1 || now > lastFetchedCacheSize + (long)(cacheExpiresAfter.TotalMilliseconds * Stopwatch.Frequency / 1000))
             {
+                lastFetchedCacheSize = now; // Serve outdated values while we perform the update
                 cacheSize = getCacheSize();
-                lastFetchedCacheSize = now;
             }
             return cacheSize;
         }
