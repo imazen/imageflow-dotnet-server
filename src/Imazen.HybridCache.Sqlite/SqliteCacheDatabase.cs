@@ -134,7 +134,7 @@ namespace Imazen.HybridCache.Sqlite
             }
         }
 
-        private bool DeleteRecordUnsynchronized(ICacheDatabaseRecord record)
+        private bool DeleteRecordUnsynchronized(ICacheDatabaseRecord record, bool fileDeleted)
         {
             AssertOpen();
             using (var provider = GetConnectionProvider())
@@ -146,7 +146,7 @@ namespace Imazen.HybridCache.Sqlite
                     delete.Parameters.AddWithValue("@relative_path", record.RelativePath);
                     delete.Prepare();
                     AssertOpen();
-                    SizeCache.BeforeDeleted(record.DiskSize);
+                    if (fileDeleted) SizeCache.BeforeDeleted(record.DiskSize);
                     // ReSharper disable once MethodHasAsyncOverloadWithCancellation
                     var result = delete.ExecuteNonQuery();
 
@@ -154,11 +154,11 @@ namespace Imazen.HybridCache.Sqlite
                 }
             }
         }
-        public async Task<bool> DeleteRecord(ICacheDatabaseRecord record)
+        public async Task DeleteRecord(ICacheDatabaseRecord record, bool fileDeleted)
         {
             using (var unused = await dbLock.LockAsync())
             {
-                return DeleteRecordUnsynchronized(record);
+                DeleteRecordUnsynchronized(record, fileDeleted);
             }
         }
 
@@ -242,7 +242,7 @@ namespace Imazen.HybridCache.Sqlite
         public async Task<bool> CreateRecordIfSpace(string relativePath, string contentType, long recordDiskSpace, DateTime createdDate,
             int accessCountKey, long diskSpaceLimit)
         {
-            var spaceUsed = SizeCache.GetTotalBytes();
+            var spaceUsed = await GetTotalBytes();
             using (var unused = await dbLock.LockAsync())
             {
                 
@@ -281,7 +281,7 @@ namespace Imazen.HybridCache.Sqlite
                 // We create the new record first, since the new file already exists
                 CreateRecordUnsynchronized(newRecord);
                 // Then we delete the old
-                DeleteRecordUnsynchronized(record);
+                DeleteRecordUnsynchronized(record, true);
             }
         }
 

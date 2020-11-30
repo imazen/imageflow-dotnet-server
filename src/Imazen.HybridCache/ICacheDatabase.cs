@@ -20,10 +20,11 @@ namespace Imazen.HybridCache
 
 
         /// <summary>
-        /// True if the record exists, false if it is already gone
+        /// 
         /// </summary>
+        /// <param name="fileDeleted">True if the file was just deleted</param>
         /// <returns></returns>
-        Task<bool> DeleteRecord(ICacheDatabaseRecord record);
+        Task DeleteRecord(ICacheDatabaseRecord record, bool fileDeleted);
 
         /// <summary>
         /// Return the oldest (by created date) records, sorted from oldest to newest, where

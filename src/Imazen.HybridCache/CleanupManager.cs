@@ -153,14 +153,15 @@ namespace Imazen.HybridCache
                 try
                 {
                     File.Delete(physicalPath);
-                    await Database.DeleteRecord(record);
+                    await Database.DeleteRecord(record, true);
                     bytesDeleted = record.DiskSize;
                 }
                 catch (FileNotFoundException)
                 {
-                    await Database.DeleteRecord(record);
+                    await Database.DeleteRecord(record, false);
+                    Logger?.LogInformation("HybridCache: File already deleted.");
                 }
-                catch (IOException)
+                catch (IOException ioException)
                 {
                     if (physicalPath.Contains(".moving_"))
                     {
@@ -178,10 +179,12 @@ namespace Imazen.HybridCache
                         File.Move(physicalPath, movedPath);
                         await Database.ReplaceRelativePathAndUpdateLastDeletion(record, movedRelativePath,
                             DateTime.Now);
+                        Logger?.LogError(ioException,"HybridCache: Error deleting file, moved for eventual deletion");
                     }
-                    catch (IOException)
+                    catch (IOException ioException2)
                     {
                         await Database.UpdateLastDeletionAttempt(record.RelativePath, DateTime.Now);
+                        Logger?.LogError(ioException2,"HybridCache: Failed to move file for eventual deletion");
                     }
                 }
             });
