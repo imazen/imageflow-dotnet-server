@@ -346,6 +346,10 @@ namespace Imazen.HybridCache.Sqlite
                 var builder = new SQLiteConnectionStringBuilder()
                 {
                     DataSource = databasePath,
+                    //TODO: Add checkpointing so file doesn't grow unbounded
+                    JournalMode = SQLiteJournalModeEnum.Wal,
+                    CacheSize = 0,
+                    
                 };
                 connection = new SQLiteConnection(builder.ToString());
             }
