@@ -24,7 +24,9 @@ namespace Imazen.HybridCache.Benchmark
                 e.Cancel = true;
             };
 
-            await TestMassiveFileQuantity(cts.Token);
+            await TestSyncVeryLimitedCacheWavesMetaStore(cts.Token);
+            //await TestMassiveFileQuantityMetaStore(cts.Token);
+            //await TestMassiveFileQuantity(cts.Token);
             //await TestSyncVeryLimitedCacheWaves(cts.Token);
             //await TestRandomAsyncCache(cts.Token);
             //await TestRandomAsyncVeryLimitedCache(cts.Token);
@@ -38,6 +40,72 @@ namespace Imazen.HybridCache.Benchmark
 
         }
         
+        private static async Task TestSyncVeryLimitedCacheWavesMetaStore(CancellationToken cancellationToken)
+        {
+            var options = new TestParams()
+            {
+                CacheOptions = new HybridCacheOptions(null)
+                {
+                    AsyncCacheOptions = new AsyncCacheOptions()
+                    {
+                        MaxQueuedBytes = 0,
+                        FailRequestsOnEnqueueLockTimeout = true,
+                        WriteSynchronouslyWhenQueueFull = true,
+                    },
+                    CleanupManagerOptions = new CleanupManagerOptions()
+                    {
+                        MaxCacheBytes = 8192000, // 1/5th the size of the files we are trying to write
+                        MinAgeToDelete = TimeSpan.Zero,
+                        MinCleanupBytes =  0,
+                        
+                    }
+                },
+                FileSize = 81920,
+                FileCount = 500,
+                RequestCountPerWave = 1000,
+                RequestWaves = 5,
+                RequestWavesIntermission = TimeSpan.Zero,
+                CreationTaskDelay = TimeSpan.FromMilliseconds(100),
+                CreationThreadSleep = TimeSpan.FromMilliseconds(200),
+                DisplayLog = false
+            };
+            Console.WriteLine("Starting HybridCache test with the async queue disabled and the cache limited to 1/5th the needed size");
+            await TestRandom(options, cancellationToken);
+        }
+        private static async Task TestMassiveFileQuantityMetaStore(CancellationToken cancellationToken)
+        {
+            var options = new TestParams()
+            {
+                CacheOptions = new HybridCacheOptions(null)
+                {
+                    AsyncCacheOptions = new AsyncCacheOptions()
+                    {
+                        MaxQueuedBytes = 0,
+                        FailRequestsOnEnqueueLockTimeout = true,
+                        WriteSynchronouslyWhenQueueFull = true,
+                    },
+                    CleanupManagerOptions = new CleanupManagerOptions()
+                    {
+                        MaxCacheBytes = (long)4096 * 2 * 1000 * 1000, // 1/2th the size of the files we are trying to write
+                        MinAgeToDelete = TimeSpan.Zero,
+                        MinCleanupBytes =  0, //1 * 1000 * 1000,
+                        
+                    }
+                },
+                FileSize = 64,
+                FileCount = 60000,
+                RequestCountPerWave = 20000,
+                RequestWaves = 5,
+                UseMetaStore = true,
+                RequestWavesIntermission = TimeSpan.Zero,
+                CreationTaskDelay = TimeSpan.FromMilliseconds(0),
+                CreationThreadSleep = TimeSpan.FromMilliseconds(0),
+                DisplayLog = true
+            };
+            Console.WriteLine("Starting HybridCache test async disabled and 60,000 files in waves of 2000 requests using MetaStore");
+            await TestRandom(options, cancellationToken);
+        }
+
         private static async Task TestMassiveFileQuantity(CancellationToken cancellationToken)
         {
             var options = new TestParams()
@@ -275,6 +343,7 @@ namespace Imazen.HybridCache.Benchmark
             internal bool DisplayLog { get; set; }
             internal HybridCacheOptions CacheOptions { get; set; } = new HybridCacheOptions(null);
 
+            internal bool UseMetaStore { get; set; }
             internal SqliteCacheDatabaseOptions DatabaseOptions { get; set; } = new SqliteCacheDatabaseOptions(null);
             public int Seed { get; set; }
         }
@@ -291,8 +360,17 @@ namespace Imazen.HybridCache.Benchmark
             Directory.CreateDirectory(path);
             options.CacheOptions.PhysicalCacheDir = path;
             options.DatabaseOptions.DatabaseDir = path;
-            var database = new SqliteCacheDatabase(options.DatabaseOptions, logger);
             
+            ICacheDatabase database;
+            if (options.UseMetaStore)
+            {
+                database = new MetaStore.MetaStore();
+            }
+            else
+            {
+                database = new SqliteCacheDatabase(options.DatabaseOptions, logger);
+            }
+
             HybridCache cache = new HybridCache(database, options.CacheOptions, logger);
             try
             {

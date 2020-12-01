@@ -6,6 +6,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\..\src\Imazen.HybridCache.MetaStore\Imazen.HybridCache.MetaStore.csproj" />
       <ProjectReference Include="..\..\src\Imazen.HybridCache.Sqlite\Imazen.HybridCache.Sqlite.csproj" />
       <ProjectReference Include="..\..\src\Imazen.HybridCache\Imazen.HybridCache.csproj" />
     </ItemGroup>

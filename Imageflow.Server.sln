@@ -54,6 +54,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imageflow.Server.HybridSqli
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imazen.HybridCache.Benchmark", "tests\Imazen.HybridCache.Benchmark\Imazen.HybridCache.Benchmark.csproj", "{2BBE3D79-D552-498D-B29A-091932EBE8ED}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imazen.HybridCache.MetaStore", "src\Imazen.HybridCache.MetaStore\Imazen.HybridCache.MetaStore.csproj", "{87F9D26B-1786-47DA-9C9B-77C4C3426F7B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -144,6 +146,10 @@ Global
 		{2BBE3D79-D552-498D-B29A-091932EBE8ED}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2BBE3D79-D552-498D-B29A-091932EBE8ED}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2BBE3D79-D552-498D-B29A-091932EBE8ED}.Release|Any CPU.Build.0 = Release|Any CPU
+		{87F9D26B-1786-47DA-9C9B-77C4C3426F7B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{87F9D26B-1786-47DA-9C9B-77C4C3426F7B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{87F9D26B-1786-47DA-9C9B-77C4C3426F7B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{87F9D26B-1786-47DA-9C9B-77C4C3426F7B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
