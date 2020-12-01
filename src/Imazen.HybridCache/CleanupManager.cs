@@ -68,7 +68,7 @@ namespace Imazen.HybridCache
                 var creationCutoff = DateTime.UtcNow.Subtract(Options.MinAgeToDelete);
                 
                 var records =
-                    (await Database.GetOldestRecords(deletionCutoff, creationCutoff, Options.CleanupSelectBatchSize))
+                    (await Database.GetDeletionCandidates(deletionCutoff, creationCutoff, Options.CleanupSelectBatchSize, AccessCounter.Get))
                     .Select(r =>
                         new Tuple<ushort, ICacheDatabaseRecord>(
                             AccessCounter.Get(r.AccessCountKey), r))

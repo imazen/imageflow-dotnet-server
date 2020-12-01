@@ -34,8 +34,10 @@ namespace Imazen.HybridCache
         /// <param name="maxLastDeletionAttemptTime"></param>
         /// <param name="maxCreatedDate"></param>
         /// <param name="count"></param>
+        /// <param name="getUsageCount"></param>
         /// <returns></returns>
-        Task<IEnumerable<ICacheDatabaseRecord>> GetOldestRecords(DateTime maxLastDeletionAttemptTime, DateTime maxCreatedDate, int count);
+        Task<IEnumerable<ICacheDatabaseRecord>> GetDeletionCandidates(DateTime maxLastDeletionAttemptTime,
+            DateTime maxCreatedDate, int count, Func<int, ushort> getUsageCount);
         
         Task<long> GetTotalBytes();
 

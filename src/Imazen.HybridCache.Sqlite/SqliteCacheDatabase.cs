@@ -55,8 +55,8 @@ namespace Imazen.HybridCache.Sqlite
         }
 
 
-        public async Task<IEnumerable<ICacheDatabaseRecord>> GetOldestRecords(DateTime maxLastDeletionAttemptTime,
-            DateTime maxCreatedDate, int count)
+        public async Task<IEnumerable<ICacheDatabaseRecord>> GetDeletionCandidates(DateTime maxLastDeletionAttemptTime,
+            DateTime maxCreatedDate, int count, Func<int, ushort> getUsageCount)
         {
             using (var unused = await dbLock.LockAsync())
             {
