@@ -87,11 +87,6 @@ namespace Imazen.HybridCache
                                 await writeCallback(fs, cancellationToken); //Can throw any number of exceptions.
                                 await fs.FlushAsync(cancellationToken);
                                 fs.Flush(true);
-                                if (fs.Position == 0)
-                                {
-                                    throw new InvalidOperationException("Disk cache wrote zero bytes to file");
-                                }
-
                                 result.BytesWritten = fs.Position;
                             }
 
