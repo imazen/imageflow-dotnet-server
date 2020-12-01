@@ -24,7 +24,9 @@ namespace Imazen.HybridCache.Benchmark
                 e.Cancel = true;
             };
 
-            await TestRandomAsyncCache(cts.Token);
+            await TestMassiveFileQuantity(cts.Token);
+            //await TestSyncVeryLimitedCacheWaves(cts.Token);
+            //await TestRandomAsyncCache(cts.Token);
             //await TestRandomAsyncVeryLimitedCache(cts.Token);
 
             //await TestRandomSynchronousVeryLimitedCache(cts.Token);
@@ -34,6 +36,72 @@ namespace Imazen.HybridCache.Benchmark
             //await TestRandomSynchronousNoEviction(true, cts.Token);
 
 
+        }
+        
+        private static async Task TestMassiveFileQuantity(CancellationToken cancellationToken)
+        {
+            var options = new TestParams()
+            {
+                CacheOptions = new HybridCacheOptions(null)
+                {
+                    AsyncCacheOptions = new AsyncCacheOptions()
+                    {
+                        MaxQueuedBytes = 0,
+                        FailRequestsOnEnqueueLockTimeout = true,
+                        WriteSynchronouslyWhenQueueFull = true,
+                    },
+                    CleanupManagerOptions = new CleanupManagerOptions()
+                    {
+                        MaxCacheBytes = (long)4096 * 2 * 1000 * 1000, // 1/2th the size of the files we are trying to write
+                        MinAgeToDelete = TimeSpan.Zero,
+                        MinCleanupBytes =  0, //1 * 1000 * 1000,
+                        
+                    }
+                },
+                FileSize = 64,
+                FileCount = 60000,
+                RequestCountPerWave = 2000,
+                RequestWaves = 5,
+                RequestWavesIntermission = TimeSpan.Zero,
+                CreationTaskDelay = TimeSpan.FromMilliseconds(0),
+                CreationThreadSleep = TimeSpan.FromMilliseconds(0),
+                DisplayLog = true
+            };
+            Console.WriteLine("Starting HybridCache test async disabled and 60,000 files in waves of 2000 requests");
+            await TestRandom(options, cancellationToken);
+        }
+        
+        private static async Task TestSyncVeryLimitedCacheWaves(CancellationToken cancellationToken)
+        {
+            var options = new TestParams()
+            {
+                CacheOptions = new HybridCacheOptions(null)
+                {
+                    AsyncCacheOptions = new AsyncCacheOptions()
+                    {
+                        MaxQueuedBytes = 0,
+                        FailRequestsOnEnqueueLockTimeout = true,
+                        WriteSynchronouslyWhenQueueFull = true,
+                    },
+                    CleanupManagerOptions = new CleanupManagerOptions()
+                    {
+                        MaxCacheBytes = 8192000, // 1/5th the size of the files we are trying to write
+                        MinAgeToDelete = TimeSpan.Zero,
+                        MinCleanupBytes =  0,
+                        
+                    }
+                },
+                FileSize = 81920,
+                FileCount = 500,
+                RequestCountPerWave = 1000,
+                RequestWaves = 5,
+                RequestWavesIntermission = TimeSpan.Zero,
+                CreationTaskDelay = TimeSpan.FromMilliseconds(100),
+                CreationThreadSleep = TimeSpan.FromMilliseconds(200),
+                DisplayLog = false
+            };
+            Console.WriteLine("Starting HybridCache test with the async queue disabled and the cache limited to 1/5th the needed size");
+            await TestRandom(options, cancellationToken);
         }
         
         private static async Task TestRandomAsyncCache(CancellationToken cancellationToken)
@@ -125,7 +193,7 @@ namespace Imazen.HybridCache.Benchmark
                 RequestCountPerWave = 2000,
                 CreationTaskDelay = TimeSpan.FromMilliseconds(2000),
                 CreationThreadSleep = TimeSpan.FromMilliseconds(500),
-                DisplayLog = true
+                DisplayLog = false
             };
             Console.WriteLine("Starting HybridCache test with the async queue disabled and the cache limited to 1/5th the needed size");
             await TestRandom(options, cancellationToken);
@@ -208,7 +276,7 @@ namespace Imazen.HybridCache.Benchmark
             internal HybridCacheOptions CacheOptions { get; set; } = new HybridCacheOptions(null);
 
             internal SqliteCacheDatabaseOptions DatabaseOptions { get; set; } = new SqliteCacheDatabaseOptions(null);
-
+            public int Seed { get; set; }
         }
         private static async Task TestRandom(TestParams options, CancellationToken cancellationToken)
         {
@@ -236,12 +304,14 @@ namespace Imazen.HybridCache.Benchmark
 
                 if (options.DisplayLog)
                 {
-                    Console.WriteLine("============== LOG ===============");
-                    foreach (var e in loggerFactory.Sink.LogEntries)
+                    var logs = loggerFactory.Sink.LogEntries.ToArray();
+                    int logsToShow = Math.Min(100, logs.Length);
+                    Console.WriteLine($"========== LOG ENTRIES {logs.Length - logsToShow}..{logs.Length} ===============");
+                    for (var ix = logs.Length - logsToShow; ix < logs.Length; ix++)
                     {
-                        Console.WriteLine(e.Message);
+                        Console.WriteLine(logs[ix].Message);
                     }
-                    Console.WriteLine("============== LOG ===============");
+                    Console.WriteLine("============== END LOGS ===============");
                 }
 
             }
@@ -281,10 +351,11 @@ namespace Imazen.HybridCache.Benchmark
                 return new Tuple<string, ArraySegment<byte>>(contentType, dataSegment);
             }
 
-            var random = new Random();
+            var random = new Random(options.Seed);
             var tasks = new List<Task<Tuple<TimeSpan,string>>>();
 
-           
+
+            var swTotal = Stopwatch.StartNew();
             for (var wave = 0; wave < options.RequestWaves; wave++)
             {
                 if (wave != 0)
@@ -294,7 +365,7 @@ namespace Imazen.HybridCache.Benchmark
                 Console.WriteLine("Starting request wave {0} with {1} requests", wave + 1, options.RequestCountPerWave);
                 var sw = Stopwatch.StartNew();
                 var memoryStreamManager =
-                    new RecyclableMemoryStreamManager((int) options.FileSize, 2, options.FileSize * 2);
+                    new RecyclableMemoryStreamManager(Math.Max(2, options.FileSize), 2, options.FileSize * 2 + 2);
                 for (var ix = 0; ix < options.RequestCountPerWave; ix++)
                 {
                     tasks.Add(Task.Run(async () =>
@@ -304,10 +375,12 @@ namespace Imazen.HybridCache.Benchmark
                         var itemSw = Stopwatch.StartNew();
                         var cacheResult = await cache.GetOrCreateBytes(key, DataProvider, cancellationToken,
                             options.RetrieveContentType);
-                        await using (var ms = memoryStreamManager.GetStream())
+                        if (cacheResult.Data != null)
                         {
+                            await using var ms = memoryStreamManager.GetStream();
                             await cacheResult.Data.CopyToAsync(ms, cancellationToken);
                         }
+
                         itemSw.Stop();
                         return new Tuple<TimeSpan, string>(itemSw.Elapsed, cacheResult.Status);
                     }, cancellationToken));
@@ -315,11 +388,17 @@ namespace Imazen.HybridCache.Benchmark
 
                 await Task.WhenAll(tasks);
                 sw.Stop();
-                Console.WriteLine("Wave completed in {0}", sw.Elapsed);
+                var swAsync = Stopwatch.StartNew();
+                await cache.AwaitEnqueuedTasks();
+                swAsync.Stop();
+                Console.WriteLine("Wave requests returned in {0}... Plus {1} for async tasks. ", sw.Elapsed, swAsync.Elapsed);
                 PrintDiskUtilization(options);
             }
 
+            swTotal.Stop();
             
+            Console.WriteLine("Completed all waves in {0}", swTotal.Elapsed);
+            Console.WriteLine();
 
             // Accumulate results
             var resultCounts = new Dictionary<string, int>();

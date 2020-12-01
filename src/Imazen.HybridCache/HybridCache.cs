@@ -41,6 +41,11 @@ namespace Imazen.HybridCache
             await AsyncCache.AwaitEnqueuedTasks();
             await Database.StopAsync(cancellationToken);
         }
+
+        public Task AwaitEnqueuedTasks()
+        {
+            return AsyncCache.AwaitEnqueuedTasks();
+        }
         
         /// <summary>
         /// 
