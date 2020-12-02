@@ -41,7 +41,7 @@ namespace Imazen.HybridCache
 
         public Task<string> GetContentType(CacheEntry cacheEntry, CancellationToken cancellationToken)
         {
-            return Database.GetContentType(cacheEntry.RelativePath);
+            return Database.GetContentType(Database.GetShardForKey(cacheEntry.RelativePath), cacheEntry.RelativePath);
         }
 
         private int EstimateEntryBytesWithOverhead(int byteCount)
@@ -54,7 +54,7 @@ namespace Imazen.HybridCache
             return withFileDescriptor;
         }
 
-        private async Task<bool> EvictSpace(long diskSpace, CancellationToken cancellationToken)
+        private async Task<bool> EvictSpace(int shard, long diskSpace, CancellationToken cancellationToken)
         {
             
             var bytesToDeleteOptimally = Math.Max(Options.MinCleanupBytes, diskSpace);
@@ -68,7 +68,7 @@ namespace Imazen.HybridCache
                 var creationCutoff = DateTime.UtcNow.Subtract(Options.MinAgeToDelete);
                 
                 var records =
-                    (await Database.GetDeletionCandidates(deletionCutoff, creationCutoff, Options.CleanupSelectBatchSize, AccessCounter.Get))
+                    (await Database.GetDeletionCandidates(shard, deletionCutoff, creationCutoff, Options.CleanupSelectBatchSize, AccessCounter.Get))
                     .Select(r =>
                         new Tuple<ushort, ICacheDatabaseRecord>(
                             AccessCounter.Get(r.AccessCountKey), r))
@@ -82,7 +82,7 @@ namespace Imazen.HybridCache
                     
                     if (bytesDeleted >= bytesToDeleteOptimally) break;
 
-                    var deletedBytes = await TryDeleteRecord(record);
+                    var deletedBytes = await TryDeleteRecord(shard, record);
                     bytesDeleted += deletedBytes;
                 }
 
@@ -100,6 +100,9 @@ namespace Imazen.HybridCache
             bool allowEviction,
             CancellationToken cancellationToken)
         {
+            var shard = Database.GetShardForKey(cacheEntry.RelativePath);
+            var shardSizeLimit = Options.MaxCacheBytes / Database.GetShardCount();
+            
             var entryDiskSpace = EstimateEntryBytesWithOverhead(byteCount) +
                             Database.EstimateRecordDiskSpace(cacheEntry.RelativePath.Length);
 
@@ -108,12 +111,12 @@ namespace Imazen.HybridCache
             for (var attempts = 0; attempts < 3; attempts++)
             {
                 var recordCreated =
-                    await Database.CreateRecordIfSpace(cacheEntry.RelativePath,
+                    await Database.CreateRecordIfSpace(shard, cacheEntry.RelativePath,
                         contentType,
                         entryDiskSpace,
                         farFuture,
                         AccessCounter.GetHash(cacheEntry.Hash),
-                        Options.MaxCacheBytes);
+                        shardSizeLimit);
 
                 // Return true if we created the record
                 if (recordCreated) return true;
@@ -121,9 +124,9 @@ namespace Imazen.HybridCache
                 // We need to evict but we are not permitted
                 if (!allowEviction) return false;
 
-                var missingSpace = Math.Max(0, await Database.GetTotalBytes() + entryDiskSpace - Options.MaxCacheBytes);
+                var missingSpace = Math.Max(0, await Database.GetShardSize(shard) + entryDiskSpace - shardSizeLimit);
                 // Evict space 
-                if (!await EvictSpace(missingSpace, cancellationToken))
+                if (!await EvictSpace(shard, missingSpace, cancellationToken))
                 {
                     return false; //We failed to evict enough space from the cache
                 }
@@ -134,7 +137,7 @@ namespace Imazen.HybridCache
 
         public Task MarkFileCreated(CacheEntry cacheEntry)
         {
-            return Database.UpdateCreatedDate(cacheEntry.RelativePath, DateTime.UtcNow);
+            return Database.UpdateCreatedDate(Database.GetShardForKey(cacheEntry.RelativePath), cacheEntry.RelativePath, DateTime.UtcNow);
         }
 
         /// <summary>
@@ -142,9 +145,10 @@ namespace Imazen.HybridCache
         /// Only counts bytes as deleted if the physical file is deleted successfully.
         /// Deletes db record whether file exists or not.
         /// </summary>
+        /// <param name="shard"></param>
         /// <param name="record"></param>
         /// <returns></returns>
-        private async Task<long> TryDeleteRecord(ICacheDatabaseRecord record)
+        private async Task<long> TryDeleteRecord(int shard, ICacheDatabaseRecord record)
         {
             long bytesDeleted = 0;
             var unused = await DeleteLocks.TryExecuteAsync(record.RelativePath, 0, CancellationToken.None, async () =>
@@ -153,12 +157,12 @@ namespace Imazen.HybridCache
                 try
                 {
                     File.Delete(physicalPath);
-                    await Database.DeleteRecord(record, true);
+                    await Database.DeleteRecord(shard, record, true);
                     bytesDeleted = record.DiskSize;
                 }
                 catch (FileNotFoundException)
                 {
-                    await Database.DeleteRecord(record, false);
+                    await Database.DeleteRecord(shard, record, false);
                     Logger?.LogInformation("HybridCache: File already deleted.");
                 }
                 catch (IOException ioException)
@@ -166,7 +170,7 @@ namespace Imazen.HybridCache
                     if (physicalPath.Contains(".moving_"))
                     {
                         // We already moved it. All we can do is update the last deletion attempt
-                        await Database.UpdateLastDeletionAttempt(record.RelativePath, DateTime.Now);
+                        await Database.UpdateLastDeletionAttempt(shard, record.RelativePath, DateTime.Now);
                         return;
                     }
 
@@ -177,13 +181,13 @@ namespace Imazen.HybridCache
                     {
                         //Move it so it usage will decrease and it can be deleted later
                         File.Move(physicalPath, movedPath);
-                        await Database.ReplaceRelativePathAndUpdateLastDeletion(record, movedRelativePath,
+                        await Database.ReplaceRelativePathAndUpdateLastDeletion(shard, record, movedRelativePath,
                             DateTime.Now);
                         Logger?.LogError(ioException,"HybridCache: Error deleting file, moved for eventual deletion");
                     }
                     catch (IOException ioException2)
                     {
-                        await Database.UpdateLastDeletionAttempt(record.RelativePath, DateTime.Now);
+                        await Database.UpdateLastDeletionAttempt(shard, record.RelativePath, DateTime.Now);
                         Logger?.LogError(ioException2,"HybridCache: Failed to move file for eventual deletion");
                     }
                 }

@@ -24,8 +24,8 @@ namespace Imazen.HybridCache.Benchmark
                 e.Cancel = true;
             };
 
-            await TestSyncVeryLimitedCacheWavesMetaStore(cts.Token);
-            //await TestMassiveFileQuantityMetaStore(cts.Token);
+            //await TestSyncVeryLimitedCacheWavesMetaStore(cts.Token);
+            await TestMassiveFileQuantityMetaStore(cts.Token);
             //await TestMassiveFileQuantity(cts.Token);
             //await TestSyncVeryLimitedCacheWaves(cts.Token);
             //await TestRandomAsyncCache(cts.Token);
@@ -60,14 +60,15 @@ namespace Imazen.HybridCache.Benchmark
                         
                     }
                 },
+                UseMetaStore = true,
                 FileSize = 81920,
                 FileCount = 500,
-                RequestCountPerWave = 1000,
-                RequestWaves = 5,
-                RequestWavesIntermission = TimeSpan.Zero,
-                CreationTaskDelay = TimeSpan.FromMilliseconds(100),
-                CreationThreadSleep = TimeSpan.FromMilliseconds(200),
-                DisplayLog = false
+                RequestCountPerWave = 500,
+                RequestWaves = 20,
+                RequestWavesIntermission = TimeSpan.FromMilliseconds(0),
+                CreationTaskDelay = TimeSpan.FromMilliseconds(0),
+                CreationThreadSleep = TimeSpan.FromMilliseconds(0),
+                DisplayLog = true
             };
             Console.WriteLine("Starting HybridCache test with the async queue disabled and the cache limited to 1/5th the needed size");
             await TestRandom(options, cancellationToken);
@@ -92,8 +93,8 @@ namespace Imazen.HybridCache.Benchmark
                         
                     }
                 },
-                FileSize = 64,
-                FileCount = 60000,
+                FileSize = 0,
+                FileCount = 6000000,
                 RequestCountPerWave = 20000,
                 RequestWaves = 5,
                 UseMetaStore = true,
@@ -102,7 +103,7 @@ namespace Imazen.HybridCache.Benchmark
                 CreationThreadSleep = TimeSpan.FromMilliseconds(0),
                 DisplayLog = true
             };
-            Console.WriteLine("Starting HybridCache test async disabled and 60,000 files in waves of 2000 requests using MetaStore");
+            Console.WriteLine("Starting HybridCache test async disabled and 6,000,000 files in waves of 20,000 requests using MetaStore");
             await TestRandom(options, cancellationToken);
         }
 
@@ -364,7 +365,7 @@ namespace Imazen.HybridCache.Benchmark
             ICacheDatabase database;
             if (options.UseMetaStore)
             {
-                database = new MetaStore.MetaStore();
+                database = new MetaStore.MetaStore(logger);
             }
             else
             {

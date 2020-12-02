@@ -55,7 +55,8 @@ namespace Imazen.HybridCache.Sqlite
         }
 
 
-        public async Task<IEnumerable<ICacheDatabaseRecord>> GetDeletionCandidates(DateTime maxLastDeletionAttemptTime,
+        public async Task<IEnumerable<ICacheDatabaseRecord>> GetDeletionCandidates(int shard,
+            DateTime maxLastDeletionAttemptTime,
             DateTime maxCreatedDate, int count, Func<int, ushort> getUsageCount)
         {
             using (var unused = await dbLock.LockAsync())
@@ -98,10 +99,16 @@ namespace Imazen.HybridCache.Sqlite
             }
         }
 
-        public Task<long> GetTotalBytes()
+        public Task<long> GetShardSize(int shard)
         {
             return Task.FromResult(SizeCache.GetTotalBytes());
         }
+
+        public int GetShardCount()
+        {
+            return 1;
+        }
+
         private long GetTotalBytesUncached()
         {
             using (var unused = dbLock.Lock())
@@ -154,7 +161,13 @@ namespace Imazen.HybridCache.Sqlite
                 }
             }
         }
-        public async Task DeleteRecord(ICacheDatabaseRecord record, bool fileDeleted)
+
+        public int GetShardForKey(string key)
+        {
+            return 0;
+        }
+
+        public async Task DeleteRecord(int shard, ICacheDatabaseRecord record, bool fileDeleted)
         {
             using (var unused = await dbLock.LockAsync())
             {
@@ -162,7 +175,7 @@ namespace Imazen.HybridCache.Sqlite
             }
         }
 
-        public async Task<string> GetContentType(string relativePath)
+        public async Task<string> GetContentType(int shard, string relativePath)
         {
             using (var unused = await dbLock.LockAsync())
             {
@@ -239,10 +252,11 @@ namespace Imazen.HybridCache.Sqlite
                 throw;
             }
         }
-        public async Task<bool> CreateRecordIfSpace(string relativePath, string contentType, long recordDiskSpace, DateTime createdDate,
+        public async Task<bool> CreateRecordIfSpace(int shard, string relativePath, string contentType,
+            long recordDiskSpace, DateTime createdDate,
             int accessCountKey, long diskSpaceLimit)
         {
-            var spaceUsed = await GetTotalBytes();
+            var spaceUsed = await GetShardSize(shard);
             using (var unused = await dbLock.LockAsync())
             {
                 
@@ -264,7 +278,8 @@ namespace Imazen.HybridCache.Sqlite
                         createRecordResult == CreateRecordResult.DuplicateRecord;
             }
         }
-        public async Task ReplaceRelativePathAndUpdateLastDeletion(ICacheDatabaseRecord record, string movedRelativePath,
+        public async Task ReplaceRelativePathAndUpdateLastDeletion(int shard, ICacheDatabaseRecord record,
+            string movedRelativePath,
             DateTime lastDeletionAttempt)
         {
             using (var unused = await dbLock.LockAsync())
@@ -285,7 +300,7 @@ namespace Imazen.HybridCache.Sqlite
             }
         }
 
-        public async Task UpdateCreatedDate(string relativePath, DateTime createdDate)
+        public async Task UpdateCreatedDate(int shard, string relativePath, DateTime createdDate)
         {
             using (var unused = await dbLock.LockAsync())
             {
@@ -307,7 +322,7 @@ namespace Imazen.HybridCache.Sqlite
         }
 
     
-        public async Task UpdateLastDeletionAttempt(string relativePath, DateTime when)
+        public async Task UpdateLastDeletionAttempt(int shard, string relativePath, DateTime when)
         {
             using (var unused = await dbLock.LockAsync())
             {
