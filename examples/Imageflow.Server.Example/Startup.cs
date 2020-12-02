@@ -33,24 +33,8 @@ namespace Imageflow.Server.Example
         {
             services.AddControllersWithViews();
 
-            services.AddHttpClient("TrickyHttpClient", config =>
-            {
-                config.DefaultRequestHeaders.Add("user-agent", "Tricky Client");
-                config.DefaultRequestHeaders.Add("authorization", "secret");
-            });
-
-            services.AddHttpClient(nameof(RemoteReaderService), config =>
-            {
-                config.DefaultRequestHeaders.Add("user-agent", "ImageFlow-DotNet-Server");
-
-            }).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
-            {
-                AllowAutoRedirect = true,
-                MaxAutomaticRedirections = 50
-
-            }).AddTransientHttpErrorPolicy(builder => builder
-                .RetryAsync()
-            );
+            // See the README for more advanced configuration
+            services.AddHttpClient();
 
             var remoteReaderServiceOptions = new RemoteReaderServiceOptions
             {
@@ -58,14 +42,8 @@ namespace Imageflow.Server.Example
             }
             .AddPrefix("/remote/");
 
-            services.AddImageflowRemoteReaderService(remoteReaderServiceOptions, uri =>
-            {
-                return uri.Host switch
-                {
-                    "tricky.endpoint.local" => "TrickyHttpClient",
-                    _ => nameof(RemoteReaderService)
-                };
-            });
+            services.AddImageflowRemoteReaderService(remoteReaderServiceOptions);
+
 
             // Make S3 containers available at /ri/ and /imageflow-resources/
             // If you use credentials, do not check them into your repository

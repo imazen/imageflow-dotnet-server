@@ -9,6 +9,8 @@ namespace Imageflow.Server.Storage.RemoteReader
         public string SigningKey { get; set; }
         public bool IgnorePrefixCase { get; set; }
 
+        public Func<Uri, string> HttpClientSelector { get; set; } = _ => "";
+
         public RemoteReaderServiceOptions AddPrefix(string prefix)
         {
             prefix = prefix.TrimStart('/').TrimEnd('/');

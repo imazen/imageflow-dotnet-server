@@ -21,21 +21,5 @@ namespace Imageflow.Server.Storage.RemoteReader
 
             return services;
         }
-
-        public static IServiceCollection AddImageflowRemoteReaderService(this IServiceCollection services
-            , RemoteReaderServiceOptions options
-            , Func<Uri, string> httpClientSelector
-            )
-        {
-            services.AddSingleton<IBlobProvider>((container) =>
-            {
-                var logger = container.GetRequiredService<ILogger<RemoteReaderService>>();
-                var http = container.GetRequiredService<IHttpClientFactory>();
-                return new RemoteReaderService(options, httpClientSelector, logger, http);
-            });
-
-            return services;
-        }
-
     }
 }
