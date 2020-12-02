@@ -34,7 +34,7 @@ To use the "named" client we configured above, configure a simple selector that 
 ```
 
 ## Add a Retry Policy for Transient Errors 
-Add the `Microsoft.Extensions.Http.Polly` nuget package to your project
+Adding the `Microsoft.Extensions.Http.Polly` nuget package to your project will make available the Polly ClientBuilderExtensions.
 ```
     services.AddHttpClient(nameof(RemoteReaderService))
         .AddTransientHttpErrorPolicy(builder => builder.RetryAsync());
@@ -47,8 +47,8 @@ Add the `Microsoft.Extensions.Http.Polly` nuget package to your project
     .AddPrefix("/remote/");
 ```
 
-## Endpoint-Specific Configuration
-The `HttpClientSelector` accepts a uri and is expected to retun the name of a configured http client.
+## Host-Specific Configuration
+The `HttpClientSelector` accepts a uri and is expected to retun the name of a configured http client. This simple example shows how you could add an `authorization` header for a specific remote host.
 ```
     services.AddHttpClient("TrickyHttpClient", config =>
     {
