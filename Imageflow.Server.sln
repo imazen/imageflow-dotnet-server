@@ -48,13 +48,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imazen.HybridCache", "src\I
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imazen.HybridCache.Tests", "tests\Imazen.HybridCache.Tests\Imazen.HybridCache.Tests.csproj", "{4494AC86-6BC5-489E-BBDF-534670916D43}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imazen.HybridCache.Sqlite", "src\Imazen.HybridCache.Sqlite\Imazen.HybridCache.Sqlite.csproj", "{A600D7C8-80BB-4B85-9C86-C9D312BD049D}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imageflow.Server.HybridSqliteCache", "Imageflow.Server.HybridSqliteCache\Imageflow.Server.HybridSqliteCache.csproj", "{05AC5E16-7AF3-48F8-AFF5-787B1BBD4234}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imazen.HybridCache.Benchmark", "tests\Imazen.HybridCache.Benchmark\Imazen.HybridCache.Benchmark.csproj", "{2BBE3D79-D552-498D-B29A-091932EBE8ED}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imazen.HybridCache.MetaStore", "src\Imazen.HybridCache.MetaStore\Imazen.HybridCache.MetaStore.csproj", "{87F9D26B-1786-47DA-9C9B-77C4C3426F7B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imazen.HybridCache.Sqlite", "src\Imazen.HybridCache.Sqlite\Imazen.HybridCache.Sqlite.csproj", "{9C66E133-A7CC-4324-85DF-DBFFF768889E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imageflow.Server.HybridSqliteCache", "src\Imageflow.Server.HybridSqliteCache\Imageflow.Server.HybridSqliteCache.csproj", "{3F27341F-6721-400E-B3FA-C8007AAB78F9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -134,22 +132,18 @@ Global
 		{4494AC86-6BC5-489E-BBDF-534670916D43}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4494AC86-6BC5-489E-BBDF-534670916D43}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4494AC86-6BC5-489E-BBDF-534670916D43}.Release|Any CPU.Build.0 = Release|Any CPU
-		{A600D7C8-80BB-4B85-9C86-C9D312BD049D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A600D7C8-80BB-4B85-9C86-C9D312BD049D}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A600D7C8-80BB-4B85-9C86-C9D312BD049D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{A600D7C8-80BB-4B85-9C86-C9D312BD049D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{05AC5E16-7AF3-48F8-AFF5-787B1BBD4234}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{05AC5E16-7AF3-48F8-AFF5-787B1BBD4234}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{05AC5E16-7AF3-48F8-AFF5-787B1BBD4234}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{05AC5E16-7AF3-48F8-AFF5-787B1BBD4234}.Release|Any CPU.Build.0 = Release|Any CPU
 		{2BBE3D79-D552-498D-B29A-091932EBE8ED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{2BBE3D79-D552-498D-B29A-091932EBE8ED}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2BBE3D79-D552-498D-B29A-091932EBE8ED}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2BBE3D79-D552-498D-B29A-091932EBE8ED}.Release|Any CPU.Build.0 = Release|Any CPU
-		{87F9D26B-1786-47DA-9C9B-77C4C3426F7B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{87F9D26B-1786-47DA-9C9B-77C4C3426F7B}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{87F9D26B-1786-47DA-9C9B-77C4C3426F7B}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{87F9D26B-1786-47DA-9C9B-77C4C3426F7B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9C66E133-A7CC-4324-85DF-DBFFF768889E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9C66E133-A7CC-4324-85DF-DBFFF768889E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9C66E133-A7CC-4324-85DF-DBFFF768889E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9C66E133-A7CC-4324-85DF-DBFFF768889E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3F27341F-6721-400E-B3FA-C8007AAB78F9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3F27341F-6721-400E-B3FA-C8007AAB78F9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3F27341F-6721-400E-B3FA-C8007AAB78F9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3F27341F-6721-400E-B3FA-C8007AAB78F9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

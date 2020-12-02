@@ -2,7 +2,7 @@ using System;
 
 namespace Imazen.HybridCache.Sqlite
 {
-    public class CacheDatabaseRecord: ICacheDatabaseRecord   
+    internal class CacheDatabaseRecord: ICacheDatabaseRecord   
     {
         public int AccessCountKey { get; set; }
         public DateTime CreatedAt { get; set; }
