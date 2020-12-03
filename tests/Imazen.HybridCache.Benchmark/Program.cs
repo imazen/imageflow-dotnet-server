@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Imazen.HybridCache.MetaStore;
 using Imazen.HybridCache.Sqlite;
 using MELT;
 using Microsoft.Extensions.Logging;
@@ -24,8 +25,8 @@ namespace Imazen.HybridCache.Benchmark
                 e.Cancel = true;
             };
 
-            //await TestSyncVeryLimitedCacheWavesMetaStore(cts.Token);
-            await TestMassiveFileQuantityMetaStore(cts.Token);
+            await TestSyncVeryLimitedCacheWavesMetaStore(cts.Token);
+            //await TestMassiveFileQuantityMetaStore(cts.Token);
             //await TestMassiveFileQuantity(cts.Token);
             //await TestSyncVeryLimitedCacheWaves(cts.Token);
             //await TestRandomAsyncCache(cts.Token);
@@ -95,13 +96,14 @@ namespace Imazen.HybridCache.Benchmark
                 },
                 FileSize = 0,
                 FileCount = 6000000,
-                RequestCountPerWave = 20000,
+                RequestCountPerWave = 2000,
                 RequestWaves = 5,
                 UseMetaStore = true,
                 RequestWavesIntermission = TimeSpan.Zero,
                 CreationTaskDelay = TimeSpan.FromMilliseconds(0),
                 CreationThreadSleep = TimeSpan.FromMilliseconds(0),
-                DisplayLog = true
+                DisplayLog = true,
+                WaitForKeypress = true
             };
             Console.WriteLine("Starting HybridCache test async disabled and 6,000,000 files in waves of 20,000 requests using MetaStore");
             await TestRandom(options, cancellationToken);
@@ -347,6 +349,8 @@ namespace Imazen.HybridCache.Benchmark
             internal bool UseMetaStore { get; set; }
             internal SqliteCacheDatabaseOptions DatabaseOptions { get; set; } = new SqliteCacheDatabaseOptions(null);
             public int Seed { get; set; }
+            public MetaStoreOptions MetaStoreOptions { get; set; } = new MetaStoreOptions(null);
+            public bool WaitForKeypress { get; set; }
         }
         private static async Task TestRandom(TestParams options, CancellationToken cancellationToken)
         {
@@ -361,11 +365,12 @@ namespace Imazen.HybridCache.Benchmark
             Directory.CreateDirectory(path);
             options.CacheOptions.PhysicalCacheDir = path;
             options.DatabaseOptions.DatabaseDir = path;
+            options.MetaStoreOptions.DatabaseDir = path;
             
             ICacheDatabase database;
             if (options.UseMetaStore)
             {
-                database = new MetaStore.MetaStore(logger);
+                database = new MetaStore.MetaStore(options.MetaStoreOptions, logger);
             }
             else
             {
@@ -384,9 +389,17 @@ namespace Imazen.HybridCache.Benchmark
                 if (options.DisplayLog)
                 {
                     var logs = loggerFactory.Sink.LogEntries.ToArray();
-                    int logsToShow = Math.Min(100, logs.Length);
-                    Console.WriteLine($"========== LOG ENTRIES {logs.Length - logsToShow}..{logs.Length} ===============");
-                    for (var ix = logs.Length - logsToShow; ix < logs.Length; ix++)
+                    int firstLogIndex = logs.Length - Math.Min(50, logs.Length);
+                    int lastLogIndex = Math.Min(firstLogIndex, 50);
+                    if (lastLogIndex > 0)
+                        Console.WriteLine($"========== LOG ENTRIES 0..{lastLogIndex} ===============");
+                    for (var ix = 0; ix < lastLogIndex; ix++)
+                    {
+                        Console.WriteLine(logs[ix].Message);
+                    }
+
+                    Console.WriteLine($"========== LOG ENTRIES {firstLogIndex}..{logs.Length} ===============");
+                    for (var ix = firstLogIndex; ix < logs.Length; ix++)
                     {
                         Console.WriteLine(logs[ix].Message);
                     }
@@ -401,6 +414,11 @@ namespace Imazen.HybridCache.Benchmark
                     Console.Write("Stopping...");
                     await cache.StopAsync(cancellationToken);
                     Console.Write("stopped.\r\n");
+                    if (options.WaitForKeypress)
+                    {
+                        Console.WriteLine("Press the any key to continue");
+                        Console.ReadKey();
+                    }
                 }
                 finally
                 {
