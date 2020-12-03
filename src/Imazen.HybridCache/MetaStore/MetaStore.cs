@@ -66,6 +66,8 @@ namespace Imazen.HybridCache.MetaStore
 
         public Task DeleteRecord(int shard, ICacheDatabaseRecord record, bool fileDeleted)
         {
+            if (record.CreatedAt > DateTime.UtcNow)
+                throw new InvalidOperationException();
             return shards[shard].DeleteRecord(record, fileDeleted);
         }
 

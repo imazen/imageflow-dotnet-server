@@ -135,6 +135,10 @@ namespace Imazen.HybridCache.MetaStore
                     await writeLog.LogCreated(newRecord);
 
                 }
+                else
+                {
+                    logger?.LogWarning("Entry already exists");
+                }
             }
 
             return true;
@@ -147,6 +151,10 @@ namespace Imazen.HybridCache.MetaStore
             {
                 record.CreatedAt = createdDate;
                 await writeLog.LogUpdated(record);
+            }
+            else
+            {
+                logger?.LogWarning("HybridCache UpdateCreatedDate failed as no such entry exists - {Path}", relativePath);
             }
         }
 
@@ -168,6 +176,10 @@ namespace Imazen.HybridCache.MetaStore
             if (loadedDict.TryAdd(movedRelativePath, newRecord))
             {
                 await writeLog.LogCreated(newRecord);
+            }
+            else
+            {
+                throw new InvalidOperationException("Record already moved in database");
             }
             if (loadedDict.TryRemove(record.RelativePath, out var oldRecord))
             {
