@@ -33,6 +33,26 @@ To use the "named" client we configured above, configure a simple selector that 
     .AddPrefix("/remote/");
 ```
 
+## Limiting Redirects 
+The `RemoteReaderServiceOptions.RedirectLimit` has been removed in favour of configuring the `HttpClientHandler` directly. 
+```
+    services.AddHttpClient(nameof(RemoteReaderService))
+    .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+        {
+            AllowAutoRedirect = true,
+            MaxAutomaticRedirections = 10
+
+        });
+
+    var remoteReaderServiceOptions = new RemoteReaderServiceOptions
+    {
+        SigningKey = "ChangeMe",
+        HttpClientSelector = _ => nameof(RemoteReaderService)
+    }
+    .AddPrefix("/remote/");
+```
+
+
 ## Add a Retry Policy for Transient Errors 
 Adding the `Microsoft.Extensions.Http.Polly` nuget package to your project will make available the Polly ClientBuilderExtensions.
 ```
