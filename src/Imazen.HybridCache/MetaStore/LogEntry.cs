@@ -3,7 +3,7 @@ using Imazen.HybridCache.Sqlite;
 
 namespace Imazen.HybridCache.MetaStore
 {
-    internal enum LogEntryType
+    internal enum LogEntryType: byte
     {
         Create = 0,
         Update = 1,

@@ -81,7 +81,7 @@ namespace Imazen.HybridCache.MetaStore
                 .OrderByDescending(t => t.Item2)
                 .Select(t => (ICacheDatabaseRecord) t.Item1)
                 .Take(count).ToArray();
-            logger?.LogInformation("Found {DeletionCandidates} deletion candidates in shard {ShardId} of MetaStore", results.Length, shardId);
+            //logger?.LogInformation("Found {DeletionCandidates} deletion candidates in shard {ShardId} of MetaStore", results.Length, shardId);
             return results;
         }
 
@@ -115,8 +115,8 @@ namespace Imazen.HybridCache.MetaStore
                 var existingDiskUsage = await GetShardSize();
                 if (existingDiskUsage + recordDiskSpace + extraLogBytes > diskSpaceLimit)
                 {
-                    logger?.LogInformation("Refusing new {RecordDiskSpace} byte record in shard {ShardId} of MetaStore",
-                        recordDiskSpace, shardId);
+                    //logger?.LogInformation("Refusing new {RecordDiskSpace} byte record in shard {ShardId} of MetaStore",
+                    //    recordDiskSpace, shardId);
                     return false;
                 }
 

@@ -13,8 +13,8 @@ namespace Imazen.HybridCache.Tests
         {
             public void NotifyUsed(CacheEntry cacheEntry){}
             public Task<string> GetContentType(CacheEntry cacheEntry, CancellationToken cancellationToken) => null;
-            public Task<bool> TryReserveSpace(CacheEntry cacheEntry, string contentType, int byteCount, bool allowEviction,
-                CancellationToken cancellationToken) => Task.FromResult(true);
+            public Task<ReserveSpaceResult> TryReserveSpace(CacheEntry cacheEntry, string contentType, int byteCount, bool allowEviction,
+                CancellationToken cancellationToken) => Task.FromResult(new ReserveSpaceResult(){Success = true});
 
             public Task MarkFileCreated(CacheEntry cacheEntry)
             {

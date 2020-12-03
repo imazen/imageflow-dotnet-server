@@ -218,10 +218,10 @@ namespace Imazen.HybridCache
                         swReserveSpace.Stop();
 
                         var syncString = queueFull ? "synchronous" : "async";
-                        if (!reserveSpaceResult)
+                        if (!reserveSpaceResult.Success)
                         {
                             //We failed to lock the file.
-                            Logger?.LogError("HybridCache {0} write failed; could not evict enough space from cache. Time taken: {1}ms - {2}", syncString, swReserveSpace.ElapsedMilliseconds, entry.DisplayPath);
+                            Logger?.LogError("HybridCache {0} eviction failed; {Message}. Time taken: {1}ms - {2}", syncString, reserveSpaceResult.Message, swReserveSpace.ElapsedMilliseconds, entry.DisplayPath);
                             return AsyncCacheDetailResult.CacheEvictionFailed;
                         }
 

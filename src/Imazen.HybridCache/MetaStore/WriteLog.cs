@@ -23,6 +23,7 @@ namespace Imazen.HybridCache.MetaStore
         private BinaryWriter binaryLogWriter;
         private readonly object writeLock = new object();
         private readonly int shardId;
+        private long previousLogsBytes;
         private long logBytes;
         private long diskBytes;
         
@@ -194,7 +195,7 @@ namespace Imazen.HybridCache.MetaStore
             }
             else
             {
-                logBytes += openedLogFileBytes;
+                previousLogsBytes += openedLogFileBytes;
                 diskBytes += dict.Values.Sum(r => r.DiskSize);
             }
 
@@ -289,7 +290,7 @@ namespace Imazen.HybridCache.MetaStore
 
         public long GetDiskSize()
         {
-            return diskBytes + CleanupManager.EstimateEntryBytesWithOverhead(logBytes);
+            return diskBytes + CleanupManager.EstimateEntryBytesWithOverhead(logBytes) + previousLogsBytes;
         }
     }
 }
