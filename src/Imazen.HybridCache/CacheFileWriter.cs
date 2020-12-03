@@ -77,7 +77,7 @@ namespace Imazen.HybridCache
                         var tempFile = entry.PhysicalPath + ".tmp_" + new Random().Next(int.MaxValue).ToString("x") +
                                        ".tmp";
 
-                        var fs = new FileStream(tempFile, FileMode.Create, FileAccess.Write, FileShare.None);
+                        var fs = new FileStream(tempFile, FileMode.Create, FileAccess.Write, FileShare.None, 4096, FileOptions.Asynchronous);
                         var finished = false;
                         try
                         {
