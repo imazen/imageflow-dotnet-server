@@ -65,11 +65,13 @@ namespace Imazen.HybridCache.Benchmark
                 FileSize = 81920,
                 FileCount = 500,
                 RequestCountPerWave = 500,
-                RequestWaves = 20,
+                RequestWaves = 10,
+                RebootCount = 12,
                 RequestWavesIntermission = TimeSpan.FromMilliseconds(0),
                 CreationTaskDelay = TimeSpan.FromMilliseconds(0),
                 CreationThreadSleep = TimeSpan.FromMilliseconds(0),
-                DisplayLog = true
+                DisplayLog = false,
+                WaitForKeypress = true,
             };
             Console.WriteLine("Starting HybridCache test with the async queue disabled and the cache limited to 1/5th the needed size");
             await TestRandom(options, cancellationToken);
@@ -96,13 +98,14 @@ namespace Imazen.HybridCache.Benchmark
                 },
                 FileSize = 0,
                 FileCount = 6000000,
-                RequestCountPerWave = 2000,
-                RequestWaves = 5,
+                RequestCountPerWave = 20000,
+                RequestWaves = 1,
                 UseMetaStore = true,
                 RequestWavesIntermission = TimeSpan.Zero,
+                RebootCount = 5,
                 CreationTaskDelay = TimeSpan.FromMilliseconds(0),
                 CreationThreadSleep = TimeSpan.FromMilliseconds(0),
-                DisplayLog = true,
+                DisplayLog = false,
                 WaitForKeypress = true
             };
             Console.WriteLine("Starting HybridCache test async disabled and 6,000,000 files in waves of 20,000 requests using MetaStore");
@@ -351,80 +354,92 @@ namespace Imazen.HybridCache.Benchmark
             public int Seed { get; set; }
             public MetaStoreOptions MetaStoreOptions { get; set; } = new MetaStoreOptions(null);
             public bool WaitForKeypress { get; set; }
+            public int RebootCount { get; set; } = 1;
         }
         private static async Task TestRandom(TestParams options, CancellationToken cancellationToken)
         {
             if (cancellationToken.IsCancellationRequested)
                 throw new OperationCanceledException(cancellationToken);
 
+            
             var loggerFactory = TestLoggerFactory.Create();
             
             var logger = loggerFactory.CreateLogger<HybridCache>();
             
             var path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}");
             Directory.CreateDirectory(path);
-            options.CacheOptions.PhysicalCacheDir = path;
-            options.DatabaseOptions.DatabaseDir = path;
-            options.MetaStoreOptions.DatabaseDir = path;
-            
-            ICacheDatabase database;
-            if (options.UseMetaStore)
-            {
-                database = new MetaStore.MetaStore(options.MetaStoreOptions, logger);
-            }
-            else
-            {
-                database = new SqliteCacheDatabase(options.DatabaseOptions, logger);
-            }
-
-            HybridCache cache = new HybridCache(database, options.CacheOptions, logger);
             try
             {
-                Console.Write("Starting...");
-                await cache.StartAsync(cancellationToken);
-                Console.Write("started.\r\n");
-                
-                await TestRandomInner(cache, options, loggerFactory, cancellationToken);
+                options.CacheOptions.PhysicalCacheDir = path;
+                options.DatabaseOptions.DatabaseDir = path;
+                options.MetaStoreOptions.DatabaseDir = path;
 
-                if (options.DisplayLog)
+                for (var reboot = 0; reboot < options.RebootCount; reboot++)
                 {
-                    var logs = loggerFactory.Sink.LogEntries.ToArray();
-                    int firstLogIndex = logs.Length - Math.Min(50, logs.Length);
-                    int lastLogIndex = Math.Min(firstLogIndex, 50);
-                    if (lastLogIndex > 0)
-                        Console.WriteLine($"========== LOG ENTRIES 0..{lastLogIndex} ===============");
-                    for (var ix = 0; ix < lastLogIndex; ix++)
+                    Console.WriteLine($"------------- Cache Reboot {reboot} ---------------");
+                    
+                    ICacheDatabase database;
+                    if (options.UseMetaStore)
                     {
-                        Console.WriteLine(logs[ix].Message);
+                        database = new MetaStore.MetaStore(options.MetaStoreOptions, logger);
+                    }
+                    else
+                    {
+                        database = new SqliteCacheDatabase(options.DatabaseOptions, logger);
                     }
 
-                    Console.WriteLine($"========== LOG ENTRIES {firstLogIndex}..{logs.Length} ===============");
-                    for (var ix = firstLogIndex; ix < logs.Length; ix++)
+                    HybridCache cache = new HybridCache(database, options.CacheOptions, logger);
+                    try
                     {
-                        Console.WriteLine(logs[ix].Message);
+                        Console.Write("Starting cache...");
+                        var swStart = Stopwatch.StartNew();
+                        await cache.StartAsync(cancellationToken);
+                        swStart.Stop();
+                        Console.Write($"ready in {swStart.Elapsed}\r\n");
+
+                        await TestRandomInner(cache, options, loggerFactory, cancellationToken);
+
+                        if (options.DisplayLog)
+                        {
+                            var logs = loggerFactory.Sink.LogEntries.ToArray();
+                            int firstLogIndex = logs.Length - Math.Min(50, logs.Length);
+                            int lastLogIndex = Math.Min(firstLogIndex, 50);
+                            if (lastLogIndex > 0)
+                                Console.WriteLine($"========== LOG ENTRIES 0..{lastLogIndex} ===============");
+                            for (var ix = 0; ix < lastLogIndex; ix++)
+                            {
+                                Console.WriteLine(logs[ix].Message);
+                            }
+
+                            Console.WriteLine($"========== LOG ENTRIES {firstLogIndex}..{logs.Length} ===============");
+                            for (var ix = firstLogIndex; ix < logs.Length; ix++)
+                            {
+                                Console.WriteLine(logs[ix].Message);
+                            }
+
+                            Console.WriteLine("============== END LOGS ===============");
+                        }
+
                     }
-                    Console.WriteLine("============== END LOGS ===============");
+                    finally
+                    {
+                        Console.Write("Stopping cache...");
+                        var swStop = Stopwatch.StartNew();
+                        await cache.StopAsync(cancellationToken);
+                        swStop.Stop();
+                        Console.Write($"stopped in {swStop.Elapsed}\r\n");
+                    }
                 }
-
+                if (options.WaitForKeypress)
+                {
+                    Console.WriteLine("Press the any key to continue");
+                    Console.ReadKey();
+                }
             }
             finally
             {
-                try
-                {
-                    Console.Write("Stopping...");
-                    await cache.StopAsync(cancellationToken);
-                    Console.Write("stopped.\r\n");
-                    if (options.WaitForKeypress)
-                    {
-                        Console.WriteLine("Press the any key to continue");
-                        Console.ReadKey();
-                    }
-                }
-                finally
-                {
-                    Console.WriteLine("Deleting cache from disk");
-                    Directory.Delete(path, true);
-                }
+                Console.WriteLine("Deleting cache from disk");
+                Directory.Delete(path, true);
             }
         }
 
@@ -459,7 +474,7 @@ namespace Imazen.HybridCache.Benchmark
                 {
                     Thread.Sleep(options.RequestWavesIntermission);
                 }
-                Console.WriteLine("Starting request wave {0} with {1} requests", wave + 1, options.RequestCountPerWave);
+                Console.Write("Wave {0}, {1} requests...", wave + 1, options.RequestCountPerWave);
                 var sw = Stopwatch.StartNew();
                 var memoryStreamManager =
                     new RecyclableMemoryStreamManager(Math.Max(2, options.FileSize), 2, options.FileSize * 2 + 2);
@@ -488,7 +503,7 @@ namespace Imazen.HybridCache.Benchmark
                 var swAsync = Stopwatch.StartNew();
                 await cache.AwaitEnqueuedTasks();
                 swAsync.Stop();
-                Console.WriteLine("Wave requests returned in {0}... Plus {1} for async tasks. ", sw.Elapsed, swAsync.Elapsed);
+                Console.WriteLine("completed in {0}, plus {1} for async tasks. ", sw.Elapsed, swAsync.Elapsed);
                 PrintDiskUtilization(options);
             }
 
@@ -517,31 +532,16 @@ namespace Imazen.HybridCache.Benchmark
 
             foreach (var pair in resultCounts.OrderByDescending(p => p.Value))
             {
-                Console.WriteLine("{0} - {1} occurrences - 1st percentile {2} 5th percentile = {3} 50th percentile = {4} 95th percentile = {5} 99th percentile = {6}",
+                Console.WriteLine("{0} - {1} occurrences - {2}kb - 1st percentile {3} 5th percentile = {4} 50th percentile = {5} 95th percentile = {6} 99th percentile = {7}",
                     pair.Key, pair.Value, 
+                    pair.Value * options.FileSize / 1000,
                     GetPercentile(resultTimes[pair.Key], 0.01f),
                     GetPercentile(resultTimes[pair.Key], 0.05f),
                     GetPercentile(resultTimes[pair.Key], 0.5f),
                     GetPercentile(resultTimes[pair.Key], 0.95f),
                     GetPercentile(resultTimes[pair.Key], 0.99f));
             }
-
-            if (!resultCounts.TryGetValue("WriteSucceeded", out var writesSucceeded)){
-                writesSucceeded = 0;
-            }
             
-            if (!resultCounts.TryGetValue("DiskHit", out var readsSucceeded)){
-                readsSucceeded = 0;
-            }
-            
-            if (!resultCounts.TryGetValue("MemoryHit", out var memReadsSucceeded)){
-                memReadsSucceeded = 0;
-            }
-            
-            Console.WriteLine("Disk wrote {0:0,0}kb", writesSucceeded * options.FileSize / 1000);
-            Console.WriteLine("Disk read {0:0,0}kb", readsSucceeded * options.FileSize / 1000);
-            Console.WriteLine("Memory read {0:0,0}kb", memReadsSucceeded * options.FileSize / 1000);
-
             var logCounts = new Dictionary<string, int>();
             var logEntryCount = 0;
             foreach (var e in loggerFactory.Sink.LogEntries)
@@ -610,7 +610,7 @@ namespace Imazen.HybridCache.Benchmark
         {
             var cacheDirBytes = GetFolderBytes(dir);
             var percent = (double) cacheDirBytes / limit * 100;
-            Console.WriteLine("{0} utilizing {1:0.00}% of limit ({2:0,0} of {3:0,0} bytes)",
+            Console.WriteLine("* {0} utilizing {1:0.00}% of limit ({2:0,0} of {3:0,0} bytes)",
                 name, percent, cacheDirBytes, limit);
         }
 

@@ -21,8 +21,14 @@ namespace Imazen.HybridCache.MetaStore
         private long startedAt;
         private FileStream writeLogStream;
         private BinaryWriter binaryLogWriter;
-        public WriteLog(string databaseDir, MetaStoreOptions options, ILogger logger)
+        private readonly object writeLock = new object();
+        private readonly int shardId;
+        private long logBytes;
+        private long diskBytes;
+        
+        public WriteLog(int shardId, string databaseDir, MetaStoreOptions options, ILogger logger)
         {
+            this.shardId = shardId;
             this.databaseDir = databaseDir;
             this.options = options;
             this.logger = logger;
@@ -30,12 +36,16 @@ namespace Imazen.HybridCache.MetaStore
 
         public Task StopAsync(CancellationToken cancellationToken)
         {
- 
-            binaryLogWriter?.Dispose();
-            writeLogStream?.Flush(true);
-            writeLogStream?.Dispose();
-            writeLogStream = null;
-            binaryLogWriter = null;
+            lock (writeLock)
+            {
+                binaryLogWriter?.Flush();
+                binaryLogWriter?.Dispose();
+                writeLogStream?.Flush(true);
+                writeLogStream?.Dispose();
+                writeLogStream = null;
+                binaryLogWriter = null;
+            }
+
             return Task.CompletedTask;
         }
 
@@ -80,6 +90,7 @@ namespace Imazen.HybridCache.MetaStore
             
             // Read in all the log files
             var openedFiles = new List<FileStream>(orderedLogs.Length);
+            long openedLogFileBytes = 0;
             List<LogEntry>[] logSets;
             try
             {
@@ -93,17 +104,18 @@ namespace Imazen.HybridCache.MetaStore
                         var fs = new FileStream(t.Item1, FileMode.Open, FileAccess.Read, FileShare.Read, 4096,
                             FileOptions.SequentialScan);
                         openedFiles.Add(fs);
+                        openedLogFileBytes += CleanupManager.EstimateEntryBytesWithOverhead(fs.Length);
                     }
                 }
                 catch (IOException ioException)
                 {
-                    logger.LogError(ioException, "Failed to open log file {Path} for reading. Perhaps another process is still writing to the log?", lastOpenPath);
+                    logger.LogError(ioException, "Failed to open log file {Path} for reading in shard {ShardId}. Perhaps another process is still writing to the log?", lastOpenPath, shardId);
                     throw;
                 }
                 
                 // Open the write log file, even if we won't use it immediately.
                 CreateWriteLog(startedAt);
-
+                
                 //Read all logs in
                 logSets = await Task.WhenAll(openedFiles.Select(ReadLogEntries));
             }
@@ -155,6 +167,7 @@ namespace Imazen.HybridCache.MetaStore
                     }
                 }
             }
+
             
             // Do consolidation if needed
             if (orderedLogs.Length >= options.MaxLogFilesPerShard)
@@ -178,6 +191,11 @@ namespace Imazen.HybridCache.MetaStore
                         logger.LogError(ioException, "Failed to delete log file {Path} after consolidation", t.Item1);
                     }
                 }
+            }
+            else
+            {
+                logBytes += openedLogFileBytes;
+                diskBytes += dict.Values.Sum(r => r.DiskSize);
             }
 
             return dict;
@@ -223,23 +241,34 @@ namespace Imazen.HybridCache.MetaStore
 
         private Task WriteLogEntry(LogEntry entry, bool flush)
         {
-            if (startedAt == 0) throw new InvalidOperationException("WriteLog cannot be used before calling ReadAll()");
-            if (writeLogStream == null)
-                throw new InvalidOperationException("WriteLog cannot be after StopAsync is called");
-            
-            binaryLogWriter.Write((byte)entry.EntryType);
-            binaryLogWriter.Write(entry.RelativePath);
-            binaryLogWriter.Write(entry.ContentType ?? "");
-            binaryLogWriter.Write(entry.CreatedAt.ToBinary());
-            binaryLogWriter.Write(entry.LastDeletionAttempt.ToBinary());
-            binaryLogWriter.Write(entry.AccessCountKey);
-            binaryLogWriter.Write(entry.DiskSize);
-            if (flush)
+            lock (writeLock)
             {
-                binaryLogWriter.Flush();
-            }
+                if (startedAt == 0)
+                    throw new InvalidOperationException("WriteLog cannot be used before calling ReadAll()");
+                if (writeLogStream == null)
+                    throw new InvalidOperationException("WriteLog cannot be after StopAsync is called");
+                var startPos = writeLogStream.Position;
+                binaryLogWriter.Write((byte) entry.EntryType);
+                binaryLogWriter.Write(entry.RelativePath);
+                binaryLogWriter.Write(entry.ContentType ?? "");
+                binaryLogWriter.Write(entry.CreatedAt.ToBinary());
+                binaryLogWriter.Write(entry.LastDeletionAttempt.ToBinary());
+                binaryLogWriter.Write(entry.AccessCountKey);
+                binaryLogWriter.Write(entry.DiskSize);
+                if (flush)
+                {
+                    binaryLogWriter.Flush();
+                }
 
-            return Task.CompletedTask;
+                // Increase the log bytes by the number of bytes we wrote
+                logBytes += Math.Max(0,writeLogStream.Position - startPos);
+                // On create events, increase the disk bytes
+                if (entry.EntryType == LogEntryType.Create)
+                    diskBytes += entry.DiskSize;
+                if (entry.EntryType == LogEntryType.Delete)
+                    diskBytes -= entry.DiskSize;
+                return Task.CompletedTask;
+            }
         }
 
         public Task LogDeleted(ICacheDatabaseRecord deletedRecord)
@@ -249,12 +278,18 @@ namespace Imazen.HybridCache.MetaStore
 
         public Task LogCreated(CacheDatabaseRecord newRecord)
         {
+            // We flush created entries through to disk right away so we don't orphan disk blobs
             return WriteLogEntry(new LogEntry(LogEntryType.Create, newRecord), true);
         }
 
         public Task LogUpdated(CacheDatabaseRecord updatedRecord)
         {
             return WriteLogEntry(new LogEntry(LogEntryType.Update, updatedRecord), false);
+        }
+
+        public long GetDiskSize()
+        {
+            return diskBytes + CleanupManager.EstimateEntryBytesWithOverhead(logBytes);
         }
     }
 }

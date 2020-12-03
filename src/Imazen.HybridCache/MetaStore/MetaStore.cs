@@ -22,11 +22,12 @@ namespace Imazen.HybridCache.MetaStore
         {
             Options = options;
             Logger = logger;
-            if (options.ShardCountBits < 0 || options.ShardCountBits > 31)
+            if (options.Shards <= 0 || options.Shards > 2048)
             {
-                throw new ArgumentException("ShardCountBits must be between 0 and 31");
+                throw new ArgumentException("Shards must be between 1 and 2048");
             }
-            var shardCount = (int)Math.Pow(2, Options.ShardCountBits);
+
+            var shardCount = options.Shards;
             shards = new Shard[shardCount];
             for (var i = 0; i < shardCount; i++)
             {
@@ -92,7 +93,7 @@ namespace Imazen.HybridCache.MetaStore
 
         public int EstimateRecordDiskSpace(int stringLength)
         {
-            return (128 + 16 + stringLength) * 4;
+            return Shard.GetLogBytesOverhead(stringLength);
         }
 
         public Task<bool> CreateRecordIfSpace(int shard, string relativePath, string contentType, long recordDiskSpace, DateTime createdDate,

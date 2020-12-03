@@ -18,22 +18,25 @@ namespace Imazen.HybridCache.MetaStore
         private readonly WriteLog writeLog;
         private readonly ILogger logger;
         private readonly int shardId;
-        internal Shard(int shardId,MetaStoreOptions options, string databaseDir,  ILogger logger)
+        
+        private volatile ConcurrentDictionary<string, CacheDatabaseRecord> dict;
+
+        private readonly AsyncLock readLock = new AsyncLock();
+        private readonly AsyncLock createLock = new AsyncLock();
+        internal Shard(int shardId, MetaStoreOptions options, string databaseDir,  ILogger logger)
         {
             this.shardId = shardId;
             this.options = options;
             this.databaseDir = databaseDir;
             this.logger = logger;
-            writeLog = new WriteLog(databaseDir, options, logger);
+            writeLog = new WriteLog(shardId, databaseDir, options, logger);
         }
 
-        private volatile ConcurrentDictionary<string, CacheDatabaseRecord> dict;
 
-        private readonly AsyncLock readLock = new AsyncLock();
         private async Task<ConcurrentDictionary<string, CacheDatabaseRecord>> GetLoadedDict()
         {
             if (dict != null) return dict;
-            using (var readLocked = await readLock.LockAsync())
+            using (var unused = await readLock.LockAsync())
             {
                 if (dict != null) return dict;
 
@@ -41,8 +44,7 @@ namespace Imazen.HybridCache.MetaStore
             }
             return dict;
         }
-
-        private long cacheSize;
+        
         public Task StartAsync(CancellationToken cancellationToken)
         {
             return Task.CompletedTask;
@@ -67,8 +69,6 @@ namespace Imazen.HybridCache.MetaStore
             if ((await GetLoadedDict()).TryRemove(record.RelativePath, out var unused))
             {
                 await writeLog.LogDeleted(record);
-                Interlocked.Add(ref cacheSize, -record.DiskSize);
-                //logger?.LogInformation("Decreasing cacheSize to {CacheSize}", cacheSize);
             }
         }
 
@@ -81,13 +81,14 @@ namespace Imazen.HybridCache.MetaStore
                 .OrderByDescending(t => t.Item2)
                 .Select(t => (ICacheDatabaseRecord) t.Item1)
                 .Take(count).ToArray();
-            logger?.LogInformation("Found {DeletionCandidates} deletion candidates in MetaStore", results.Length);
+            logger?.LogInformation("Found {DeletionCandidates} deletion candidates in shard {ShardId} of MetaStore", results.Length, shardId);
             return results;
         }
 
-        public Task<long> GetShardSize()
-        {
-            return Task.FromResult(cacheSize);
+        public async Task<long> GetShardSize()
+        { 
+            await GetLoadedDict();
+            return writeLog.GetDiskSize();
         }
         public async Task<string> GetContentType(string relativePath)
         {
@@ -97,32 +98,43 @@ namespace Imazen.HybridCache.MetaStore
         }
 
 
+        internal static int GetLogBytesOverhead(int stringLength)
+        {
+            return 4 * (128 + stringLength);
+        }
         public async Task<bool> CreateRecordIfSpace(string relativePath, string contentType, long recordDiskSpace,
             DateTime createdDate,
             int accessCountKey, long diskSpaceLimit)
         {
-            if (cacheSize + recordDiskSpace > diskSpaceLimit)
+            // Lock so multiple writers can't get past the capacity check simultaneously
+            using (await createLock.LockAsync())
             {
-                logger?.LogInformation("Refusing new {RecordDiskSpace} byte record in MetaStore", recordDiskSpace);
-                return false;
-            }
+                var loadedDict = await GetLoadedDict();
+                var extraLogBytes = GetLogBytesOverhead(relativePath.Length + contentType.Length);
 
-            var newRecord = new CacheDatabaseRecord()
-            {
-                AccessCountKey = accessCountKey,
-                ContentType = contentType,
-                CreatedAt = createdDate,
-                DiskSize = recordDiskSpace,
-                LastDeletionAttempt = DateTime.MinValue,
-                RelativePath = relativePath
-            };
+                var existingDiskUsage = await GetShardSize();
+                if (existingDiskUsage + recordDiskSpace + extraLogBytes > diskSpaceLimit)
+                {
+                    logger?.LogInformation("Refusing new {RecordDiskSpace} byte record in shard {ShardId} of MetaStore",
+                        recordDiskSpace, shardId);
+                    return false;
+                }
 
-            if ((await GetLoadedDict()).TryAdd(relativePath, newRecord))
-            {
-                await writeLog.LogCreated(newRecord);
-                Interlocked.Add(ref cacheSize, recordDiskSpace);
+                var newRecord = new CacheDatabaseRecord()
+                {
+                    AccessCountKey = accessCountKey,
+                    ContentType = contentType,
+                    CreatedAt = createdDate,
+                    DiskSize = recordDiskSpace,
+                    LastDeletionAttempt = DateTime.MinValue,
+                    RelativePath = relativePath
+                };
 
-                //logger?.LogInformation("Increasing cacheSize to {CacheSize}", cacheSize);
+                if (loadedDict.TryAdd(relativePath, newRecord))
+                {
+                    await writeLog.LogCreated(newRecord);
+
+                }
             }
 
             return true;

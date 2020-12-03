@@ -44,7 +44,7 @@ namespace Imazen.HybridCache
             return Database.GetContentType(Database.GetShardForKey(cacheEntry.RelativePath), cacheEntry.RelativePath);
         }
 
-        private int EstimateEntryBytesWithOverhead(int byteCount)
+        internal static long EstimateEntryBytesWithOverhead(long byteCount)
         {
             // Most file systems have a 4KiB block size
             var withBlockSize = (Math.Max(1, byteCount) + 4095) / 4096 * 4096;
@@ -103,17 +103,15 @@ namespace Imazen.HybridCache
             var shard = Database.GetShardForKey(cacheEntry.RelativePath);
             var shardSizeLimit = Options.MaxCacheBytes / Database.GetShardCount();
             
-            var entryDiskSpace = EstimateEntryBytesWithOverhead(byteCount) +
-                            Database.EstimateRecordDiskSpace(cacheEntry.RelativePath.Length + contentType.Length);
-
-            var farFuture = DateTime.UtcNow.AddYears(100);
+            // When we're okay with deleting the database entry even though the file isn't written
+            var farFuture = DateTime.UtcNow.AddYears(100); //TODO: make AddHour(1)
 
             for (var attempts = 0; attempts < 3; attempts++)
             {
                 var recordCreated =
                     await Database.CreateRecordIfSpace(shard, cacheEntry.RelativePath,
                         contentType,
-                        entryDiskSpace,
+                        EstimateEntryBytesWithOverhead(byteCount),
                         farFuture,
                         AccessCounter.GetHash(cacheEntry.Hash),
                         shardSizeLimit);
@@ -123,7 +121,10 @@ namespace Imazen.HybridCache
 
                 // We need to evict but we are not permitted
                 if (!allowEviction) return false;
-
+                
+                var entryDiskSpace = EstimateEntryBytesWithOverhead(byteCount) +
+                                     Database.EstimateRecordDiskSpace(cacheEntry.RelativePath.Length + contentType.Length);
+                
                 var missingSpace = Math.Max(0, await Database.GetShardSize(shard) + entryDiskSpace - shardSizeLimit);
                 // Evict space 
                 if (!await EvictSpace(shard, missingSpace, cancellationToken))
