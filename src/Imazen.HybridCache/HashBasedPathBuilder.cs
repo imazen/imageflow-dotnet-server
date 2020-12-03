@@ -75,14 +75,12 @@ namespace Imazen.HybridCache
             //If subfolders is set above 256, it will nest files in multiple directories, one for each byte
             foreach (var b in allBits)
             {
-                sb.Append(b
-                    .ToString("x", NumberFormatInfo.InvariantInfo)
-                    .PadLeft(2, '0'));
+                sb.AppendFormat(NumberFormatInfo.InvariantInfo, "{0:x2}",b);
                 sb.Append(Path.DirectorySeparatorChar);
             }
 
             foreach (var b in hash)
-                sb.Append(b.ToString("x", NumberFormatInfo.InvariantInfo).PadLeft(2, '0'));
+                sb.AppendFormat(NumberFormatInfo.InvariantInfo, "{0:x2}",b);
 
             sb.Append(FileExtension);
             return sb.ToString();

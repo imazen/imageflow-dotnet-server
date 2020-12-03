@@ -104,7 +104,7 @@ namespace Imazen.HybridCache
             var shardSizeLimit = Options.MaxCacheBytes / Database.GetShardCount();
             
             var entryDiskSpace = EstimateEntryBytesWithOverhead(byteCount) +
-                            Database.EstimateRecordDiskSpace(cacheEntry.RelativePath.Length);
+                            Database.EstimateRecordDiskSpace(cacheEntry.RelativePath.Length + contentType.Length);
 
             var farFuture = DateTime.UtcNow.AddYears(100);
 

@@ -59,9 +59,9 @@ namespace Imazen.HybridCache
         /// <summary>
         /// Estimate disk usage for a record with the given key length
         /// </summary>
-        /// <param name="stringKeyLength"></param>
+        /// <param name="stringLength"></param>
         /// <returns></returns>
-        int EstimateRecordDiskSpace(int stringKeyLength);
+        int EstimateRecordDiskSpace(int stringLength);
 
         /// <summary>
         /// Within a lock or transaction, checks if Sum(DiskBytes) + recordDiskSpace &lt; diskSpaceLimit, then
