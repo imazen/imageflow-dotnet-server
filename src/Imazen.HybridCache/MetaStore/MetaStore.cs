@@ -1,148 +1,116 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Imazen.HybridCache.Sqlite;
 using Microsoft.Extensions.Logging;
 
 namespace Imazen.HybridCache.MetaStore
 {
     public class MetaStore: ICacheDatabase
     {
+        private MetaStoreOptions Options { get; }
         private ILogger Logger { get;  }
 
-        public MetaStore(ILogger logger)
-        {
-            Logger = logger;
-        }
-        private readonly ConcurrentDictionary<string, CacheDatabaseRecord> dict =
-            new ConcurrentDictionary<string, CacheDatabaseRecord>(StringComparer.Ordinal);
+        private readonly Shard[] shards;
 
-        private long cacheSize;
+
+        public MetaStore(MetaStoreOptions options, ILogger logger)
+        {
+            Options = options;
+            Logger = logger;
+            if (options.ShardCountBits < 0 || options.ShardCountBits > 31)
+            {
+                throw new ArgumentException("ShardCountBits must be between 0 and 31");
+            }
+            var shardCount = (int)Math.Pow(2, Options.ShardCountBits);
+            shards = new Shard[shardCount];
+            for (var i = 0; i < shardCount; i++)
+            {
+                shards[i] = new Shard(i, options, Path.Combine(options.DatabaseDir,"db", i.ToString()), logger);
+            }
+        }
+
         public Task StartAsync(CancellationToken cancellationToken)
         {
-            return Task.CompletedTask;
+            return Task.WhenAll(shards.Select(s => s.StartAsync(cancellationToken)));
         }
 
         public Task StopAsync(CancellationToken cancellationToken)
         {
-            return Task.CompletedTask;
+            return Task.WhenAll(shards.Select(s => s.StopAsync(cancellationToken)));
         }
 
         public Task UpdateLastDeletionAttempt(int shard, string relativePath, DateTime when)
         {
-            if (dict.TryGetValue(relativePath, out var record))
-            {
-                record.LastDeletionAttempt = when;
-            }
-            return Task.CompletedTask;
+            return shards[shard].UpdateLastDeletionAttempt(relativePath, when);
         }
 
         public int GetShardForKey(string key)
         {
-            return 0;
+            var stringBytes = Encoding.UTF8.GetBytes(key);
+            
+            using (var h = SHA256.Create())
+            {
+                var a = h.ComputeHash(stringBytes);
+                var shardSeed = BitConverter.ToUInt32(a, 8);
+
+                var shard = (int)(shardSeed % shards.Length);
+                return shard;
+            }
         }
 
         public Task DeleteRecord(int shard, ICacheDatabaseRecord record, bool fileDeleted)
         {
-           
-            if (dict.TryRemove(record.RelativePath, out var unused))
-            {
-                Interlocked.Add(ref cacheSize, -record.DiskSize);
-                Logger?.LogInformation("Decreasing cacheSize to {CacheSize}", cacheSize);
-            }
-            return Task.CompletedTask;
+            return shards[shard].DeleteRecord(record, fileDeleted);
         }
 
-        public Task<IEnumerable<ICacheDatabaseRecord>> GetDeletionCandidates(int shard,
-            DateTime maxLastDeletionAttemptTime, DateTime maxCreatedDate, int count, Func<int, ushort> getUsageCount)
+        public Task<IEnumerable<ICacheDatabaseRecord>> GetDeletionCandidates(int shard, DateTime maxLastDeletionAttemptTime, DateTime maxCreatedDate, int count,
+            Func<int, ushort> getUsageCount)
         {
-            var results = dict.Values
-                .Where(r => r.CreatedAt < maxCreatedDate && r.LastDeletionAttempt < maxLastDeletionAttemptTime)
-                .Select(r => new Tuple<CacheDatabaseRecord, ushort>(r, getUsageCount(r.AccessCountKey)))
-                .OrderByDescending(t => t.Item2)
-                .Select(t => (ICacheDatabaseRecord) t.Item1)
-                .Take(count).ToArray();
-            Logger?.LogInformation("Found {DeletionCandidates} deletion candidates in MetaStore", results.Length);
-            return Task.FromResult((IEnumerable<ICacheDatabaseRecord>)results);
+            return shards[shard]
+                .GetDeletionCandidates(maxLastDeletionAttemptTime, maxCreatedDate, count, getUsageCount);
         }
 
         public Task<long> GetShardSize(int shard)
         {
-            return Task.FromResult(cacheSize);
+            return shards[shard].GetShardSize();
         }
 
         public int GetShardCount()
         {
-            return 1;
+            return shards.Length;
         }
 
         public Task<string> GetContentType(int shard, string relativePath)
         {
-            return dict.TryGetValue(relativePath, out var record) ? 
-                Task.FromResult(record.ContentType) : 
-                Task.FromResult<string>(null);
+            return shards[shard].GetContentType(relativePath);
         }
 
-        public int EstimateRecordDiskSpace(int stringKeyLength)
+        public int EstimateRecordDiskSpace(int stringLength)
         {
-            return 128 + stringKeyLength * 2;
+            return (128 + 16 + stringLength) * 4;
         }
 
-        public Task<bool> CreateRecordIfSpace(int shard, string relativePath, string contentType, long recordDiskSpace,
-            DateTime createdDate,
+        public Task<bool> CreateRecordIfSpace(int shard, string relativePath, string contentType, long recordDiskSpace, DateTime createdDate,
             int accessCountKey, long diskSpaceLimit)
         {
-            if (cacheSize + recordDiskSpace > diskSpaceLimit)
-            {
-                Logger?.LogInformation("Refusing new {RecordDiskSpace} byte record in MetaStore", recordDiskSpace);
-                return Task.FromResult(false);
-            }
-
-            if (dict.TryAdd(relativePath, new CacheDatabaseRecord()
-                {
-                    AccessCountKey = accessCountKey,
-                    ContentType = contentType,
-                    CreatedAt = createdDate,
-                    DiskSize = recordDiskSpace,
-                    LastDeletionAttempt = DateTime.MinValue,
-                    RelativePath = relativePath
-                }))
-                {
-                    Interlocked.Add(ref cacheSize, recordDiskSpace);
-                    
-                    Logger?.LogInformation("Increasing cacheSize to {CacheSize}", cacheSize);
-                }
-                return Task.FromResult(true);;
-            
+            return shards[shard].CreateRecordIfSpace(relativePath, contentType, recordDiskSpace, createdDate,
+                accessCountKey, diskSpaceLimit);
         }
 
         public Task UpdateCreatedDate(int shard, string relativePath, DateTime createdDate)
         {
-            if (dict.TryGetValue(relativePath, out var record))
-            {
-                record.CreatedAt = createdDate;
-            }
-            return Task.CompletedTask;
+            return shards[shard].UpdateCreatedDate(relativePath, createdDate);
         }
 
-        public Task ReplaceRelativePathAndUpdateLastDeletion(int shard, ICacheDatabaseRecord record,
-            string movedRelativePath,
+        public Task ReplaceRelativePathAndUpdateLastDeletion(int shard, ICacheDatabaseRecord record, string movedRelativePath,
             DateTime lastDeletionAttempt)
         {
-            dict.TryAdd(movedRelativePath, new CacheDatabaseRecord()
-            {
-                AccessCountKey = record.AccessCountKey,
-                ContentType = record.ContentType,
-                CreatedAt = record.CreatedAt,
-                DiskSize = record.DiskSize,
-                LastDeletionAttempt = lastDeletionAttempt,
-                RelativePath = movedRelativePath
-            });
-            dict.TryRemove(record.RelativePath, out var unused);
-            return Task.CompletedTask;
+            return shards[shard].ReplaceRelativePathAndUpdateLastDeletion(record, movedRelativePath, lastDeletionAttempt);
         }
     }
 }
