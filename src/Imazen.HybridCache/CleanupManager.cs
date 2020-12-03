@@ -104,7 +104,7 @@ namespace Imazen.HybridCache
             var shardSizeLimit = Options.MaxCacheBytes / Database.GetShardCount();
             
             // When we're okay with deleting the database entry even though the file isn't written
-            var farFuture = DateTime.UtcNow.AddYears(100); //TODO: make AddHour(1)
+            var farFuture = DateTime.UtcNow.AddHours(1);
 
             for (var attempts = 0; attempts < 3; attempts++)
             {
