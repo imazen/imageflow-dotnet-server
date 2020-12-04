@@ -13,7 +13,7 @@ namespace Imazen.HybridCache
         /// <summary>
         /// The minimum time to wait before trying to delete a file again if file deletion fails
         /// </summary>
-        public TimeSpan RetryDeletionAfter { get; set; } = TimeSpan.FromMinutes(20);
+        public TimeSpan RetryDeletionAfter { get; set; } = TimeSpan.FromMinutes(1);
 
         /// <summary>
         /// Defaults to 1 gigabyte. The maximum number of bytes permitted to be stored.
@@ -26,8 +26,7 @@ namespace Imazen.HybridCache
         public long MinCleanupBytes { get; set; } = 1 * 1024 * 1024;
 
         /// <summary>
-        /// The minimum age of files to delete. Must be long enough for new files to be written to disk after their
-        /// records are created, or orphaned files can be created.
+        /// The minimum age of files to delete.
         /// </summary>
         public TimeSpan MinAgeToDelete { get; set; } = TimeSpan.FromSeconds(60);
         

@@ -17,6 +17,8 @@ namespace Imazen.HybridCache
         internal AsyncCache AsyncCache { get; }
         internal CleanupManager CleanupManager { get; }
         internal ICacheDatabase Database { get; }
+        
+        
         public HybridCache(ICacheDatabase cacheDatabase, HybridCacheOptions options, ILogger logger)
         {
             Database = cacheDatabase;

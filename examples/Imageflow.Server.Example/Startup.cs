@@ -11,6 +11,7 @@ using Imageflow.Server.DiskCache;
 using Imageflow.Server.Storage.AzureBlob;
 using Imageflow.Server.Storage.S3;
 using System;
+using Imageflow.Server.HybridCache;
 using Imageflow.Server.HybridSqliteCache;
 using Imageflow.Server.SqliteCache;
 using Imageflow.Server.Storage.RemoteReader;
@@ -81,12 +82,13 @@ namespace Imageflow.Server.Example
             // But remember to call ImageflowMiddlewareOptions.SetAllowCaching(true)
             // If you're deploying to azure, provide a disk cache folder *not* inside ContentRootPath
             // to prevent the app from recycling whenever folders are created.
-            services.AddImageflowHybridSqliteCache(
-                new HybridSqliteCacheOptions(Path.Combine(homeFolder, "imageflow_example_hybrid_cache"))
+            services.AddImageflowHybridCache(
+                new HybridCacheOptions(Path.Combine(homeFolder, "imageflow_example_hybrid_cache"))
                 {
                     MaxWriteQueueBytes = 0,
                     CacheSizeLimitInBytes = 1024 * 1024 * 10,
-                    MinCleanupBytes = 1024
+                    MinCleanupBytes = 1024,
+                    MinAgeToDelete = TimeSpan.Zero
                 });
 
         }

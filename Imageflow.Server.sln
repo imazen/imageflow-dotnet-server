@@ -50,9 +50,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imazen.HybridCache.Tests", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imazen.HybridCache.Benchmark", "tests\Imazen.HybridCache.Benchmark\Imazen.HybridCache.Benchmark.csproj", "{2BBE3D79-D552-498D-B29A-091932EBE8ED}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imazen.HybridCache.Sqlite", "src\Imazen.HybridCache.Sqlite\Imazen.HybridCache.Sqlite.csproj", "{9C66E133-A7CC-4324-85DF-DBFFF768889E}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imageflow.Server.HybridSqliteCache", "src\Imageflow.Server.HybridSqliteCache\Imageflow.Server.HybridSqliteCache.csproj", "{3F27341F-6721-400E-B3FA-C8007AAB78F9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imazen.HybridCache.Sqlite", "src\Imazen.HybridCache.Sqlite\Imazen.HybridCache.Sqlite.csproj", "{57904148-D078-43AE-94AD-FD928ACCA166}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imageflow.Server.HybridCache", "src\Imageflow.Server.HybridCache\Imageflow.Server.HybridCache.csproj", "{D1ACF35D-469B-4AC9-804D-8A3FD87ECD5C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -136,14 +138,18 @@ Global
 		{2BBE3D79-D552-498D-B29A-091932EBE8ED}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2BBE3D79-D552-498D-B29A-091932EBE8ED}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2BBE3D79-D552-498D-B29A-091932EBE8ED}.Release|Any CPU.Build.0 = Release|Any CPU
-		{9C66E133-A7CC-4324-85DF-DBFFF768889E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9C66E133-A7CC-4324-85DF-DBFFF768889E}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9C66E133-A7CC-4324-85DF-DBFFF768889E}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9C66E133-A7CC-4324-85DF-DBFFF768889E}.Release|Any CPU.Build.0 = Release|Any CPU
 		{3F27341F-6721-400E-B3FA-C8007AAB78F9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{3F27341F-6721-400E-B3FA-C8007AAB78F9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3F27341F-6721-400E-B3FA-C8007AAB78F9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3F27341F-6721-400E-B3FA-C8007AAB78F9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{57904148-D078-43AE-94AD-FD928ACCA166}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{57904148-D078-43AE-94AD-FD928ACCA166}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{57904148-D078-43AE-94AD-FD928ACCA166}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{57904148-D078-43AE-94AD-FD928ACCA166}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D1ACF35D-469B-4AC9-804D-8A3FD87ECD5C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D1ACF35D-469B-4AC9-804D-8A3FD87ECD5C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D1ACF35D-469B-4AC9-804D-8A3FD87ECD5C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D1ACF35D-469B-4AC9-804D-8A3FD87ECD5C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
