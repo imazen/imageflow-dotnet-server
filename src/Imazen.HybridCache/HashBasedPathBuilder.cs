@@ -79,8 +79,11 @@ namespace Imazen.HybridCache
                 sb.Append(Path.DirectorySeparatorChar);
             }
 
-            foreach (var b in hash)
-                sb.AppendFormat(NumberFormatInfo.InvariantInfo, "{0:x2}",b);
+            sb.AppendFormat(NumberFormatInfo.InvariantInfo, 
+                "{0:x2}{1:x2}{2:x2}{3:x2}{4:x2}{5:x2}{6:x2}{7:x2}{8:x2}{9:x2}{10:x2}{11:x2}{12:x2}{13:x2}{14:x2}{15:x2}{16:x2}{17:x2}{18:x2}{19:x2}{20:x2}{21:x2}{22:x2}{23:x2}{24:x2}{25:x2}{26:x2}{27:x2}{28:x2}{29:x2}{30:x2}{31:x2}",
+                hash[0], hash[1], hash[2], hash[3], hash[4], hash[5], hash[6], hash[7], hash[8], hash[9], hash[10], hash[11]
+                , hash[12], hash[13], hash[14], hash[15], hash[16], hash[17], hash[18], hash[19], hash[20], hash[21], hash[22], hash[23]
+                , hash[24], hash[25], hash[26], hash[27], hash[28], hash[29], hash[30], hash[31]);
 
             sb.Append(FileExtension);
             return sb.ToString();
