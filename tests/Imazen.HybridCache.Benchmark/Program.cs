@@ -71,7 +71,7 @@ namespace Imazen.HybridCache.Benchmark
                 CreationTaskDelay = TimeSpan.FromMilliseconds(0),
                 CreationThreadSleep = TimeSpan.FromMilliseconds(0),
                 DisplayLog = true,
-                Synchronous = true,
+                Synchronous = false,
                 MaxLogEntries = 75,
                 WaitForKeypress = true,
             };

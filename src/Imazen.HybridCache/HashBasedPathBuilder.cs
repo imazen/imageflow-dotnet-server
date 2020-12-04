@@ -70,7 +70,7 @@ namespace Imazen.HybridCache
             var sb = new StringBuilder(75 + FileExtension.Length);
             //Start with the subfolder distribution in bits, so we can easily delete old folders
             //When we change the subfolder size
-            sb.Append(subfolderBits.ToString("D", NumberFormatInfo.InvariantInfo));
+            sb.AppendFormat(NumberFormatInfo.InvariantInfo, "{0:D}",subfolderBits);
             sb.Append(Path.DirectorySeparatorChar);
             //If subfolders is set above 256, it will nest files in multiple directories, one for each byte
             foreach (var b in allBits)
