@@ -70,8 +70,9 @@ namespace Imazen.HybridCache.Benchmark
                 RequestWavesIntermission = TimeSpan.FromMilliseconds(0),
                 CreationTaskDelay = TimeSpan.FromMilliseconds(0),
                 CreationThreadSleep = TimeSpan.FromMilliseconds(0),
-                DisplayLog = false,
-                MaxLogEntries = 500,
+                DisplayLog = true,
+                Synchronous = true,
+                MaxLogEntries = 75,
                 WaitForKeypress = true,
             };
             Console.WriteLine("Starting HybridCache test with the async queue disabled and the cache limited to 1/5th the needed size");
@@ -357,6 +358,7 @@ namespace Imazen.HybridCache.Benchmark
             public bool WaitForKeypress { get; set; }
             public int RebootCount { get; set; } = 1;
             public int MaxLogEntries { get; set; } = 50;
+            public bool Synchronous { get; set; }
         }
         private static async Task TestRandom(TestParams options, CancellationToken cancellationToken)
         {
@@ -482,7 +484,7 @@ namespace Imazen.HybridCache.Benchmark
                     new RecyclableMemoryStreamManager(Math.Max(2, options.FileSize), 2, options.FileSize * 2 + 2);
                 for (var ix = 0; ix < options.RequestCountPerWave; ix++)
                 {
-                    tasks.Add(Task.Run(async () =>
+                    Func<Task<Tuple<TimeSpan,string>>> task = async () =>
                     {
                         var whichFile = random.Next(options.FileCount);
                         var key = BitConverter.GetBytes(whichFile);
@@ -497,7 +499,15 @@ namespace Imazen.HybridCache.Benchmark
 
                         itemSw.Stop();
                         return new Tuple<TimeSpan, string>(itemSw.Elapsed, cacheResult.Status);
-                    }, cancellationToken));
+                    };
+                    if (options.Synchronous)
+                    {
+                        await task();
+                    }
+                    else
+                    {
+                        tasks.Add(Task.Run(task, cancellationToken));
+                    }
                 }
 
                 await Task.WhenAll(tasks);
