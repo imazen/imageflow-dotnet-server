@@ -244,7 +244,10 @@ namespace Imazen.HybridCache
 
                         var swMarkCreated = Stopwatch.StartNew();
                         // Mark the file as created so it can be deleted
-                        await CleanupManager.MarkFileCreated(entry);
+                        await CleanupManager.MarkFileCreated(entry, 
+                            w.ContentType, 
+                            w.GetUsedBytes(),
+                            DateTime.UtcNow);
                         swMarkCreated.Stop();
                         
                         switch (fileWriteResult.Status)
@@ -317,11 +320,6 @@ namespace Imazen.HybridCache
                         {
                             Logger?.LogError("HybridCache failed to flush async write, {Exception} {DisplayPath}\n{StackTrace}", ex.ToString(),
                                 entry.DisplayPath, ex.StackTrace);
-                        }
-                        finally
-                        {
-                            //TODO: Remove this duplicate line of code
-                            CurrentWrites.Remove(job); //Remove from the queue, it's done or failed. 
                         }
 
                     });

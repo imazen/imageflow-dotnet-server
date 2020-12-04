@@ -18,10 +18,11 @@ namespace Imazen.HybridCache.Tests
                 AsyncLockProvider writeLocks, 
                 CancellationToken cancellationToken) => Task.FromResult(new ReserveSpaceResult(){Success = true});
 
-            public Task MarkFileCreated(CacheEntry cacheEntry)
+            public Task MarkFileCreated(CacheEntry cacheEntry, string contentType, long recordDiskSpace, DateTime createdDate)
             {
                 return Task.FromResult(true);
             }
+            
         }
 
         [Fact]

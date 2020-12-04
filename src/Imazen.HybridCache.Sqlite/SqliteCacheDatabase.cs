@@ -300,6 +300,12 @@ namespace Imazen.HybridCache.Sqlite
             }
         }
 
+        public Task UpdateCreatedDateAtomic(int shard, string relativePath, string contentType, long recordDiskSpace, DateTime createdDate,
+            int accessCountKey)
+        {
+            //TOOD: Make this create the record if it doesn't exist anymore
+            return UpdateCreatedDate(shard, relativePath, createdDate);
+        }
         public async Task UpdateCreatedDate(int shard, string relativePath, DateTime createdDate)
         {
             using (var unused = await dbLock.LockAsync())

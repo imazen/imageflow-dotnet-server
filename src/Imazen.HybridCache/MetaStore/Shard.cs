@@ -62,12 +62,24 @@ namespace Imazen.HybridCache.MetaStore
             }
         }
         
-        public async Task DeleteRecord(ICacheDatabaseRecord record, bool fileDeleted)
+        public async Task DeleteRecord(ICacheDatabaseRecord oldRecord, bool fileDeleted)
         {
-           
-            if ((await GetLoadedDict()).TryRemove(record.RelativePath, out var unused))
+            using (await createLock.LockAsync())
             {
-                await writeLog.LogDeleted(record);
+                if ((await GetLoadedDict()).TryRemove(oldRecord.RelativePath, out var currentRecord))
+                {
+                    if (currentRecord != oldRecord)
+                    {
+                        logger?.LogError(
+                            "DeleteRecord tried to delete a different instance of the record than the one provided. Re-inserting");
+                        (await GetLoadedDict()).TryAdd(oldRecord.RelativePath, currentRecord);
+
+                    }
+                    else
+                    {
+                        await writeLog.LogDeleted(oldRecord);
+                    }
+                }
             }
         }
 
@@ -136,7 +148,7 @@ namespace Imazen.HybridCache.MetaStore
                 }
                 else
                 {
-                    logger?.LogWarning("Entry already exists");
+                    logger?.LogWarning("Database entry already exists");
                 }
             }
 
@@ -144,16 +156,33 @@ namespace Imazen.HybridCache.MetaStore
 
         }
 
-        public async Task UpdateCreatedDate(string relativePath, DateTime createdDate)
+        public async Task UpdateCreatedDate(string relativePath, string contentType, long recordDiskSpace, DateTime createdDate, int accessCountKey)
         {
-            if ((await GetLoadedDict()).TryGetValue(relativePath, out var record))
+            using (await createLock.LockAsync())
             {
-                record.CreatedAt = createdDate;
-                await writeLog.LogUpdated(record);
-            }
-            else
-            {
-                logger?.LogWarning("HybridCache UpdateCreatedDate failed as no such entry exists - {Path}", relativePath);
+                if ((await GetLoadedDict()).TryGetValue(relativePath, out var getRecord))
+                {
+                    getRecord.CreatedAt = createdDate;
+                    await writeLog.LogUpdated(getRecord);
+                }
+                else
+                {
+                    var record = (await GetLoadedDict()).GetOrAdd(relativePath, (s) =>
+
+                        new CacheDatabaseRecord()
+                        {
+                            AccessCountKey = accessCountKey,
+                            ContentType = contentType,
+                            CreatedAt = createdDate,
+                            DiskSize = recordDiskSpace,
+                            LastDeletionAttempt = DateTime.MinValue,
+                            RelativePath = relativePath
+                        }
+                    );
+                    record.CreatedAt = createdDate;
+                    await writeLog.LogCreated(record);
+                    logger?.LogError("HybridCache UpdateCreatedDate had to recreate entry - {Path}", relativePath);
+                }
             }
         }
 
@@ -180,10 +209,7 @@ namespace Imazen.HybridCache.MetaStore
             {
                 throw new InvalidOperationException("Record already moved in database");
             }
-            if (loadedDict.TryRemove(record.RelativePath, out var oldRecord))
-            {
-                await writeLog.LogDeleted(oldRecord);
-            }
+            await DeleteRecord(record, false);
         }
     }
 }

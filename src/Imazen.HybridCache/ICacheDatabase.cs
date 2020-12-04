@@ -78,7 +78,17 @@ namespace Imazen.HybridCache
         /// <returns></returns>
         Task<bool> CreateRecordIfSpace(int shard, string relativePath, string contentType, long recordDiskSpace, DateTime createdDate, int accessCountKey, long diskSpaceLimit);
 
-        Task UpdateCreatedDate(int shard, string relativePath, DateTime createdDate);
+        /// <summary>
+        /// Should only delete the record if the createdDate matches
+        /// </summary>
+        /// <param name="shard"></param>
+        /// <param name="relativePath"></param>
+        /// <param name="contentType"></param>
+        /// <param name="recordDiskSpace"></param>
+        /// <param name="createdDate"></param>
+        /// <param name="accessCountKey"></param>
+        /// <returns></returns>
+        Task UpdateCreatedDateAtomic(int shard, string relativePath, string contentType, long recordDiskSpace, DateTime createdDate, int accessCountKey);
 
         /// <summary>
         /// May require creation of new record and deletion of old, since we are changing the primary key

@@ -49,29 +49,28 @@ namespace Imazen.HybridCache.Benchmark
                 {
                     AsyncCacheOptions = new AsyncCacheOptions()
                     {
-                        MaxQueuedBytes = 0,
+                        MaxQueuedBytes = 0, //100 * 100 * 1000,
                         FailRequestsOnEnqueueLockTimeout = true,
                         WriteSynchronouslyWhenQueueFull = true,
                         MoveFileOverwriteFunc = (from, to) => File.Move(from,to,true)
                     },
                     CleanupManagerOptions = new CleanupManagerOptions()
                     {
-                        MaxCacheBytes = 8192000, // 1/5th the size of the files we are trying to write
+                        MaxCacheBytes = 8192000, // 1/10th the size of the files we are trying to write
                         MinAgeToDelete = TimeSpan.Zero,
                         MinCleanupBytes =  0,
-                        
                     }
                 },
                 UseMetaStore = true,
                 FileSize = 81920,
-                FileCount = 500,
-                RequestCountPerWave = 500,
+                FileCount = 1000,
+                RequestCountPerWave = 3000,
                 RequestWaves = 10,
                 RebootCount = 12,
                 RequestWavesIntermission = TimeSpan.FromMilliseconds(0),
                 CreationTaskDelay = TimeSpan.FromMilliseconds(0),
                 CreationThreadSleep = TimeSpan.FromMilliseconds(0),
-                DisplayLog = true,
+                DisplayLog = false,
                 Synchronous = false,
                 MaxLogEntries = 75,
                 WaitForKeypress = true,
@@ -367,9 +366,6 @@ namespace Imazen.HybridCache.Benchmark
                 throw new OperationCanceledException(cancellationToken);
 
             
-            var loggerFactory = TestLoggerFactory.Create();
-            
-            var logger = loggerFactory.CreateLogger<HybridCache>();
             
             var path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}");
             Directory.CreateDirectory(path);
@@ -382,6 +378,10 @@ namespace Imazen.HybridCache.Benchmark
                 for (var reboot = 0; reboot < options.RebootCount; reboot++)
                 {
                     Console.WriteLine($"------------- Cache Reboot {reboot} ---------------");
+                    
+                    var loggerFactory = TestLoggerFactory.Create();
+            
+                    var logger = loggerFactory.CreateLogger<HybridCache>();
                     
                     ICacheDatabase database;
                     if (options.UseMetaStore)
@@ -503,7 +503,8 @@ namespace Imazen.HybridCache.Benchmark
                     };
                     if (options.Synchronous)
                     {
-                        await task();
+                        var result = await task();
+                        tasks.Add(Task.FromResult(result));
                     }
                     else
                     {
@@ -574,7 +575,7 @@ namespace Imazen.HybridCache.Benchmark
             foreach (var pair in logCounts)
             {
                 var percent = pair.Value * 100.0 / logEntryCount;
-                Console.WriteLine("{0:00.00}% of {1} log entries were {2}", percent, logEntryCount, pair.Key);
+                Console.WriteLine("{0:00.00}% ({1} of {2}) log entries were {3}", percent, pair.Value, logEntryCount, pair.Key);
             }
             
         }

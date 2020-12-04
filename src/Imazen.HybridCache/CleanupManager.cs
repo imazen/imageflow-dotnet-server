@@ -79,7 +79,7 @@ namespace Imazen.HybridCache
                         throw new OperationCanceledException(cancellationToken);
                     
                     if (bytesDeleted >= bytesToDeleteOptimally) break;
-
+                    
                     var deletedBytes = await TryDeleteRecord(shard, record, writeLocks);
                     bytesDeleted += deletedBytes;
                 }
@@ -143,10 +143,17 @@ namespace Imazen.HybridCache
 
             return new ReserveSpaceResult(){ Success = false, Message = $"Eviction worked but CreateRecordIfSpace failed {maxAttempts} times."};
         }
+        
 
-        public Task MarkFileCreated(CacheEntry cacheEntry)
+        public Task MarkFileCreated(CacheEntry cacheEntry, string contentType, long recordDiskSpace, DateTime createdDate)
         {
-            return Database.UpdateCreatedDate(Database.GetShardForKey(cacheEntry.RelativePath), cacheEntry.RelativePath, DateTime.UtcNow);
+            return Database.UpdateCreatedDateAtomic(
+                Database.GetShardForKey(cacheEntry.RelativePath), 
+                cacheEntry.RelativePath, 
+                contentType,
+                EstimateEntryBytesWithOverhead(recordDiskSpace), 
+                createdDate, 
+                AccessCounter.GetHash(cacheEntry.Hash));
         }
 
         /// <summary>

@@ -105,9 +105,9 @@ namespace Imazen.HybridCache.MetaStore
                 accessCountKey, diskSpaceLimit);
         }
 
-        public Task UpdateCreatedDate(int shard, string relativePath, DateTime createdDate)
+        public Task UpdateCreatedDateAtomic(int shard, string relativePath, string contentType, long recordDiskSpace, DateTime createdDate, int accessCountKey)
         {
-            return shards[shard].UpdateCreatedDate(relativePath, createdDate);
+            return shards[shard].UpdateCreatedDate(relativePath, contentType, recordDiskSpace, createdDate, accessCountKey);
         }
 
         public Task ReplaceRelativePathAndUpdateLastDeletion(int shard, ICacheDatabaseRecord record, string movedRelativePath,
