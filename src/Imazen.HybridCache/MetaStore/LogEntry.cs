@@ -1,5 +1,4 @@
 using System;
-using Imazen.HybridCache.Sqlite;
 
 namespace Imazen.HybridCache.MetaStore
 {

@@ -8,7 +8,6 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Imazen.HybridCache.Sqlite;
 using Microsoft.Extensions.Logging;
 
 namespace Imazen.HybridCache.MetaStore

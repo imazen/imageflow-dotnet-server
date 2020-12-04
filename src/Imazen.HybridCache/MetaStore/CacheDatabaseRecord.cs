@@ -1,6 +1,6 @@
 using System;
 
-namespace Imazen.HybridCache.Sqlite
+namespace Imazen.HybridCache.MetaStore
 {
     internal class CacheDatabaseRecord: ICacheDatabaseRecord   
     {
