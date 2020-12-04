@@ -22,6 +22,9 @@ namespace Imazen.HybridCache
             Database = cacheDatabase;
             PathBuilder = new HashBasedPathBuilder(options.PhysicalCacheDir, options.Subfolders,
                 Path.DirectorySeparatorChar, ".jpg");
+            options.CleanupManagerOptions.MoveFileOverwriteFunc = options.CleanupManagerOptions.MoveFileOverwriteFunc ??
+                                                                  options.AsyncCacheOptions.MoveFileOverwriteFunc;
+            
             CleanupManager = new CleanupManager(options.CleanupManagerOptions, Database, logger, PathBuilder);
             AsyncCache = new AsyncCache(options.AsyncCacheOptions, CleanupManager,PathBuilder, logger);
         }

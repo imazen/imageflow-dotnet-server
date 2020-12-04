@@ -19,12 +19,14 @@ namespace Imazen.HybridCache
             FileAlreadyExists,
             LockTimeout,
         }
-        
+
+        private Action<string, string> moveFileOverwriteFunc;
         private AsyncLockProvider WriteLocks { get; }
 
-        public CacheFileWriter(AsyncLockProvider writeLocks)
+        public CacheFileWriter(AsyncLockProvider writeLocks, Action<string,string> moveFileOverwriteFunc)
         {
             WriteLocks = writeLocks;
+            this.moveFileOverwriteFunc = moveFileOverwriteFunc ?? File.Move;
         }
 
 
@@ -92,7 +94,8 @@ namespace Imazen.HybridCache
 
                             try
                             {
-                                File.Move(tempFile, entry.PhysicalPath);
+                                
+                                moveFileOverwriteFunc(tempFile, entry.PhysicalPath);
                                 result.Status = FileWriteStatus.FileCreated;
                                 finished = true;
                             }

@@ -24,8 +24,6 @@ namespace Imazen.HybridCache
         
         private HashBasedPathBuilder PathBuilder { get; }
         private ILogger Logger { get; }
-
-        private AsyncLockProvider DeleteLocks { get; } = new AsyncLockProvider();
         public CleanupManager(CleanupManagerOptions options, ICacheDatabase database, ILogger logger, HashBasedPathBuilder pathBuilder)
         {
             PathBuilder = pathBuilder;
@@ -54,7 +52,7 @@ namespace Imazen.HybridCache
             return withFileDescriptor;
         }
 
-        private async Task<ReserveSpaceResult> EvictSpace(int shard, long diskSpace, CancellationToken cancellationToken)
+        private async Task<ReserveSpaceResult> EvictSpace(int shard, long diskSpace, AsyncLockProvider writeLocks, CancellationToken cancellationToken)
         {
             
             var bytesToDeleteOptimally = Math.Max(Options.MinCleanupBytes, diskSpace);
@@ -82,7 +80,7 @@ namespace Imazen.HybridCache
                     
                     if (bytesDeleted >= bytesToDeleteOptimally) break;
 
-                    var deletedBytes = await TryDeleteRecord(shard, record);
+                    var deletedBytes = await TryDeleteRecord(shard, record, writeLocks);
                     bytesDeleted += deletedBytes;
                 }
 
@@ -104,7 +102,7 @@ namespace Imazen.HybridCache
         }
 
         public async Task<ReserveSpaceResult> TryReserveSpace(CacheEntry cacheEntry, string contentType, int byteCount,
-            bool allowEviction,
+            bool allowEviction, AsyncLockProvider writeLocks,
             CancellationToken cancellationToken)
         {
             var shard = Database.GetShardForKey(cacheEntry.RelativePath);
@@ -136,7 +134,7 @@ namespace Imazen.HybridCache
                 
                 var missingSpace = Math.Max(0, await Database.GetShardSize(shard) + entryDiskSpace - shardSizeLimit);
                 // Evict space 
-                var evictResult = await EvictSpace(shard, missingSpace, cancellationToken);
+                var evictResult = await EvictSpace(shard, missingSpace, writeLocks, cancellationToken);
                 if (!evictResult.Success)
                 {
                     return evictResult; //We failed to evict enough space from the cache
@@ -159,10 +157,10 @@ namespace Imazen.HybridCache
         /// <param name="shard"></param>
         /// <param name="record"></param>
         /// <returns></returns>
-        private async Task<long> TryDeleteRecord(int shard, ICacheDatabaseRecord record)
+        private async Task<long> TryDeleteRecord(int shard, ICacheDatabaseRecord record, AsyncLockProvider writeLocks)
         {
             long bytesDeleted = 0;
-            var unused = await DeleteLocks.TryExecuteAsync(record.RelativePath, 0, CancellationToken.None, async () =>
+            var unused = await writeLocks.TryExecuteAsync(record.RelativePath, 0, CancellationToken.None, async () =>
             {
                 var physicalPath = PathBuilder.GetPhysicalPathFromRelativePath(record.RelativePath);
                 try
@@ -193,7 +191,7 @@ namespace Imazen.HybridCache
                     try
                     {
                         //Move it so it usage will decrease and it can be deleted later
-                        File.Move(physicalPath, movedPath);
+                        (Options.MoveFileOverwriteFunc ?? File.Move)(physicalPath, movedPath);
                         await Database.ReplaceRelativePathAndUpdateLastDeletion(shard, record, movedRelativePath,
                             DateTime.UtcNow);
                         Logger?.LogError(ioException,"HybridCache: Error deleting file, moved for eventual deletion");

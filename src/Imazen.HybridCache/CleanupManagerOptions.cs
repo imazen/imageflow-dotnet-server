@@ -35,5 +35,10 @@ namespace Imazen.HybridCache
         /// How many records to pull at a time when doing cleanup
         /// </summary>
         public int CleanupSelectBatchSize { get; set; } = 100;
+        
+        /// <summary>
+        /// If this is used from .NET Core, set to File.Move(from, to, true)
+        /// </summary>
+        public Action<string,string> MoveFileOverwriteFunc { get; set; }
     }
 }

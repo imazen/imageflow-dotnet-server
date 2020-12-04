@@ -1,3 +1,5 @@
+using System;
+
 namespace Imazen.HybridCache
 {
     public class AsyncCacheOptions
@@ -9,6 +11,11 @@ namespace Imazen.HybridCache
         public bool FailRequestsOnEnqueueLockTimeout { get; set; } = true;
         
         public bool WriteSynchronouslyWhenQueueFull { get; set; } = true;
+        
+        /// <summary>
+        /// If this is used from .NET Core, set to File.Move(from, to, true)
+        /// </summary>
+        public Action<string,string> MoveFileOverwriteFunc { get; set; }
         
     }
 }

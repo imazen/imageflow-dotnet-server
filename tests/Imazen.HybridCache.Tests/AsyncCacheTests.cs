@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Imazen.Common.Concurrency;
 using Imazen.Common.Extensibility.StreamCache;
 using Xunit;
 
@@ -14,6 +15,7 @@ namespace Imazen.HybridCache.Tests
             public void NotifyUsed(CacheEntry cacheEntry){}
             public Task<string> GetContentType(CacheEntry cacheEntry, CancellationToken cancellationToken) => null;
             public Task<ReserveSpaceResult> TryReserveSpace(CacheEntry cacheEntry, string contentType, int byteCount, bool allowEviction,
+                AsyncLockProvider writeLocks, 
                 CancellationToken cancellationToken) => Task.FromResult(new ReserveSpaceResult(){Success = true});
 
             public Task MarkFileCreated(CacheEntry cacheEntry)

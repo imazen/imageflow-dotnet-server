@@ -1,5 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
+using Imazen.Common.Concurrency;
 
 namespace Imazen.HybridCache
 {
@@ -12,7 +13,7 @@ namespace Imazen.HybridCache
     {
         void NotifyUsed(CacheEntry cacheEntry);
         Task<string> GetContentType(CacheEntry cacheEntry, CancellationToken cancellationToken);
-        Task<ReserveSpaceResult> TryReserveSpace(CacheEntry cacheEntry, string contentType, int byteCount, bool allowEviction, CancellationToken cancellationToken);
+        Task<ReserveSpaceResult> TryReserveSpace(CacheEntry cacheEntry, string contentType, int byteCount, bool allowEviction, AsyncLockProvider writeLocks, CancellationToken cancellationToken);
 
         Task MarkFileCreated(CacheEntry cacheEntry);
     }

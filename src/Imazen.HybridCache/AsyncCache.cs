@@ -23,7 +23,8 @@ namespace Imazen.HybridCache
             Miss,
             CacheEvictionFailed,
             WriteTimedOut,
-            QueueLockTimeoutAndFailed
+            QueueLockTimeoutAndFailed,
+            EvictAndWriteLockTimedOut
         }
         public class AsyncCacheResult : IStreamCacheResult
         {
@@ -40,10 +41,11 @@ namespace Imazen.HybridCache
             PathBuilder = pathBuilder;
             CleanupManager = cleanupManager;
             Logger = logger;
-            Locks = new AsyncLockProvider();
+            FileWriteLocks = new AsyncLockProvider();
             QueueLocks = new AsyncLockProvider();
+            EvictAndWriteLocks = new AsyncLockProvider();
             CurrentWrites = new AsyncWriteCollection(options.MaxQueuedBytes);
-            FileWriter = new CacheFileWriter(Locks);
+            FileWriter = new CacheFileWriter(FileWriteLocks, Options.MoveFileOverwriteFunc);
         }
 
         
@@ -56,7 +58,10 @@ namespace Imazen.HybridCache
         /// <summary>
         /// Provides string-based locking for file write access.
         /// </summary>
-        private AsyncLockProvider Locks {get; }
+        private AsyncLockProvider FileWriteLocks {get; }
+        
+        
+        private AsyncLockProvider EvictAndWriteLocks {get; }
         
         private CacheFileWriter FileWriter { get; }
 
@@ -207,14 +212,14 @@ namespace Imazen.HybridCache
 
                     // Create a lambda which we can call either in a spawned Task (if enqueued successfully), or
                     // in this task, if our buffer is full.
-                    async Task<AsyncCacheDetailResult> EvictWriteAndLog(bool queueFull, TimeSpan dataCreationTime,  CancellationToken ct)
+                    async Task<AsyncCacheDetailResult> EvictWriteAndLogUnsynchronized(bool queueFull, TimeSpan dataCreationTime,  CancellationToken ct)
                     {
                         var delegateStartedAt = DateTime.UtcNow;
                         var swReserveSpace = Stopwatch.StartNew();
                         //We only permit eviction proceedings from within the queue or if the queue is disabled
                         var allowEviction = !queueFull || CurrentWrites.MaxQueueBytes <= 0;
                         var reserveSpaceResult = await CleanupManager.TryReserveSpace(entry, w.ContentType, 
-                            w.GetUsedBytes(), allowEviction, ct);
+                            w.GetUsedBytes(), allowEviction, EvictAndWriteLocks, ct);
                         swReserveSpace.Stop();
 
                         var syncString = queueFull ? "synchronous" : "async";
@@ -281,12 +286,32 @@ namespace Imazen.HybridCache
                         }
                     }
 
+                    async Task<AsyncCacheDetailResult> EvictWriteAndLogSynchronized(bool queueFull,
+                        TimeSpan dataCreationTime, CancellationToken ct)
+                    {
+                        var cacheDetailResult = AsyncCacheDetailResult.Unknown;
+                        var writeLockComplete = await EvictAndWriteLocks.TryExecuteAsync(entry.StringKey,
+                            Options.WaitForIdenticalRequestsTimeoutMs, cancellationToken,
+                            async () =>
+                            {
+                                cacheDetailResult =
+                                    await EvictWriteAndLogUnsynchronized(queueFull, dataCreationTime, ct);
+                            });
+                        if (!writeLockComplete)
+                        {
+                            cacheDetailResult = AsyncCacheDetailResult.EvictAndWriteLockTimedOut;
+                        }
+
+                        return cacheDetailResult;
+                    }
+                    
+
                     var swEnqueue = Stopwatch.StartNew();
                     var queueResult = CurrentWrites.Queue(w, async delegate(AsyncWrite job)
                     {
                         try
                         {
-                            var unused = await EvictWriteAndLog(false, swDataCreation.Elapsed, CancellationToken.None);
+                            var unused = await EvictWriteAndLogSynchronized(false, swDataCreation.Elapsed, CancellationToken.None);
                         }
                         catch (Exception ex)
                         {
@@ -308,7 +333,7 @@ namespace Imazen.HybridCache
                     {
                         if (Options.WriteSynchronouslyWhenQueueFull)
                         {
-                            var writerDelegateResult = await EvictWriteAndLog(true, swDataCreation.Elapsed, cancellationToken);
+                            var writerDelegateResult = await EvictWriteAndLogSynchronized(true, swDataCreation.Elapsed, cancellationToken);
                             cacheResult.Detail = writerDelegateResult;
                         }
                     }
