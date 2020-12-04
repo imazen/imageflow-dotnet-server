@@ -4,8 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Imazen.Common.Concurrency;
 using Microsoft.Extensions.Logging;
-using NeoSmart.AsyncLock;
 
 namespace Imazen.HybridCache.MetaStore
 {
@@ -20,8 +20,8 @@ namespace Imazen.HybridCache.MetaStore
         
         private volatile ConcurrentDictionary<string, CacheDatabaseRecord> dict;
 
-        private readonly AsyncLock readLock = new AsyncLock();
-        private readonly AsyncLock createLock = new AsyncLock();
+        private readonly BasicAsyncLock readLock = new BasicAsyncLock();
+        private readonly BasicAsyncLock createLock = new BasicAsyncLock();
         internal Shard(int shardId, MetaStoreOptions options, string databaseDir,  ILogger logger)
         {
             this.shardId = shardId;

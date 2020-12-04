@@ -8,8 +8,4 @@
       <ProjectReference Include="..\Imazen.Common\Imazen.Common.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <PackageReference Include="NeoSmart.AsyncLock" Version="0.3.0.2" />
-    </ItemGroup>
-
 </Project>
