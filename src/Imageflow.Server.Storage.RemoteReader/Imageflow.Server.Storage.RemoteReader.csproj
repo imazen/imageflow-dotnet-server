@@ -16,6 +16,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="README.md" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Imageflow.Server\Imageflow.Server.csproj" />
     <ProjectReference Include="..\Imazen.Common\Imazen.Common.csproj" />
   </ItemGroup>

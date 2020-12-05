@@ -1,4 +1,5 @@
-﻿using Imazen.Common.Storage;
+﻿using Imazen.Common.Helpers;
+using Imazen.Common.Storage;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -6,7 +7,6 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Imazen.Common.Helpers;
 
 namespace Imageflow.Server.Storage.RemoteReader
 {
@@ -14,21 +14,23 @@ namespace Imageflow.Server.Storage.RemoteReader
     {
 
         private readonly List<string> prefixes = new List<string>();
-        private readonly HttpClient http;
+        private readonly IHttpClientFactory httpFactory;
         private readonly RemoteReaderServiceOptions options;
-        // ReSharper disable once NotAccessedField.Local
         private readonly ILogger<RemoteReaderService> logger;
+        private readonly Func<Uri, string> httpClientSelector;
 
-        public RemoteReaderService(RemoteReaderServiceOptions options, ILogger<RemoteReaderService> logger)
+        public RemoteReaderService(RemoteReaderServiceOptions options
+            , ILogger<RemoteReaderService> logger
+            , IHttpClientFactory httpFactory
+            )
         {
             this.options = options;
             this.logger = logger;
+            this.httpFactory = httpFactory;
+            httpClientSelector = options.HttpClientSelector ?? (_ => "");
 
             prefixes.AddRange(this.options.Prefixes);
             prefixes.Sort((a, b) => b.Length.CompareTo(a.Length));
-
-            http = new HttpClient();
-            http.DefaultRequestHeaders.Add("user-agent", this.options.UserAgent);
         }
 
         /// <summary>
@@ -42,42 +44,56 @@ namespace Imageflow.Server.Storage.RemoteReader
         {
             var remote = virtualPath
                 .Split('/')
-                .Last()
+                .Last()?
                 .Split('.');
+
+            if (remote == null || remote.Length < 2)
+            {
+                logger?.LogWarning("Invalid remote path: {VirtualPath}", virtualPath);
+                throw new BlobMissingException($"Invalid remote path: {virtualPath}");
+            }
 
             var urlBase64 = remote[0];
             var hmac = remote[1];
             var sig = Signatures.SignString(urlBase64, options.SigningKey, 8);
 
             if (hmac != sig)
+            {
+                logger?.LogWarning("Missing or Invalid signature on remote path: {VirtualPath}", virtualPath);
                 throw new BlobMissingException($"Missing or Invalid signature on remote path: {virtualPath}");
+            }
 
             var url = EncodingUtils.FromBase64UToString(urlBase64);
+
+            if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
+            {
+                logger?.LogWarning("RemoteReader blob {VirtualPath} not found. Invalid Uri: {Url}", virtualPath, url);
+                throw new BlobMissingException($"RemoteReader blob \"{virtualPath}\" not found. Invalid Uri: {url}");
+            }
+
+            var httpClientName = httpClientSelector(uri);
+            using var http = httpFactory.CreateClient(httpClientName);
 
             try
             {
                 var resp = await http.GetAsync(url);
 
-                var redirectCount = 0;
-
-                while (resp.StatusCode == System.Net.HttpStatusCode.Redirect
-                    && redirectCount++ < options.RedirectLimit
-                    && resp.Headers.Location != null
-                    )
-                {
-                    resp = await http.GetAsync(resp.Headers.Location);
-                }
-
                 if (!resp.IsSuccessStatusCode)
                 {
-                    throw new BlobMissingException($"RemoteReader blob \"{virtualPath}\" not found.");
+                    logger?.LogWarning("RemoteReader blob {VirtualPath} not found. The remote {Url} responded with status: {StatusCode}", virtualPath, url, resp.StatusCode);
+                    throw new BlobMissingException($"RemoteReader blob \"{virtualPath}\" not found. The remote \"{url}\" responded with status: {resp.StatusCode}");
                 }
 
                 return new RemoteReaderBlob(resp);
             }
+            catch (BlobMissingException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
-                throw new BlobMissingException($"RemoteReader blob error retrieving \"{virtualPath}\" .", ex);
+                logger?.LogWarning(ex, "RemoteReader blob error retrieving {Url} for {VirtualPath}.", url, virtualPath);
+                throw new BlobMissingException($"RemoteReader blob error retrieving \"{url}\" for \"{virtualPath}\".", ex);
             }
         }
 
@@ -102,7 +118,5 @@ namespace Imageflow.Server.Storage.RemoteReader
             var sig = Signatures.SignString(data, key,8);
             return $"{data}.{sig}.{sanitizedExtension}";
         }
-
-
     }
 }
