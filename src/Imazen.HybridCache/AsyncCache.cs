@@ -99,7 +99,7 @@ namespace Imazen.HybridCache
                 {
                     Detail = AsyncCacheDetailResult.DiskHit,
                     ContentType = contentType,
-                    Data = new FileStream(entry.PhysicalPath, FileMode.Open, FileAccess.Read, FileShare.Read)
+                    Data = new FileStream(entry.PhysicalPath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, FileOptions.Asynchronous | FileOptions.SequentialScan)
                 };
             }
             catch (FileNotFoundException)

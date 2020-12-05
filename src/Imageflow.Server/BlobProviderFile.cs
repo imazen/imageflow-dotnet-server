@@ -11,7 +11,7 @@ namespace Imageflow.Server
         public DateTime? LastModifiedDateUtc { get; set; }
         public Stream OpenRead()
         {
-            return File.OpenRead(Path);
+            return new FileStream(Path, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, FileOptions.Asynchronous | FileOptions.SequentialScan);
         }
 
         public void Dispose()

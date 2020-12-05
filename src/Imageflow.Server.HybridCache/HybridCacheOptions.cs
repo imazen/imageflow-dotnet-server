@@ -12,7 +12,7 @@ namespace Imageflow.Server.HybridCache
         public long MaxWriteQueueBytes { get; set; } = 100 * 1024 * 1024;
 
         /// <summary>
-        /// Defaults to 1 GiB
+        /// Defaults to 1 GiB. Don't set below 35MB or no files will be cached
         /// </summary>
         public long CacheSizeLimitInBytes { get; set; } = 1 * 1024 * 1024 * 1024;
         
