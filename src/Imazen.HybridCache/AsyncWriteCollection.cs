@@ -26,6 +26,7 @@ namespace Imazen.HybridCache {
         /// </summary>
         public long MaxQueueBytes { get; }
 
+        private long queuedBytes = 0;
         /// <summary>
         /// If the collection contains the specified item, it is returned. Otherwise, null is returned.
         /// </summary>
@@ -36,29 +37,16 @@ namespace Imazen.HybridCache {
                 return c.TryGetValue(key, out var result) ? result : null;
             }
         }
-
-        /// <summary>
-        /// Returns how many bytes are allocated by buffers in the queue. May be 2x the amount of data. Represents how much ram is being used by the queue, not the amount of encoded bytes that will actually be written.
-        /// </summary>
-        /// <returns></returns>
-        private long GetQueuedBufferBytes() {
-            lock (sync) {
-                long total = 0;
-                foreach (AsyncWrite value in c.Values) {
-                    if (value == null) continue;
-                    total += value.GetBufferLength();
-                }
-                return total;
-            }
-        }
-
+        
         /// <summary>
         /// Removes the specified object based on its relativePath and modifiedDateUtc values.
         /// </summary>
         /// <param name="w"></param>
         public void Remove(AsyncWrite w) {
-            lock (sync) {
+            lock (sync)
+            {
                 c.Remove(w.Key);
+                queuedBytes -= w.GetEntrySizeInMemory();
             }
         }
 
@@ -75,10 +63,13 @@ namespace Imazen.HybridCache {
         /// <param name="writerDelegate"></param>
         /// <returns></returns>
         public AsyncQueueResult Queue(AsyncWrite w, Func<AsyncWrite, Task> writerDelegate){
-            lock (sync) {
-                if (GetQueuedBufferBytes() + w.GetBufferLength() > MaxQueueBytes) return AsyncQueueResult.QueueFull; //Because we would use too much ram.
+            lock (sync)
+            {
+                if (queuedBytes < 0) throw new InvalidOperationException();
+                if (queuedBytes + w.GetEntrySizeInMemory() > MaxQueueBytes) return AsyncQueueResult.QueueFull; //Because we would use too much ram.
                 if (c.ContainsKey(w.Key)) return AsyncQueueResult.AlreadyPresent; //We already have a queued write for this data.
                 c.Add(w.Key, w);
+                queuedBytes += w.GetEntrySizeInMemory();
                 w.RunningTask = Task.Run(
                     async () => {
                         try

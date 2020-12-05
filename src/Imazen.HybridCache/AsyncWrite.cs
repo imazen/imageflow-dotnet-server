@@ -28,11 +28,21 @@ namespace Imazen.HybridCache {
         /// </summary>
         public DateTime JobCreatedAt { get; }
 
+        
+        /// <summary>
+        /// Returns the length of the buffer plus 100 bytes for the AsyncWrite instance in memory
+        /// </summary>
+        /// <returns></returns>
+        public long GetEntrySizeInMemory()
+        {
+            return GetBufferLength() + 100;
+        }
+        
         /// <summary>
         /// Returns the length of the buffer capacity
         /// </summary>
         /// <returns></returns>
-        public long GetBufferLength() {
+        private long GetBufferLength() {
             return data.Array?.Length ?? 0;
         }
         /// <summary>
@@ -51,5 +61,7 @@ namespace Imazen.HybridCache {
             //Wrap the original buffer in a new MemoryStream.
             return new MemoryStream(data.Array ?? throw new NullReferenceException(), data.Offset, data.Count, false, true);
         }
+
+
     }
 }
