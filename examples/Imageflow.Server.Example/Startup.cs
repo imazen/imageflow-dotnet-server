@@ -12,8 +12,6 @@ using Imageflow.Server.Storage.AzureBlob;
 using Imageflow.Server.Storage.S3;
 using System;
 using Imageflow.Server.HybridCache;
-using Imageflow.Server.HybridSqliteCache;
-using Imageflow.Server.SqliteCache;
 using Imageflow.Server.Storage.RemoteReader;
 
 namespace Imageflow.Server.Example
