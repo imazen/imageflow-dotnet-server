@@ -34,8 +34,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Imageflow.Server.Tests", "t
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Imageflow.Server.ExampleMinimal", "examples\Imageflow.Server.ExampleMinimal\Imageflow.Server.ExampleMinimal.csproj", "{3A49829E-C85F-4BE2-8D6E-AFA129C5BB2C}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Imageflow.Server.SqliteCache", "src\Imageflow.Server.SqliteCache\Imageflow.Server.SqliteCache.csproj", "{F49EA90B-0673-4DC1-9F0A-DB147646D8A3}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Imageflow.Server.Storage.RemoteReader", "src\Imageflow.Server.Storage.RemoteReader\Imageflow.Server.Storage.RemoteReader.csproj", "{CA4FF20A-2B21-4FDA-85BD-E3B84610483C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imageflow.Server.ExampleDocker", "examples\Imageflow.Server.ExampleDocker\Imageflow.Server.ExampleDocker.csproj", "{E3AF3896-73D4-4240-915D-871B0F9D07B5}"
@@ -106,10 +104,6 @@ Global
 		{3A49829E-C85F-4BE2-8D6E-AFA129C5BB2C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3A49829E-C85F-4BE2-8D6E-AFA129C5BB2C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3A49829E-C85F-4BE2-8D6E-AFA129C5BB2C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{F49EA90B-0673-4DC1-9F0A-DB147646D8A3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F49EA90B-0673-4DC1-9F0A-DB147646D8A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F49EA90B-0673-4DC1-9F0A-DB147646D8A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F49EA90B-0673-4DC1-9F0A-DB147646D8A3}.Release|Any CPU.Build.0 = Release|Any CPU
 		{CA4FF20A-2B21-4FDA-85BD-E3B84610483C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{CA4FF20A-2B21-4FDA-85BD-E3B84610483C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CA4FF20A-2B21-4FDA-85BD-E3B84610483C}.Release|Any CPU.ActiveCfg = Release|Any CPU
