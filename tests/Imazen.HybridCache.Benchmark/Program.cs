@@ -48,7 +48,7 @@ namespace Imazen.HybridCache.Benchmark
             {
                 CacheOptions = new HybridCacheOptions(null)
                 {
-                    Subfolders = 8192,
+                    Subfolders = 2048,
                     AsyncCacheOptions = new AsyncCacheOptions()
                     {
                         MaxQueuedBytes = 100 * 100 * 1000,

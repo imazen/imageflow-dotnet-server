@@ -11,9 +11,9 @@ namespace Imazen.HybridCache.MetaStore
         /// </summary>
         public string DatabaseDir { get; set; }
         /// <summary>
-        /// The number of shards to create
+        /// The number of shards to create. Defaults to 8
         /// </summary>
-        public int Shards { get; set; } = 1;
+        public int Shards { get; set; } = 8;
 
         /// <summary>
         /// The maximum number of log files per shard to permit. Log files will be merged when this value is exceeded.
