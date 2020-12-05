@@ -22,13 +22,13 @@ namespace Imazen.HybridCache.MetaStore
 
         private readonly BasicAsyncLock readLock = new BasicAsyncLock();
         private readonly BasicAsyncLock createLock = new BasicAsyncLock();
-        internal Shard(int shardId, MetaStoreOptions options, string databaseDir,  ILogger logger)
+        internal Shard(int shardId, MetaStoreOptions options, string databaseDir, long directoryEntriesBytes,  ILogger logger)
         {
             this.shardId = shardId;
             this.options = options;
             this.databaseDir = databaseDir;
             this.logger = logger;
-            writeLog = new WriteLog(shardId, databaseDir, options, logger);
+            writeLog = new WriteLog(shardId, databaseDir, options, directoryEntriesBytes + CleanupManager.DirectoryEntrySize(), logger);
         }
 
 

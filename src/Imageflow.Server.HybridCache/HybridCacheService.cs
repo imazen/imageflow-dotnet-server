@@ -15,12 +15,8 @@ namespace Imageflow.Server.HybridCache
         private readonly Imazen.HybridCache.HybridCache cache;
         public HybridCacheService(HybridCacheOptions options, ILogger<HybridCacheService> logger)
         {
-            var database = new Imazen.HybridCache.MetaStore.MetaStore(new MetaStoreOptions(options.DiskCacheDirectory)
-            {
-                Shards = 16,
-                MaxLogFilesPerShard = 3,
-            }, logger);
-            cache = new Imazen.HybridCache.HybridCache(database, new Imazen.HybridCache.HybridCacheOptions(options.DiskCacheDirectory)
+
+            var cacheOptions = new Imazen.HybridCache.HybridCacheOptions(options.DiskCacheDirectory)
             {
                 AsyncCacheOptions = new AsyncCacheOptions()
                 {
@@ -33,7 +29,13 @@ namespace Imageflow.Server.HybridCache
                     MinCleanupBytes = options.MinCleanupBytes,
                     MinAgeToDelete = options.MinAgeToDelete,
                 }
-            }, logger);
+            };
+            var database = new Imazen.HybridCache.MetaStore.MetaStore(new MetaStoreOptions(options.DiskCacheDirectory)
+            {
+                Shards = 16,
+                MaxLogFilesPerShard = 3,
+            }, cacheOptions, logger);
+            cache = new Imazen.HybridCache.HybridCache(database,cacheOptions , logger);
         }
 
         public IEnumerable<IIssue> GetIssues()

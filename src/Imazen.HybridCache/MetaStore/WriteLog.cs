@@ -25,13 +25,15 @@ namespace Imazen.HybridCache.MetaStore
         private long previousLogsBytes;
         private long logBytes;
         private long diskBytes;
+        private long directoryEntriesBytes;
         
-        public WriteLog(int shardId, string databaseDir, MetaStoreOptions options, ILogger logger)
+        public WriteLog(int shardId, string databaseDir, MetaStoreOptions options, long directoryEntriesBytes, ILogger logger)
         {
             this.shardId = shardId;
             this.databaseDir = databaseDir;
             this.options = options;
             this.logger = logger;
+            this.directoryEntriesBytes = directoryEntriesBytes;
         }
 
         public Task StopAsync(CancellationToken cancellationToken)
@@ -289,7 +291,7 @@ namespace Imazen.HybridCache.MetaStore
 
         public long GetDiskSize()
         {
-            return diskBytes + CleanupManager.EstimateEntryBytesWithOverhead(logBytes) + previousLogsBytes;
+            return diskBytes + CleanupManager.EstimateEntryBytesWithOverhead(logBytes) + previousLogsBytes + directoryEntriesBytes;
         }
     }
 }

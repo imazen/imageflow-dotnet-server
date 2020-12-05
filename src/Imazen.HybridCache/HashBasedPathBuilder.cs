@@ -89,7 +89,27 @@ namespace Imazen.HybridCache
             return sb.ToString();
         }
 
+        public long GetDirectoryEntriesBytesTotal()
+        {
+            return GetDirectoryEntriesCount() * CleanupManager.DirectoryEntrySize() + CleanupManager.DirectoryEntrySize();
+        }
+        private long GetDirectoryEntriesCount()
+        {
+            var allBits = GetTrailingBits(new byte[]{255,255,255,255,255,255}, subfolderBits);
 
+            var totalDirs = 1;
+            foreach (var b in allBits)
+            {
+                totalDirs = totalDirs * (b + 1);
+            }
+            
+            totalDirs = totalDirs + totalDirs / (256 * 256 * 256);
+            totalDirs = totalDirs + totalDirs / (256 * 256);
+            totalDirs = totalDirs + totalDirs / 256;
+            
+            return totalDirs;
+        }
+        
         internal static byte[] GetTrailingBits(byte[] data, int bits)
         {
             var trailingBytes = new byte[(int) Math.Ceiling(bits / 8.0)]; //Round up to bytes.
@@ -104,5 +124,7 @@ namespace Imazen.HybridCache
             var hash = HashKeyBasis(keyBasis);
             return GetRelativePathFromHash(hash);
         }
+
+
     }
 }

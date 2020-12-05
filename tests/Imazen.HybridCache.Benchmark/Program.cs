@@ -25,7 +25,8 @@ namespace Imazen.HybridCache.Benchmark
                 e.Cancel = true;
             };
 
-            await TestSyncVeryLimitedCacheWavesMetaStore(cts.Token);
+            await TestSyncMediumLimitedCacheWavesMetaStore(cts.Token);
+            //await TestSyncVeryLimitedCacheWavesMetaStore(cts.Token);
             //await TestMassiveFileQuantityMetaStore(cts.Token);
             //await TestMassiveFileQuantity(cts.Token);
             //await TestSyncVeryLimitedCacheWaves(cts.Token);
@@ -41,12 +42,57 @@ namespace Imazen.HybridCache.Benchmark
 
         }
         
+        private static async Task TestSyncMediumLimitedCacheWavesMetaStore(CancellationToken cancellationToken)
+        {
+            var options = new TestParams()
+            {
+                CacheOptions = new HybridCacheOptions(null)
+                {
+                    Subfolders = 8192,
+                    AsyncCacheOptions = new AsyncCacheOptions()
+                    {
+                        MaxQueuedBytes = 100 * 100 * 1000,
+                        FailRequestsOnEnqueueLockTimeout = true,
+                        WriteSynchronouslyWhenQueueFull = true,
+                        MoveFileOverwriteFunc = (from, to) => File.Move(from,to,true)
+                    },
+                    CleanupManagerOptions = new CleanupManagerOptions()
+                    {
+                        MaxCacheBytes = 409600000, // 1/2th the size of the files we are trying to write
+                        MinAgeToDelete = TimeSpan.Zero,
+                        MinCleanupBytes =  0,
+                    },
+                },
+                MetaStoreOptions = new MetaStoreOptions(null)
+                {
+                    Shards = 32
+                },
+                UseMetaStore = true,
+                FileSize = 81920,
+                FileCount = 10000,
+                RequestCountPerWave = 1000,
+                RequestWaves = 10,
+                RebootCount = 12,
+                RequestWavesIntermission = TimeSpan.FromMilliseconds(15),
+                CreationTaskDelay = TimeSpan.FromMilliseconds(0),
+                CreationThreadSleep = TimeSpan.FromMilliseconds(0),
+                DisplayLog = false,
+                Synchronous = false,
+                MaxLogEntries = 75,
+                WaitForKeypress = true,
+            };
+            Console.WriteLine("Starting HybridCache test with the async queue disabled and the cache limited to 1/5th the needed size");
+            await TestRandom(options, cancellationToken);
+        }
+        
+        
         private static async Task TestSyncVeryLimitedCacheWavesMetaStore(CancellationToken cancellationToken)
         {
             var options = new TestParams()
             {
                 CacheOptions = new HybridCacheOptions(null)
                 {
+                    Subfolders = 1,
                     AsyncCacheOptions = new AsyncCacheOptions()
                     {
                         MaxQueuedBytes = 0, //100 * 100 * 1000,
@@ -59,15 +105,19 @@ namespace Imazen.HybridCache.Benchmark
                         MaxCacheBytes = 8192000, // 1/10th the size of the files we are trying to write
                         MinAgeToDelete = TimeSpan.Zero,
                         MinCleanupBytes =  0,
-                    }
+                    },
+                },
+                MetaStoreOptions = new MetaStoreOptions(null)
+                {
+                    Shards = 1
                 },
                 UseMetaStore = true,
                 FileSize = 81920,
-                FileCount = 1000,
-                RequestCountPerWave = 3000,
-                RequestWaves = 10,
+                FileCount = 4000,
+                RequestCountPerWave = 400,
+                RequestWaves = 30,
                 RebootCount = 12,
-                RequestWavesIntermission = TimeSpan.FromMilliseconds(0),
+                RequestWavesIntermission = TimeSpan.FromMilliseconds(15),
                 CreationTaskDelay = TimeSpan.FromMilliseconds(0),
                 CreationThreadSleep = TimeSpan.FromMilliseconds(0),
                 DisplayLog = false,
@@ -386,7 +436,7 @@ namespace Imazen.HybridCache.Benchmark
                     ICacheDatabase database;
                     if (options.UseMetaStore)
                     {
-                        database = new MetaStore.MetaStore(options.MetaStoreOptions, logger);
+                        database = new MetaStore.MetaStore(options.MetaStoreOptions, options.CacheOptions, logger);
                     }
                     else
                     {
@@ -623,24 +673,38 @@ namespace Imazen.HybridCache.Benchmark
         private static void PrintDiskUtilization(string name, string dir, long limit)
         {
             var cacheDirBytes = GetFolderBytes(dir);
-            var percent = (double) cacheDirBytes / limit * 100;
-            Console.WriteLine("* {0} utilizing {1:0.00}% of limit ({2:0,0} of {3:0,0} bytes)",
-                name, percent, cacheDirBytes, limit);
+            var percent = (double) cacheDirBytes.Item3 / limit * 100;
+            Console.WriteLine("* {0} utilizing {1:0.00}% of limit ({2:0,0} of {3:0,0} bytes, {4} files and {5} dirs)",
+                name, percent, cacheDirBytes.Item3, limit, cacheDirBytes.Item1, cacheDirBytes.Item2);
         }
 
-        private static long GetFolderBytes(string folder)
+        private static Tuple<int,int,long> GetFolderBytes(string folder)
         {
             long bytes = 0;
-            if (!Directory.Exists(folder)) return 0;
-
-            foreach (var file in Directory.GetFiles(folder, "*", SearchOption.AllDirectories))
+            if (!Directory.Exists(folder)) return new Tuple<int,int, long>(0,0,0);
+            int fileCount = 0;
+            int dirCount = 0;
+            
+            foreach (var entry in new DirectoryInfo(folder).EnumerateFileSystemInfos( "*", SearchOption.AllDirectories))
             {
-                var info = new FileInfo(file);
-                if (info.Exists)
-                    bytes += EstimateEntryBytesWithOverhead(info.Length);
+                if ((entry.Attributes & FileAttributes.Directory) == FileAttributes.Directory)
+                {
+                    bytes += 4096;
+                    dirCount++;
+                }
+                else
+                {
+                    var fileInfo = new FileInfo(entry.FullName);
+                    if (fileInfo.Exists)
+                    {
+                        bytes += EstimateEntryBytesWithOverhead(fileInfo.Length);
+                        fileCount++;
+                    }
+                }
+                
             }
-
-            return bytes;
+            
+            return new Tuple<int,int, long>(fileCount,dirCount, bytes);
         }
         
         private static long EstimateEntryBytesWithOverhead(long byteCount)

@@ -18,7 +18,7 @@ namespace Imazen.HybridCache.MetaStore
         private readonly Shard[] shards;
 
 
-        public MetaStore(MetaStoreOptions options, ILogger logger)
+        public MetaStore(MetaStoreOptions options, HybridCacheOptions cacheOptions, ILogger logger)
         {
             Options = options;
             Logger = logger;
@@ -27,11 +27,16 @@ namespace Imazen.HybridCache.MetaStore
                 throw new ArgumentException("Shards must be between 1 and 2048");
             }
 
+            var pathBuilder =
+                new HashBasedPathBuilder(cacheOptions.PhysicalCacheDir, cacheOptions.Subfolders, '/', ".jpg");
+
+            var directoryEntriesBytes = pathBuilder.GetDirectoryEntriesBytesTotal() + CleanupManager.DirectoryEntrySize();
+
             var shardCount = options.Shards;
             shards = new Shard[shardCount];
             for (var i = 0; i < shardCount; i++)
             {
-                shards[i] = new Shard(i, options, Path.Combine(options.DatabaseDir,"db", i.ToString()), logger);
+                shards[i] = new Shard(i, options, Path.Combine(options.DatabaseDir,"db", i.ToString()),directoryEntriesBytes / shardCount, logger);
             }
         }
 

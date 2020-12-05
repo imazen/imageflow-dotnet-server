@@ -42,6 +42,11 @@ namespace Imazen.HybridCache
             return Database.GetContentType(Database.GetShardForKey(cacheEntry.RelativePath), cacheEntry.RelativePath);
         }
 
+        public static long DirectoryEntrySize()
+        {
+            return 4096;
+        }
+        
         internal static long EstimateEntryBytesWithOverhead(long byteCount)
         {
             // Most file systems have a 4KiB block size
@@ -213,6 +218,7 @@ namespace Imazen.HybridCache
             
             return bytesDeleted;
         }
+
 
     }
 }
