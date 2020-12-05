@@ -11,9 +11,6 @@ namespace Imazen.HybridCache.MetaStore
 {
     internal class Shard
     {
-        private readonly MetaStoreOptions options;
-        private readonly string databaseDir;
-        
         private readonly WriteLog writeLog;
         private readonly ILogger logger;
         private readonly int shardId;
@@ -25,8 +22,6 @@ namespace Imazen.HybridCache.MetaStore
         internal Shard(int shardId, MetaStoreOptions options, string databaseDir, long directoryEntriesBytes,  ILogger logger)
         {
             this.shardId = shardId;
-            this.options = options;
-            this.databaseDir = databaseDir;
             this.logger = logger;
             writeLog = new WriteLog(shardId, databaseDir, options, directoryEntriesBytes + CleanupManager.DirectoryEntrySize(), logger);
         }
@@ -71,7 +66,7 @@ namespace Imazen.HybridCache.MetaStore
                     if (currentRecord != oldRecord)
                     {
                         logger?.LogError(
-                            "DeleteRecord tried to delete a different instance of the record than the one provided. Re-inserting");
+                            "DeleteRecord tried to delete a different instance of the record than the one provided. Re-inserting in {ShardId}", shardId);
                         (await GetLoadedDict()).TryAdd(oldRecord.RelativePath, currentRecord);
 
                     }

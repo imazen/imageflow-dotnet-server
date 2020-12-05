@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -12,11 +11,10 @@ namespace Imazen.HybridCache
 {
     public class HybridCache : IStreamCache
     {
-
-        internal HashBasedPathBuilder PathBuilder { get; }
+        private HashBasedPathBuilder PathBuilder { get; }
         internal AsyncCache AsyncCache { get; }
-        internal CleanupManager CleanupManager { get; }
-        internal ICacheDatabase Database { get; }
+        private CleanupManager CleanupManager { get; }
+        private ICacheDatabase Database { get; }
         
         
         public HybridCache(ICacheDatabase cacheDatabase, HybridCacheOptions options, ILogger logger)

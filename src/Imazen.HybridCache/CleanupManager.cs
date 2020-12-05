@@ -168,6 +168,7 @@ namespace Imazen.HybridCache
         /// </summary>
         /// <param name="shard"></param>
         /// <param name="record"></param>
+        /// <param name="writeLocks"></param>
         /// <returns></returns>
         private async Task<long> TryDeleteRecord(int shard, ICacheDatabaseRecord record, AsyncLockProvider writeLocks)
         {

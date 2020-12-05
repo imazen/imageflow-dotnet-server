@@ -20,7 +20,7 @@ namespace Imazen.HybridCache
             LockTimeout,
         }
 
-        private Action<string, string> moveFileOverwriteFunc;
+        private readonly Action<string, string> moveFileOverwriteFunc;
         private AsyncLockProvider WriteLocks { get; }
 
         public CacheFileWriter(AsyncLockProvider writeLocks, Action<string,string> moveFileOverwriteFunc)
@@ -40,22 +40,19 @@ namespace Imazen.HybridCache
         /// <param name="recheckFileSystemFirst"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        internal async Task<FileWriteResult> TryWriteFile(CacheEntry entry,
+        internal async Task<FileWriteStatus> TryWriteFile(CacheEntry entry,
             Func<Stream, CancellationToken,Task> writeCallback, 
             bool recheckFileSystemFirst, 
             int timeoutMs, 
             CancellationToken cancellationToken)
         {
-            var result = new FileWriteResult()
-            {
-                Status = FileWriteStatus.FileAlreadyExists
-            };
+            var resultStatus = FileWriteStatus.FileAlreadyExists;
             
             // ReSharper disable once InvertIf
             if (recheckFileSystemFirst)
             {
                 var miss = !File.Exists(entry.PhysicalPath);
-                if (!miss && !WriteLocks.MayBeLocked(entry.StringKey)) return result;
+                if (!miss && !WriteLocks.MayBeLocked(entry.StringKey)) return FileWriteStatus.FileAlreadyExists;
             }
             
             var lockingSucceeded = await WriteLocks.TryExecuteAsync(entry.StringKey, timeoutMs, cancellationToken,
@@ -89,14 +86,13 @@ namespace Imazen.HybridCache
                                 await writeCallback(fs, cancellationToken); //Can throw any number of exceptions.
                                 await fs.FlushAsync(cancellationToken);
                                 fs.Flush(true);
-                                result.BytesWritten = fs.Position;
                             }
 
                             try
                             {
                                 
                                 moveFileOverwriteFunc(tempFile, entry.PhysicalPath);
-                                result.Status = FileWriteStatus.FileCreated;
+                                resultStatus = FileWriteStatus.FileCreated;
                                 finished = true;
                             }
                             //Will throw IO exception if already exists. Which we consider a hit, so we delete the tempFile
@@ -124,9 +120,9 @@ namespace Imazen.HybridCache
 
             if (!lockingSucceeded)
             {
-                result.Status = FileWriteStatus.LockTimeout;
+                return FileWriteStatus.LockTimeout;
             }
-            return result;
+            return resultStatus;
         }
     }
 }

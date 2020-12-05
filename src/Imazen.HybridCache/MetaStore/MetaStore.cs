@@ -12,16 +12,11 @@ namespace Imazen.HybridCache.MetaStore
 {
     public class MetaStore: ICacheDatabase
     {
-        private MetaStoreOptions Options { get; }
-        private ILogger Logger { get;  }
-
         private readonly Shard[] shards;
 
 
         public MetaStore(MetaStoreOptions options, HybridCacheOptions cacheOptions, ILogger logger)
         {
-            Options = options;
-            Logger = logger;
             if (options.Shards <= 0 || options.Shards > 2048)
             {
                 throw new ArgumentException("Shards must be between 1 and 2048");

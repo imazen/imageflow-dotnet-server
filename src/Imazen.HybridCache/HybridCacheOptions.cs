@@ -1,5 +1,3 @@
-using System;
-
 namespace Imazen.HybridCache
 {
     public class HybridCacheOptions

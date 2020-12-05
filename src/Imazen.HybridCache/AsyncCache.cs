@@ -250,7 +250,7 @@ namespace Imazen.HybridCache
                             DateTime.UtcNow);
                         swMarkCreated.Stop();
                         
-                        switch (fileWriteResult.Status)
+                        switch (fileWriteResult)
                         {
                             case CacheFileWriter.FileWriteStatus.LockTimeout:
                                 //We failed to lock the file.
@@ -310,7 +310,7 @@ namespace Imazen.HybridCache
                     
 
                     var swEnqueue = Stopwatch.StartNew();
-                    var queueResult = CurrentWrites.Queue(w, async delegate(AsyncWrite job)
+                    var queueResult = CurrentWrites.Queue(w, async delegate
                     {
                         try
                         {
@@ -318,7 +318,7 @@ namespace Imazen.HybridCache
                         }
                         catch (Exception ex)
                         {
-                            Logger?.LogError("HybridCache failed to flush async write, {Exception} {DisplayPath}\n{StackTrace}", ex.ToString(),
+                            Logger?.LogError(ex, "HybridCache failed to flush async write, {Exception} {DisplayPath}\n{StackTrace}", ex.ToString(),
                                 entry.DisplayPath, ex.StackTrace);
                         }
 

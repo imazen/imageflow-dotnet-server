@@ -83,8 +83,8 @@ namespace Imazen.HybridCache
         }
 
         public ushort Get(byte[] data) => Get(GetHash(data));
-        
-        internal int HashSizeInBits { get;  }
+
+        private int HashSizeInBits { get;  }
         
         internal long RowCount { get; }
         

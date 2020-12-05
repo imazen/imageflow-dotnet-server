@@ -25,7 +25,7 @@ namespace Imazen.HybridCache.MetaStore
         private long previousLogsBytes;
         private long logBytes;
         private long diskBytes;
-        private long directoryEntriesBytes;
+        private readonly long directoryEntriesBytes;
         
         public WriteLog(int shardId, string databaseDir, MetaStoreOptions options, long directoryEntriesBytes, ILogger logger)
         {

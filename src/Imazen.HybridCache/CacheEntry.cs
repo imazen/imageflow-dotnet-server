@@ -1,5 +1,3 @@
-using System;
-
 namespace Imazen.HybridCache
 {
     internal readonly struct CacheEntry
@@ -10,7 +8,6 @@ namespace Imazen.HybridCache
             RelativePath = builder.GetRelativePathFromHash(Hash);
             PhysicalPath = builder.GetPhysicalPathFromRelativePath(RelativePath);
             StringKey = builder.GetStringFromHash(Hash);
-            GetKeyBytesFromStringKey = builder.GetHashFromString;
         }
 
         public byte[] Hash { get; }
@@ -20,6 +17,5 @@ namespace Imazen.HybridCache
         
         public string RelativePath { get; }
         
-        public Func<string, byte[]> GetKeyBytesFromStringKey { get; }
     }
 }

@@ -7,7 +7,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Imazen.HybridCache {
@@ -26,7 +25,7 @@ namespace Imazen.HybridCache {
         /// </summary>
         public long MaxQueueBytes { get; }
 
-        private long queuedBytes = 0;
+        private long queuedBytes;
         /// <summary>
         /// If the collection contains the specified item, it is returned. Otherwise, null is returned.
         /// </summary>
@@ -42,7 +41,7 @@ namespace Imazen.HybridCache {
         /// Removes the specified object based on its relativePath and modifiedDateUtc values.
         /// </summary>
         /// <param name="w"></param>
-        public void Remove(AsyncWrite w) {
+        private void Remove(AsyncWrite w) {
             lock (sync)
             {
                 c.Remove(w.Key);
