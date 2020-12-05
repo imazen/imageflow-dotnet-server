@@ -104,7 +104,8 @@ build:
   project: Imageflow.Server.sln     # path to Visual Studio solution or project
   publish_nuget: true             # package projects with .nuspec files and push to artifacts
   publish_nuget_symbols: true     # generate and publish NuGet symbol packages
-
+  use_snupkg_format: true
+  
 test_script:
   - dotnet build --configuration Release
   - dotnet test
@@ -113,7 +114,7 @@ deploy:
   - provider: NuGet
     api_key:
       secure: W0fJC3/ZD5Ur1OyoaBxa4c95rGP8sREZq7gn4B839bK1oDfr5/wJ0e7cBDA7pp1a
-    skip_symbols: true
-    artifact: /.*\.nupkg/
+    skip_symbols: false
+    artifact: /.*(\.|\.s)nupkg/
     on:
       appveyor_repo_tag: true

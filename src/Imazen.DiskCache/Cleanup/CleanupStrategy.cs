@@ -1,13 +1,12 @@
 /* Copyright (c) 2014 Imazen See license.txt for your rights. */
+
 using System;
 using System.Collections.Generic;
 using System.Text;
-using System.Collections.Specialized;
-using System.Reflection;
-using System.Globalization;
 using Imazen.Common.Issues;
+using Imazen.DiskCache.Index;
 
-namespace Imazen.DiskCache {
+namespace Imazen.DiskCache.Cleanup {
     public class CleanupStrategy :IssueSink
     {
 
@@ -28,19 +27,24 @@ namespace Imazen.DiskCache {
         /// </summary>
         private void SaveDefaults(){
             var t = this.GetType();
-            foreach(var s in properties){
+            foreach(var s in properties)
+            {
                 var pi = t.GetProperty(s);
-                defaults[s] = pi.GetValue(this,null);
+                // ReSharper disable once PossibleNullReferenceException
+                defaults[s] = pi.GetValue(this, null);
             }
         }
         /// <summary>
         /// Restores the default property values
         /// </summary>
+        // ReSharper disable once UnusedMember.Local
         private void RestoreDefaults() {
-            var t = this.GetType();
-            foreach(var s in properties){
+            var t = GetType();
+            foreach(var s in properties)
+            {
                 var pi = t.GetProperty(s);
-                pi.SetValue(this,defaults[s],null);
+                // ReSharper disable once PossibleNullReferenceException
+                pi.SetValue(this, defaults[s], null);
             }
         }
 
@@ -119,13 +123,14 @@ namespace Imazen.DiskCache {
             var sb = new StringBuilder();
             foreach(var s in defaults.Keys){
                 var pi = t.GetProperty(s);
+                // ReSharper disable once PossibleNullReferenceException
                 var v = pi.GetValue(this,null);
                 if (!v.Equals(defaults[s]))
-                    sb.AppendLine(s + " has been changed to " + v.ToString() + " instead of the suggested value, " + defaults[s].ToString());
+                    sb.AppendLine(s + " has been changed to " + v + " instead of the suggested value, " + defaults[s]);
             }
             if (sb.Length > 0)
                 issues.Add(new Issue( "The cleanup strategy settings have been changed. This is not advised, and may have ill effects. " +
-                "\nThe default settings for the cleanup strategy were carefully chosen, and should not be changed except at the suggestion of the support.\n" + sb.ToString(), IssueSeverity.Warning));
+                "\nThe default settings for the cleanup strategy were carefully chosen, and should not be changed except at the suggestion of the support.\n" + sb, IssueSeverity.Warning));
 
             return issues;
         }

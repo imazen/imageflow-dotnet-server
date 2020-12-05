@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Imazen.Common.Extensibility.ClassicDiskCache;
 using Imazen.Common.Issues;
+using Imazen.DiskCache.Cleanup;
 using Microsoft.Extensions.Logging;
 
 namespace Imazen.DiskCache
@@ -19,9 +20,9 @@ namespace Imazen.DiskCache
             this.options.MakeImmutable();
         }
 
-        private ILogger Logger { get; } = null;
-        private AsyncCustomDiskCache cache = null;
-        private CleanupManager cleaner = null;
+        private ILogger Logger { get; }
+        private AsyncCustomDiskCache cache;
+        private CleanupManager cleaner;
 
         /// <summary>
         /// Returns true if the configured settings are valid and .NET (not NTFS) permissions will work.
@@ -33,7 +34,7 @@ namespace Imazen.DiskCache
         }
         
         private readonly object startSync = new object();
-        private volatile bool started = false;
+        private volatile bool started;
         /// <summary>
         /// Returns true if the DiskCache instance is operational.
         /// </summary>
@@ -42,6 +43,7 @@ namespace Imazen.DiskCache
         /// <summary>
         /// Attempts to start the DiskCache using the current settings. 
         /// </summary>
+        // ReSharper disable once UnusedParameter.Global
         public Task StartAsync(CancellationToken cancellationToken) {
             
             if (!IsConfigurationValid())     throw new InvalidOperationException("DiskCache configuration invalid");
@@ -52,7 +54,7 @@ namespace Imazen.DiskCache
 
                 cache = new AsyncCustomDiskCache(Logger, options.PhysicalCacheDir, options.Subfolders, options.AsyncBufferSize);
                 //Init the cleanup worker
-                if (options.AutoClean) cleaner = new CleanupManager(Logger, (ICleanableCache)cache, options.CleanupStrategy);
+                if (options.AutoClean) cleaner = new CleanupManager(Logger, cache, options.CleanupStrategy);
                 //If we're running with subfolders, enqueue the cache root for cleanup (after the 5 minute delay)
                 //so we don't eternally 'skip' files in the root or in other unused subfolders (since only 'accessed' subfolders are ever cleaned ). 
                 cleaner?.CleanAll();
@@ -67,6 +69,7 @@ namespace Imazen.DiskCache
         ///    Cannot be restarted once stopped.
         /// </summary>
         /// <returns></returns>
+        // ReSharper disable once UnusedParameter.Global
         public Task StopAsync(CancellationToken cancellationToken) {
             cleaner?.Dispose();
             cleaner = null;
@@ -84,7 +87,7 @@ namespace Imazen.DiskCache
             return r;
         }
 
-        private bool HasNTFSPermission(){
+        private bool HasNtfsPermission(){
             try {
                 if (!Directory.Exists(options.PhysicalCacheDir)) Directory.CreateDirectory(options.PhysicalCacheDir);
                 var testFile = Path.Combine(options.PhysicalCacheDir, "TestFile.txt");
@@ -133,7 +136,7 @@ namespace Imazen.DiskCache
             if (cleaner != null) issues.AddRange(cleaner.GetIssues());
 
 
-            if (!HasNTFSPermission()) 
+            if (!HasNtfsPermission()) 
                 issues.Add(new Issue("DiskCache", "Not working: Your NTFS Security permissions are preventing the application from writing to the disk cache",
     "Please give user " + GetExecutingUser() + " read and write access to directory \"" + options.PhysicalCacheDir + "\" to correct the problem. You can access NTFS security settings by right-clicking the aforementioned folder and choosing Properties, then Security.", IssueSeverity.ConfigurationError));
 

@@ -14,6 +14,8 @@ using Polly;
 using System;
 using System.IO;
 using System.Net.Http;
+using Imageflow.Server.HybridCache;
+using Imageflow.Server.Storage.RemoteReader;
 
 namespace Imageflow.Server.Example
 {
@@ -77,15 +79,27 @@ namespace Imageflow.Server.Example
 
             // You can add a distributed cache, such as redis, if you add it and and
             // call ImageflowMiddlewareOptions.SetAllowDistributedCaching(true)
-            services.AddDistributedMemoryCache();
+            //services.AddDistributedMemoryCache();
             // You can add a memory cache and call ImageflowMiddlewareOptions.SetAllowMemoryCaching(true)
-            services.AddMemoryCache();
+            //services.AddMemoryCache();
             // You can add a disk cache and call ImageflowMiddlewareOptions.SetAllowDiskCaching(true)
             // If you're deploying to azure, provide a disk cache folder *not* inside ContentRootPath
             // to prevent the app from recycling whenever folders are created.
             services.AddImageflowDiskCache(new DiskCacheOptions(Path.Combine(homeFolder, "imageflow_example_cache")));
-            //services.AddImageflowSqliteCache(
-            //    new SqliteCacheOptions(Path.Combine(homeFolder, "imageflow_example_sqlite_cache")));
+            
+            // You can add a hybrid cache (Database for tracking filenames, but filesystem used for bytes)
+            // But remember to call ImageflowMiddlewareOptions.SetAllowCaching(true)
+            // If you're deploying to azure, provide a disk cache folder *not* inside ContentRootPath
+            // to prevent the app from recycling whenever folders are created.
+            services.AddImageflowHybridCache(
+                new HybridCacheOptions(Path.Combine(homeFolder, "imageflow_example_hybrid_cache"))
+                {
+                    MaxWriteQueueBytes = 100 * 1000 * 1000,
+                    CacheSizeLimitInBytes = 1024 * 1024 * 50,
+                    MinCleanupBytes = 1024,
+                    MinAgeToDelete = TimeSpan.Zero
+                });
+
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -113,8 +127,10 @@ namespace Imageflow.Server.Example
                 // Allow localhost to access the diagnostics page or remotely via /imageflow.debug?password=fuzzy_caterpillar
                 .SetDiagnosticsPageAccess(env.IsDevelopment() ? AccessDiagnosticsFrom.AnyHost : AccessDiagnosticsFrom.LocalHost)
                 .SetDiagnosticsPagePassword("fuzzy_caterpillar")
+                
+                .SetAllowCaching(true)
                 // Allow Disk Caching
-                .SetAllowDiskCaching(true)
+                .SetAllowDiskCaching(false)
                 // Allow Sqlite Caching
                 .SetAllowSqliteCaching(false)
                 // We can only have one type of caching enabled at a time

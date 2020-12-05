@@ -4,6 +4,7 @@ using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Imazen.Common.Concurrency;
 
 namespace Imazen.PersistentCache.Evicter
 {
@@ -15,7 +16,7 @@ namespace Imazen.PersistentCache.Evicter
         private ulong? lastCount;
         private DateTimeOffset lastTimeRead = DateTimeOffset.MinValue;
         private readonly IClock clock;
-        private readonly AsyncLock sizeLock = new AsyncLock();
+        private readonly BasicAsyncLock sizeLock = new BasicAsyncLock();
         public SizeTracker(uint shardId, IPersistentStore store, IClock clock, PersistentCacheOptions options)
         {
             this.shardId = shardId;

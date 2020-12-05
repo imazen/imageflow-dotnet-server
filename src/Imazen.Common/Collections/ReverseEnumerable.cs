@@ -9,6 +9,10 @@ using System.Collections.ObjectModel;
 using System.Collections;
 
 namespace Imazen.Common.Collections {
+    /// <summary>
+    /// Enumerates the collection backwards
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
     public class ReverseEnumerable<T>:IEnumerable<T> {
         private readonly ReadOnlyCollection<T> collection;
         public ReverseEnumerable(ReadOnlyCollection<T> collection){
@@ -22,6 +26,10 @@ namespace Imazen.Common.Collections {
             return new ReverseEnumerator<T>(collection);
         }
     }
+    /// <summary>
+    /// Enumerates the collection from end to beginning
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
     public class ReverseEnumerator<T> : IEnumerator<T> {
         private readonly ReadOnlyCollection<T> collection;
         private int curIndex;
@@ -47,7 +55,7 @@ namespace Imazen.Common.Collections {
             return true;
         }
 
-        public void Reset() { curIndex = collection.Count; Current = default(T); }
+        public void Reset() { curIndex = collection.Count; Current = default; }
 
         void IDisposable.Dispose() { }
 

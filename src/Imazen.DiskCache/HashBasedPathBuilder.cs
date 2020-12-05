@@ -1,32 +1,29 @@
 ﻿/* Copyright (c) 2014 Imazen See license.txt */
 using System;
-using System.Collections.Generic;
 using System.Text;
 using System.Diagnostics;
-using System.Security.Cryptography;
 using System.Globalization;
 
 namespace Imazen.DiskCache {
 
-    public class UrlHasher {
-        public UrlHasher() {
-        }
-
+    internal class HashBasedPathBuilder
+    {
+   
         /// <summary>
-        /// Builds a key for the cached version, using the hashcode of the normalized URL.
+        /// Builds a key for the cached version, using the hashcode of `data`.
         /// if subfolders > 1, dirSeparator will be used to separate the subfolder and the key. 
         /// No extension is appended.
-        /// I.e, a13514\124211ab132592 or 12412ababc12141
+        /// I.e, a13514\124211ab132592 or 12412ab12141
         /// </summary>
         /// <param name="data"></param>
         /// <param name="subfolders"></param>
         /// <param name="dirSeparator"></param>
         /// <returns></returns>
-        public string Hash(string data, int subfolders, string dirSeparator) {
+        public string BuildPath(byte[] data, int subfolders, string dirSeparator) {
 
             using (var h = System.Security.Cryptography.SHA256.Create())
             {
-                var hash = h.ComputeHash(new System.Text.UTF8Encoding().GetBytes(data));
+                var hash = h.ComputeHash(data);
 
                 //If configured, place files in subfolders.
                 var subfolder = "";
@@ -52,14 +49,18 @@ namespace Imazen.DiskCache {
             var bits = (int)Math.Ceiling(Math.Log(subfolders, 2)); //Log2 to find the number of bits. round up.
             Debug.Assert(bits > 0);
             Debug.Assert(bits <= hash.Length * 8);
-
-            var subfolder = new byte[(int)Math.Ceiling((double)bits / 8.0)]; //Round up to bytes.
-            Array.Copy(hash, hash.Length - subfolder.Length, subfolder, 0, subfolder.Length);
-            subfolder[0] = (byte)((int)subfolder[0] >> ((subfolder.Length * 8) - bits)); //Set extra bits to 0.
-            return Base16Encode(subfolder);
+            
+            return Base16Encode(GetTrailingBits(hash, bits));
             
         }
-
+        internal static byte[] GetTrailingBits(byte[] data, int bits)
+        {
+            var trailingBytes = new byte[(int) Math.Ceiling(bits / 8.0)]; //Round up to bytes.
+            Array.Copy(data, data.Length - trailingBytes.Length, trailingBytes, 0, trailingBytes.Length);
+            var bitsToClear = (trailingBytes.Length * 8) - bits;
+            trailingBytes[0] = (byte) ((byte)(trailingBytes[0] << bitsToClear) >> bitsToClear); //Set extra bits to 0.
+            return trailingBytes;
+        }
 
         private string Base16Encode(byte[] bytes) {
             var sb = new StringBuilder(bytes.Length * 2);

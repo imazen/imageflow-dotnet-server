@@ -37,7 +37,7 @@ namespace Imageflow.Net.Server.Example.Controllers
                 .ToList();
 
             var remoteUrls = imageNumbers
-                .Select(i => $"{Request.Scheme}://{Request.Host}/ri/{i}.jpg")
+                .Select(i => $"http://{Request.Host}/ri/{i}.jpg")
                 .Select(u => $"/remote/{RemoteReaderService.EncodeAndSignUrl(u, "ChangeMe")}").ToList();
 
             return View(imageUrls.Concat(remoteUrls).ToList());

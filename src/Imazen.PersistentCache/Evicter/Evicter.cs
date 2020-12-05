@@ -9,6 +9,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Imazen.Common.Concurrency;
 
 namespace Imazen.PersistentCache.Evicter
 {
@@ -28,8 +29,8 @@ namespace Imazen.PersistentCache.Evicter
         private readonly CancellationTokenSource shutdownTokenSource;
         private readonly SizeTracker sizeTracker;
         private readonly CacheKeyHasher hasher; 
-        private readonly AsyncLock evictionLock = new AsyncLock();
-        private readonly AsyncLock flushLogLock = new AsyncLock();
+        private readonly BasicAsyncLock evictionLock = new BasicAsyncLock();
+        private readonly BasicAsyncLock flushLogLock = new BasicAsyncLock();
         public Evicter(uint shardId, IPersistentStore store, UsageTracker usage, CacheKeyHasher hasher, IClock clock, PersistentCacheOptions options, CancellationTokenSource shutdownTokenSource)
         {
             this.shardId = shardId;

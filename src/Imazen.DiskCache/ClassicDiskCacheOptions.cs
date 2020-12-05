@@ -1,4 +1,5 @@
 using System;
+using Imazen.DiskCache.Cleanup;
 
 namespace Imazen.DiskCache
 {
@@ -6,11 +7,11 @@ namespace Imazen.DiskCache
     {
         public ClassicDiskCacheOptions(string physicalCacheDir)
         {
-            this.PhysicalCacheDir = physicalCacheDir;
+            PhysicalCacheDir = physicalCacheDir;
         }
 
 
-        private bool immutable = false;
+        private bool immutable;
         internal void MakeImmutable()
         {
             if (PhysicalCacheDir == null) throw new ArgumentNullException($"PhysicalCacheDir", "PhysicalCacheDir must be set to a non-null value");
@@ -45,7 +46,7 @@ namespace Imazen.DiskCache
         }
 
 
-        private bool autoClean = false;
+        private bool autoClean;
         /// <summary>
         /// If true, items from the cache folder will be automatically 'garbage collected' if the cache size limits are exceeded.
         /// Defaults to false.
@@ -92,7 +93,7 @@ namespace Imazen.DiskCache
         }
 
 
-        private int asyncBufferSize = 1024 * 1024 * 10;
+        private int asyncBufferSize = 1024 * 1024 * 100;
         /// <summary>
         /// If more than this amount of memory (in bytes) is currently allocated by queued writes, the request will be processed synchronously instead of asynchronously.
         /// </summary>
@@ -102,7 +103,7 @@ namespace Imazen.DiskCache
         }
 
 
-        private string physicalCacheDir =  null;
+        private string physicalCacheDir;
         /// <summary>
         /// Sets the location of the cache directory. 
         /// </summary>

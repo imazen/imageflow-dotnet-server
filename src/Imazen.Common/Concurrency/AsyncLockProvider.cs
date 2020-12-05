@@ -1,13 +1,11 @@
 ﻿/* Copyright (c) 2014 Imazen See license.txt for your rights. */
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Imazen.DiskCache {
-
-    internal delegate Task AsyncLockCallback();
+namespace Imazen.Common.Concurrency {
+    
     /// <summary>
     /// Provides locking based on a string key. 
     /// Locks are local to the LockProvider instance.
@@ -17,7 +15,8 @@ namespace Imazen.DiskCache {
     /// Thread-safe.
     /// Uses SemaphoreSlim instead of locks to be thread-context agnostic.
     /// </summary>
-    internal class AsyncLockProvider:ILockProvider {
+    public class AsyncLockProvider {
+        
 
         /// <summary>
         /// The only objects in this collection should be for open files. 
@@ -28,6 +27,14 @@ namespace Imazen.DiskCache {
         /// Synchronization object for modifications to the 'locks' dictionary
         /// </summary>
         private readonly object createLock = new object();
+
+        internal int GetActiveLockCount()
+        {
+            lock (createLock)
+            {
+                return locks.Count;
+            }
+        }
 
         /// <summary>
         /// Returns true if the given key *might* be locked.
@@ -42,20 +49,35 @@ namespace Imazen.DiskCache {
             }
         }
 
-        public bool TryExecute(string key, int timeoutMs, LockCallback success)
+        /// <summary>
+        /// A synchronous wrapper for TryExecuteAsync.
+        /// Attempts to execute the 'success' callback inside a lock based on 'key'.  If successful, returns true.
+        /// If the lock cannot be acquired within 'timeoutMs' or cancellation token is triggered, returns false
+        /// In a worst-case scenario, it could take up to twice as long as 'timeoutMs' to return false.
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="timeoutMs"></param>
+        /// <param name="cancellationToken"></param>
+        /// <param name="success"></param>
+        /// <returns></returns>
+        public bool TryExecuteSynchronous(string key, int timeoutMs, CancellationToken cancellationToken, Action success)
         {
-            return TryExecuteAsync(key, timeoutMs, delegate() { success();  return Task.FromResult(false); }).Result;
+            var task = TryExecuteAsync(key, timeoutMs, cancellationToken, () => { success();  return Task.FromResult(false); });
+            task.RunSynchronously();
+            task.Wait(cancellationToken);
+            return task.Result;
         }
 
         /// <summary>
         /// Attempts to execute the 'success' callback inside a lock based on 'key'.  If successful, returns true.
-        /// If the lock cannot be acquired within 'timeoutMs', returns false
+        /// If the lock cannot be acquired within 'timeoutMs' or cancellation token is triggered, returns false
         /// In a worst-case scenario, it could take up to twice as long as 'timeoutMs' to return false.
         /// </summary>
         /// <param name="key"></param>
+        /// <param name="cancellationToken"></param>
         /// <param name="success"></param>
         /// <param name="timeoutMs"></param>
-        public async Task<bool> TryExecuteAsync(string key, int timeoutMs, AsyncLockCallback success)
+        public async Task<bool> TryExecuteAsync(string key, int timeoutMs, CancellationToken cancellationToken, Func<Task> success)
         {
             //Record when we started. We don't want an infinite loop.
             DateTime startedAt = DateTime.UtcNow;
@@ -83,7 +105,7 @@ namespace Imazen.DiskCache {
                     // insert a new value for 'itemLock' into the dictionary... etc, etc..
 
                     // 2) Execute phase
-                    if (await itemLock.WaitAsync(timeoutMs)) {
+                    if (await itemLock.WaitAsync(timeoutMs, cancellationToken)) {
                         try {
                             // May take minutes to acquire this lock. 
 
@@ -135,7 +157,7 @@ namespace Imazen.DiskCache {
                         // (but may be preparing to, see loophole)
                         // Only remove the lock object if it 
                         // still exists in the dictionary as-is
-                        if (itemLock.CurrentCount > 0 &&
+                        if (itemLock != null && itemLock.CurrentCount > 0 &&
                             locks.TryGetValue(key, out var existingLock)
                             && existingLock == itemLock)
                         {

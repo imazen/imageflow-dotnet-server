@@ -1,10 +1,8 @@
 ﻿/* Copyright (c) 2014 Imazen See license.txt for your rights. */
-using System;
-using System.Collections.Generic;
-using System.Text;
+
 using System.Diagnostics;
 
-namespace Imazen.DiskCache {
+namespace Imazen.DiskCache.Cleanup {
 
     public delegate CleanupWorkItem LazyTaskProvider();
     
@@ -22,25 +20,25 @@ namespace Imazen.DiskCache {
         /// <summary>
         /// Cache-relative path 
         /// </summary>
-        public string RelativePath { get; private set;}
+        public string RelativePath { get; }
         /// <summary>
         /// Physical path
         /// </summary>
-        public string PhysicalPath {get; private set;}
+        public string PhysicalPath {get; }
         public CleanupWorkItem(Kind task, string relativePath, string physicalPath) {
-            this.Task = task;
-            this.RelativePath = relativePath;
-            this.PhysicalPath = physicalPath;
+            Task = task;
+            RelativePath = relativePath;
+            PhysicalPath = physicalPath;
 
 
-            if (this.RelativePath.StartsWith("/")) {
+            if (RelativePath.StartsWith("/")) {
                 Debug.WriteLine("Invalid relativePath value - should never have leading slash!");
             }
         }
 
         public CleanupWorkItem(Kind task, LazyTaskProvider callback) {
-            this.Task = task;
-            this.LazyProvider = callback;
+            Task = task;
+            LazyProvider = callback;
         }
         public override int GetHashCode() {
             return base.GetHashCode();
@@ -82,7 +80,7 @@ namespace Imazen.DiskCache {
         }
 
 
-        public Kind Task{ get; set; }
+        public Kind Task{ get; }
 
     }
 }

@@ -324,7 +324,7 @@ namespace Imageflow.Server
         internal async Task<byte[]> GetPrimaryBlobBytesAsync()
         {
             await using var sourceStream = (await GetPrimaryBlob()).OpenRead();
-            var ms = new MemoryStream((int)sourceStream.Length);
+            var ms = new MemoryStream(sourceStream.CanSeek ? (int)sourceStream.Length : 4096);
             await sourceStream.CopyToAsync(ms);
             var buffer = ms.ToArray();
             if (buffer.Length == 0)

@@ -1,20 +1,19 @@
 ﻿/* Copyright (c) 2014 Imazen See license.txt for your rights. */
-using System;
+
 using System.Collections.Generic;
-using System.Text;
 using Imazen.Common.Collections;
 
-namespace Imazen.DiskCache {
+namespace Imazen.DiskCache.Cleanup {
     internal class CleanupQueue {
-        LinkedList<CleanupWorkItem> queue = null;
+        readonly LinkedList<CleanupWorkItem> queue;
         public CleanupQueue() {
             queue = new LinkedList<CleanupWorkItem>();
         }
 
-        protected readonly object _sync = new object();
+        private readonly object sync = new object();
 
         public void Queue(CleanupWorkItem item) {
-            lock (_sync) {
+            lock (sync) {
                 queue.AddLast(item);
             }
         }
@@ -25,7 +24,7 @@ namespace Imazen.DiskCache {
         /// <param name="item"></param>
         /// <returns></returns>
         public bool QueueIfUnique(CleanupWorkItem item) {
-            lock (_sync) {
+            lock (sync) {
                 bool unique = !queue.Contains(item);
                 if (unique) queue.AddLast(item);
                 return unique;
@@ -33,17 +32,17 @@ namespace Imazen.DiskCache {
         }
 
         public bool Exists(CleanupWorkItem item) {
-            lock (_sync) {
+            lock (sync) {
                 return queue.Contains(item);
             }
         }
         public void Insert(CleanupWorkItem item) {
-            lock (_sync) {
+            lock (sync) {
                 queue.AddFirst(item);
             }
         }
         public void QueueRange(IEnumerable<CleanupWorkItem> items) {
-            lock (_sync) {
+            lock (sync) {
                 foreach (CleanupWorkItem item in items)
                 {
                     queue.AddLast(item);
@@ -56,7 +55,7 @@ namespace Imazen.DiskCache {
         /// </summary>
         /// <param name="items"></param>
         public void InsertRange(IList<CleanupWorkItem> items) {
-            lock (_sync) {
+            lock (sync) {
                 ReverseEnumerable<CleanupWorkItem> reversed = new ReverseEnumerable<CleanupWorkItem>(new System.Collections.ObjectModel.ReadOnlyCollection<CleanupWorkItem>(items));
                 foreach (CleanupWorkItem item in reversed)
                 {
@@ -66,7 +65,7 @@ namespace Imazen.DiskCache {
             }
         }
         public CleanupWorkItem Pop() {
-            lock (_sync) {
+            lock (sync) {
                 CleanupWorkItem i = queue.Count > 0 ? queue.First.Value : null;
                 if (i != null) queue.RemoveFirst();
                 return i;
@@ -75,16 +74,16 @@ namespace Imazen.DiskCache {
 
         public bool IsEmpty {
             get {
-                lock (_sync) return queue.Count <= 0;
+                lock (sync) return queue.Count <= 0;
             }
         }
         public int Count {
             get {
-                lock (_sync) return queue.Count;
+                lock (sync) return queue.Count;
             }
         }
         public void Clear() {
-            lock (_sync) {
+            lock (sync) {
                 queue.Clear();
             }
         }
@@ -93,7 +92,7 @@ namespace Imazen.DiskCache {
         /// </summary>
         /// <param name="item"></param>
         public void ReplaceWith(CleanupWorkItem item) {
-            lock (_sync) {
+            lock (sync) {
                 queue.Clear();
                 queue.AddLast(item);
             }

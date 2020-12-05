@@ -17,7 +17,6 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\src\Imageflow.Server.DiskCache\Imageflow.Server.DiskCache.csproj" />
-      <ProjectReference Include="..\..\src\Imageflow.Server.SqliteCache\Imageflow.Server.SqliteCache.csproj" />
       <ProjectReference Include="..\..\src\Imageflow.Server.Storage.AzureBlob\Imageflow.Server.Storage.AzureBlob.csproj" />
       <ProjectReference Include="..\..\src\Imageflow.Server.Storage.S3\Imageflow.Server.Storage.S3.csproj" />
       <ProjectReference Include="..\..\src\Imageflow.Server\Imageflow.Server.csproj" />

@@ -1,15 +1,15 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Imageflow.Server.Extensibility;
+using Imazen.Common.Extensibility.StreamCache;
 using Microsoft.Extensions.Hosting;
 
-namespace Imageflow.Server.SqliteCache
+namespace Imageflow.Server.HybridCache
 {
-    internal class SqliteCacheHostedServiceProxy: IHostedService
+    internal class HybridCacheHostedServiceProxy: IHostedService
     {
  
-            private readonly ISqliteCache cache;
-            public SqliteCacheHostedServiceProxy(ISqliteCache cache)
+            private readonly IStreamCache cache;
+            public HybridCacheHostedServiceProxy(IStreamCache cache)
             {
                 this.cache = cache;
             }

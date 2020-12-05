@@ -1,24 +1,24 @@
 ﻿/* Copyright (c) 2014 Imazen See license.txt for your rights. */
+
 using System;
 using System.Collections.Generic;
-using System.Text;
-using System.Threading;
-using System.IO;
 using System.Diagnostics;
-
 using System.Globalization;
+using System.IO;
+using System.Threading;
 using Imazen.Common.Issues;
+using Imazen.DiskCache.Index;
 using Microsoft.Extensions.Logging;
 
-namespace Imazen.DiskCache {
+namespace Imazen.DiskCache.Cleanup {
     internal class CleanupWorker : IssueSink, IDisposable {
-        private readonly Thread t = null;
-        private readonly EventWaitHandle _queueWait = new AutoResetEvent(false);
-        private readonly EventWaitHandle _quitWait = new AutoResetEvent(false);
-        private readonly CleanupStrategy cs = null;
-        private readonly CleanupQueue queue = null;
-        private readonly ICleanableCache cache = null;
-        private readonly ILogger logger = null;
+        private readonly Thread t;
+        private readonly EventWaitHandle queueWait = new AutoResetEvent(false);
+        private readonly EventWaitHandle quitWait = new AutoResetEvent(false);
+        private readonly CleanupStrategy cs;
+        private readonly CleanupQueue queue;
+        private readonly ICleanableCache cache;
+        private readonly ILogger logger;
         /// <summary>
         /// Creates and starts a thread that consumes the queue, pausing until notified when 'queue' empties.
         /// </summary>
@@ -31,14 +31,14 @@ namespace Imazen.DiskCache {
             this.queue = queue;
             this.cache = cache;
             this.logger = logger;
-            t = new Thread(main) {IsBackground = true};
+            t = new Thread(Main) {IsBackground = true};
             t.Start();
         }
         /// <summary>
         /// Tells the worker to check the queue for more work.
         /// </summary>
         public void MayHaveWork() {
-            _queueWait.Set();
+            queueWait.Set();
         }
 
         /// <summary>
@@ -55,7 +55,7 @@ namespace Imazen.DiskCache {
         /// Tells the worker to avoid work for a little bit.
         /// </summary>
         public void BeLazy() {
-            lock(_timesLock) lastBusy = DateTime.UtcNow.Ticks;
+            lock(timesLock) lastBusy = DateTime.UtcNow.Ticks;
             
         }
         /// <summary>
@@ -66,34 +66,35 @@ namespace Imazen.DiskCache {
         /// <summary>
         /// When true, indicates that another process is managing cleanup operations - this thread is idle, waiting for the other process to end before it can pick up work.
         /// </summary>
-        public bool ExternalProcessCleaning { get { return this.otherProcessManagingCleanup; } }
+        public bool ExternalProcessCleaning => otherProcessManagingCleanup;
+
         /// <summary>
         /// When true, indicates that another process is managing cleanup operations - this thread is idle, waiting for the other process to end before it can pick up work.
         /// </summary>
-        private bool otherProcessManagingCleanup = false;
+        private bool otherProcessManagingCleanup;
 
-        private readonly object _timesLock = new object();
+        private readonly object timesLock = new object();
         /// <summary>
         /// Thread runs this method.
         /// </summary>
-        private void main() {
+        private void Main() {
             try {
-                mainInner();
+                MainInner();
             } catch (Exception ex) {
                 if (Debugger.IsAttached) throw;
                 logger?.LogError("Contact support! A critical (and unexpected) exception occurred in the disk cache cleanup worker thread. This needs to be investigated. {0}", ex.Message + ex.StackTrace);
-                this.AcceptIssue(new Issue("Contact support! A critical (and unexpected) exception occurred in the disk cache cleanup worker thread. This needs to be investigated. ", ex.Message + ex.StackTrace, IssueSeverity.Critical));
+                AcceptIssue(new Issue("Contact support! A critical (and unexpected) exception occurred in the disk cache cleanup worker thread. This needs to be investigated. ", ex.Message + ex.StackTrace, IssueSeverity.Critical));
             }
         }
         /// <summary>
         /// Processes work items from the queue, using at most 50%
         /// </summary>
-        private void mainInner(){
+        private void MainInner(){
             //TODO: Verify that GetHashCode() is the same between .net 2 and 4. 
             var mutexKey = "ir.cachedir:" + cache.PhysicalCachePath.ToLowerInvariant().GetHashCode().ToString("x", NumberFormatInfo.InvariantInfo);
 
             //Sleep for the duration requested before trying anything. 
-            _quitWait.WaitOne(cs.StartupDelay);
+            quitWait.WaitOne(cs.StartupDelay);
 
             Mutex cleanupLock = null;
             var hasLock = false;
@@ -138,11 +139,11 @@ namespace Imazen.DiskCache {
                     
 
                     //Is it time to do some work?
-                    bool noWorkInTooLong = false; //Has it been too long since we did something?
-                    lock (_timesLock) noWorkInTooLong = (DateTime.UtcNow.Subtract(new DateTime(lastWorked)) > cs.MaxDelay);
+                    bool noWorkInTooLong; //Has it been too long since we did something?
+                    lock (timesLock) noWorkInTooLong = (DateTime.UtcNow.Subtract(new DateTime(lastWorked)) > cs.MaxDelay);
 
-                    bool notBusy = false; //Is the server busy recently?
-                    lock (_timesLock) notBusy = (DateTime.UtcNow.Subtract(new DateTime(lastBusy)) > cs.MinDelay);
+                    bool notBusy; //Is the server busy recently?
+                    lock (timesLock) notBusy = (DateTime.UtcNow.Subtract(new DateTime(lastBusy)) > cs.MinDelay);
                     //doSomeWork keeps being true in absence of incoming requests
 
                     //If the server isn't busy, or if this worker has been lazy to long long, do some work and time it.
@@ -151,7 +152,7 @@ namespace Imazen.DiskCache {
                         workedForTime = new Stopwatch();
                         workedForTime.Start();
                         DoWorkFor(cs.OptimalWorkSegmentLength);
-                        lock (_timesLock) lastWorked = DateTime.UtcNow.Ticks; 
+                        lock (timesLock) lastWorked = DateTime.UtcNow.Ticks; 
                         workedForTime.Stop();
                     }
 
@@ -162,20 +163,20 @@ namespace Imazen.DiskCache {
                     //Nothing to do, queue is empty.
                     if (queue.IsEmpty)
                         //Wait perpetually until notified of more queue items.
-                        _queueWait.WaitOne();
+                        queueWait.WaitOne();
                     else if (notBusy)
                         //Don't flood the system even when it's not busy. 50% usage here. Wait for the length of time worked or the optimal work time, whichever is longer.
                         //A directory listing can take 30 seconds sometimes and kill the CPU.
-                        _quitWait.WaitOne((int)Math.Max(cs.OptimalWorkSegmentLength.TotalMilliseconds, workedForTime.ElapsedMilliseconds));
+                        quitWait.WaitOne((int)Math.Max(cs.OptimalWorkSegmentLength.TotalMilliseconds, workedForTime.ElapsedMilliseconds));
 
                     else {
                         //Estimate how long before we can run more code.
-                        long busyTicks = 0;
-                        lock (_timesLock) busyTicks = (cs.MinDelay - DateTime.UtcNow.Subtract(new DateTime(lastBusy))).Ticks;
-                        long maxTicks = 0;
-                        lock (_timesLock) maxTicks = (cs.MaxDelay - DateTime.UtcNow.Subtract(new DateTime(lastWorked))).Ticks;
+                        long busyTicks;
+                        lock (timesLock) busyTicks = (cs.MinDelay - DateTime.UtcNow.Subtract(new DateTime(lastBusy))).Ticks;
+                        long maxTicks;
+                        lock (timesLock) maxTicks = (cs.MaxDelay - DateTime.UtcNow.Subtract(new DateTime(lastWorked))).Ticks;
                         //Use the longer value and add a second to avoid rounding and timing errors.
-                        _quitWait.WaitOne(new TimeSpan(Math.Max(busyTicks, maxTicks)) + new TimeSpan(0, 0, 1));
+                        quitWait.WaitOne(new TimeSpan(Math.Max(busyTicks, maxTicks)) + new TimeSpan(0, 0, 1));
                     } 
 
                     //Check for shutdown
@@ -192,8 +193,8 @@ namespace Imazen.DiskCache {
             if (ExternalProcessCleaning) 
                 issues.Add(new Issue("An external process indicates it is managing cleanup of the disk cache. " + 
                 "This process is not currently managing disk cache cleanup. If configured as a web garden, keep in mind that the negligible performance gains are likely to be outweighed by the loss of cache optimization quality.", IssueSeverity.Warning));
-            lock (_timesLock) {
-                if (this.lastFoundItemsOverMax > (DateTime.UtcNow.Subtract(new TimeSpan(0, 5, 0)).Ticks))
+            lock (timesLock) {
+                if (lastFoundItemsOverMax > (DateTime.UtcNow.Subtract(new TimeSpan(0, 5, 0)).Ticks))
                     issues.Add(new Issue("Your cache configuration may not be optimal. If this message persists, you should increase the 'subfolders' value in the <diskcache /> element in Web.config",
                         "In the last 5 minutes, a cache folder exceeded both the optimum and maximum limits for file count. This usually indicates that your 'subfolders' setting is too low, and that cached images are being deleted shortly after their creation. \n" +
                         "To estimate the appropriate subfolders value, multiply the total number of images on the site times the average number of size variations, and divide by 400. I.e, 6,400 images with 2 variants would be 32. If in doubt, set the value higher, but ensure there is disk space available.", IssueSeverity.Error));
@@ -207,6 +208,7 @@ namespace Imazen.DiskCache {
         /// </summary>
         /// <param name="length"></param>
         /// <returns></returns>
+        // ReSharper disable once UnusedMethodReturnValue.Local
         private bool DoWorkFor(TimeSpan length) {
             if (queue.IsEmpty) return false;
 
@@ -220,20 +222,20 @@ namespace Imazen.DiskCache {
                 } catch (Exception e) {
                     if (Debugger.IsAttached) throw;
                     logger?.LogError("Failed executing task {0}", e.Message + e.StackTrace);
-                    this.AcceptIssue(new Issue("Failed executing task", e.Message + e.StackTrace, IssueSeverity.Critical));
+                    AcceptIssue(new Issue("Failed executing task", e.Message + e.StackTrace, IssueSeverity.Critical));
                 }
             }
             return true;
         }
 
-        private volatile bool shuttingDown = false;
+        private volatile bool shuttingDown;
         public void Dispose() {
             shuttingDown = true;
-            _queueWait.Set();
-            _quitWait.Set();
+            queueWait.Set();
+            quitWait.Set();
             t.Join(); //Wait for work to stop.
-            _queueWait.Close();
-            _quitWait.Close();
+            queueWait.Close();
+            quitWait.Close();
         }
 
 
@@ -241,7 +243,7 @@ namespace Imazen.DiskCache {
 
 
             Stopwatch sw = null;
-            if (logger != null) { sw = new Stopwatch(); sw.Start(); }
+            if (logger != null) { sw = Stopwatch.StartNew(); }
 
             if (item.Task == CleanupWorkItem.Kind.RemoveFile)
                 RemoveFile(item);
@@ -252,15 +254,15 @@ namespace Imazen.DiskCache {
             else if (item.Task == CleanupWorkItem.Kind.FlushAccessedDate) 
                 FlushAccessedDate(item);
 
-            if (logger != null) sw.Stop();
-            logger?.LogTrace("{0}ms: Executing task {1} {2} ({3} tasks remaining)",  sw.ElapsedMilliseconds.ToString(NumberFormatInfo.InvariantInfo).PadLeft(4), item.Task.ToString(), item.RelativePath, queue.Count.ToString(NumberFormatInfo.InvariantInfo));
+            if (logger != null) sw?.Stop();
+            logger?.LogTrace("{0}ms: Executing task {1} {2} ({3} tasks remaining)",  sw?.ElapsedMilliseconds.ToString(NumberFormatInfo.InvariantInfo).PadLeft(4), item.Task.ToString(), item.RelativePath, queue.Count.ToString(NumberFormatInfo.InvariantInfo));
 
 
         }
 
         private string addSlash(string s, bool physical) {
             if (string.IsNullOrEmpty(s)) return s; //On empty or null, don't add a slash.
-            if (physical) return s.TrimEnd(System.IO.Path.DirectorySeparatorChar) + System.IO.Path.DirectorySeparatorChar;
+            if (physical) return s.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
             else return s.TrimEnd('/') + '/';
         }
 
@@ -268,18 +270,17 @@ namespace Imazen.DiskCache {
             //Do the local work.
             if (!cache.Index.GetIsValid(item.RelativePath)) {
                 if (logger != null) {
-                    Stopwatch sw = new Stopwatch();
-                    sw.Start();
-                    cache.Index.populate(item.RelativePath, item.PhysicalPath);
+                    var sw = Stopwatch.StartNew();
+                    cache.Index.Populate(item.RelativePath, item.PhysicalPath);
                     sw.Stop();
                     logger.LogTrace("{0}ms: Querying file system about {1}", sw.ElapsedMilliseconds.ToString(NumberFormatInfo.InvariantInfo).PadLeft(4), item.RelativePath);
                 } else 
-                    cache.Index.populate(item.RelativePath, item.PhysicalPath);
+                    cache.Index.Populate(item.RelativePath, item.PhysicalPath);
             }
 
             if (recursive) {
                 //Queue the recursive work.
-                IList<string> names = cache.Index.getSubfolders(item.RelativePath);
+                IList<string> names = cache.Index.GetSubfolders(item.RelativePath);
                 List<CleanupWorkItem> childWorkItems = new List<CleanupWorkItem>(names.Count);
                 foreach (string n in names)
                     childWorkItems.Add(new CleanupWorkItem(CleanupWorkItem.Kind.PopulateFolderRecursive, addSlash(item.RelativePath,false) + n, addSlash(item.PhysicalPath,true) + n));
@@ -296,26 +297,27 @@ namespace Imazen.DiskCache {
 
             bool removedFile = false;
 
-            cache.Locks.TryExecute(item.RelativePath.ToUpperInvariant(), 10, delegate() {
+            cache.Locks.TryExecuteSynchronous(item.RelativePath.ToUpperInvariant(), 10, CancellationToken.None, delegate
+            {
 
                 //If the file is already gone, consider the mission a success.
-                if (!System.IO.File.Exists(item.PhysicalPath)) {
-                    cache.Index.setCachedFileInfo(item.RelativePath, null);
+                if (!File.Exists(item.PhysicalPath)) {
+                    cache.Index.SetCachedFileInfo(item.RelativePath, null);
                     removedFile = true;
                     return;
                 }
                 //Cool, we got a lock on the file.
                 //Remove it from the cache. Better a miss than an invalidation.
-                cache.Index.setCachedFileInfo(item.RelativePath, null);
+                cache.Index.SetCachedFileInfo(item.RelativePath, null);
                 try {
-                    System.IO.File.Delete(item.PhysicalPath);
+                    File.Delete(item.PhysicalPath);
                 } catch (IOException) {
                     return; //The file is in use, or has an open handle. - try the next file.
                 } catch (UnauthorizedAccessException) {
                     return; //Invalid NTFS permissions or readonly file.  - try the next file
                 }
 
-                cache.Index.setCachedFileInfo(item.RelativePath, null); //In case it crossed paths.
+                cache.Index.SetCachedFileInfo(item.RelativePath, null); //In case it crossed paths.
                 removedFile = true;
             });
 
@@ -329,7 +331,7 @@ namespace Imazen.DiskCache {
             if (!cache.Index.GetIsValid(item.RelativePath)) {
                 //Put this task back where it was, but with a 'populate/populaterecursive' right before it.
                 //We could actually make this Populate non-recursive, since the recursive Clean would just insert Populates beforehand anyway.
-                queue.InsertRange(new CleanupWorkItem[]{
+                queue.InsertRange(new[]{
                         new CleanupWorkItem(recursive ? CleanupWorkItem.Kind.PopulateFolderRecursive : CleanupWorkItem.Kind.PopulateFolder,item.RelativePath,item.PhysicalPath),
                         item});
                 return;
@@ -341,7 +343,7 @@ namespace Imazen.DiskCache {
             //Ok, it's valid.
             //Queue the recursive work.
             if (item.Task == CleanupWorkItem.Kind.CleanFolderRecursive) {
-                IList<string> names = cache.Index.getSubfolders(item.RelativePath);
+                IList<string> names = cache.Index.GetSubfolders(item.RelativePath);
                 List<CleanupWorkItem> childWorkItems = new List<CleanupWorkItem>(names.Count);
                 foreach (string n in names)
                     childWorkItems.Add(new CleanupWorkItem(CleanupWorkItem.Kind.CleanFolderRecursive, baseRelative + n, basePhysical + n));
@@ -349,7 +351,7 @@ namespace Imazen.DiskCache {
             }
 
             //Now do the local work
-            int files = cache.Index.getFileCount(item.RelativePath);
+            int files = cache.Index.GetFileCount(item.RelativePath);
 
             //How much are we over?
             int overMax = Math.Max(0, files - cs.MaximumItemsPerFolder);
@@ -357,18 +359,18 @@ namespace Imazen.DiskCache {
 
             if (overMax + overOptimal < 1) return; //nothing to do
 
-            if (overMax > 0) lock (_timesLock) lastFoundItemsOverMax = DateTime.UtcNow.Ticks;
+            if (overMax > 0) lock (timesLock) lastFoundItemsOverMax = DateTime.UtcNow.Ticks;
 
             //Make a linked list, like a queue of files. 
             LinkedList<KeyValuePair<string, CachedFileInfo>> sortedList = new LinkedList<KeyValuePair<string, CachedFileInfo>>(
-                    cache.Index.getSortedSubfiles(item.RelativePath));
+                    cache.Index.GetSortedSubFiles(item.RelativePath));
 
             //This callback will execute (overMax) number of times
-            CleanupWorkItem obsessive = new CleanupWorkItem(CleanupWorkItem.Kind.RemoveFile, delegate() {
+            CleanupWorkItem obsessive = new CleanupWorkItem(CleanupWorkItem.Kind.RemoveFile, delegate
+            {
                 //Pop the next item
-                KeyValuePair<string, CachedFileInfo> file;
                 while (sortedList.Count > 0) {
-                    file = sortedList.First.Value; sortedList.RemoveFirst();
+                    var file = sortedList.First.Value; sortedList.RemoveFirst();
                     if (cs.ShouldRemove(baseRelative + file.Key, file.Value, true)) {
                         return new CleanupWorkItem(CleanupWorkItem.Kind.RemoveFile, baseRelative + file.Key, basePhysical + file.Key);
                     }
@@ -376,11 +378,11 @@ namespace Imazen.DiskCache {
                 return null; //No matching items left.
             });
 
-            CleanupWorkItem relaxed = new CleanupWorkItem(CleanupWorkItem.Kind.RemoveFile, delegate() {
+            CleanupWorkItem relaxed = new CleanupWorkItem(CleanupWorkItem.Kind.RemoveFile, delegate
+            {
                 //Pop the next item
-                KeyValuePair<string, CachedFileInfo> file;
                 while (sortedList.Count > 0) {
-                    file = sortedList.First.Value; sortedList.RemoveFirst();
+                    var file = sortedList.First.Value; sortedList.RemoveFirst();
                     if (cs.ShouldRemove(baseRelative + file.Key, file.Value, false)) {
                         return new CleanupWorkItem(CleanupWorkItem.Kind.RemoveFile, baseRelative + file.Key, basePhysical + file.Key);
                     }
@@ -395,10 +397,10 @@ namespace Imazen.DiskCache {
         }
 
         public void FlushAccessedDate(CleanupWorkItem item) {
-            CachedFileInfo c = cache.Index.getCachedFileInfo(item.RelativePath);
+            CachedFileInfo c = cache.Index.GetCachedFileInfo(item.RelativePath);
             if (c == null) return; //File was already deleted, nothing to do.
             try{
-                cache.Locks.TryExecute(item.RelativePath.ToUpperInvariant(), 1, delegate ()
+                cache.Locks.TryExecuteSynchronous(item.RelativePath.ToUpperInvariant(), 1, CancellationToken.None, delegate
                 {
                     File.SetLastAccessTimeUtc(item.PhysicalPath, c.AccessedUtc);
                 });

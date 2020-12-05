@@ -5,7 +5,6 @@
 // Commercial licenses available at http://imageresizing.net/
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading;
 
 namespace Imazen.DiskCache.SourceMemCache {
@@ -50,7 +49,7 @@ namespace Imazen.DiskCache.SourceMemCache {
         /// <summary>
         /// The estimated size (in bytes) of a counter (excluding the key). Based on CounterGranularity
         /// </summary>
-        public int EstimatedCounterSize { get { return CounterGranularity * 4 + 132; } }
+        public int EstimatedCounterSize => CounterGranularity * 4 + 132;
     }
 
     /// <summary>
@@ -65,8 +64,8 @@ namespace Imazen.DiskCache.SourceMemCache {
         public event EventKeyRemoved CounterRemoved;
 
         public EventCountingDictionary(IEqualityComparer<T> keyComparer, TimeSpan trackingDuration, EventCountingStrategy strategy) {
-            this._trackingDuration = trackingDuration;
-            this.granularity = strategy.CounterGranularity;
+            this.trackingDuration = trackingDuration;
+            granularity = strategy.CounterGranularity;
             precision = strategy.Threading;
 
             keysToCounters = new Dictionary<T, EventCounter>(keyComparer);
@@ -79,52 +78,51 @@ namespace Imazen.DiskCache.SourceMemCache {
             cleanupInterval = strategy.MinimumCleanupInterval.Ticks;
         }
 
-        private TimeSpan _trackingDuration;
+        private TimeSpan trackingDuration;
         /// <summary>
         /// The duration for which to track events. For example, 5 minutes will keep a rolling value of how many events have occurred in the last 5 minutes
         /// </summary>
-        public TimeSpan TrackingDuration {
-            get { return _trackingDuration; }
-        }
-        private int granularity = 0;
-        private int itemSize = 0;
-        private long byteCeiling = 0;
-        private long cleanupInterval = 0;
-        private EventCountingStrategy.ThreadingPrecision precision;
+        public TimeSpan TrackingDuration => trackingDuration;
 
-        private long bytesUsed = 0;
+        private readonly int granularity;
+        private readonly int itemSize;
+        private readonly long byteCeiling;
+        private readonly long cleanupInterval;
+        private readonly EventCountingStrategy.ThreadingPrecision precision;
+
+        private long bytesUsed;
 
         /// <summary>
         /// The estimated number of bytes used for tracking, plus the sum of the CustomSize values. Key space not included unless the caller always includes key size in CustomSize parameter.
         /// </summary>
-        public long ReportedBytesUsed { get { return bytesUsed; } }
+        public long ReportedBytesUsed => bytesUsed;
 
         /// <summary>
         /// For incrementing and finding counters based on keys
         /// </summary>
-        private Dictionary<T, EventCounter> keysToCounters;
+        private readonly Dictionary<T, EventCounter> keysToCounters;
         /// <summary>
         /// Purely for cleanup purposes. Allows fast removal of pairs based on the EventCounter instance.
         /// </summary>
-        private Dictionary<EventCounter, T> countersToKeys;
+        private readonly Dictionary<EventCounter, T> countersToKeys;
         /// <summary>
         /// Lock for access to dictionaries
         /// </summary>
-        private object syncLock = new object();
+        private readonly object syncLock = new object();
         /// <summary>
         /// Lock on EventCounter.sortValue members. Redundant with cleanupLock implemented.
         /// </summary>
-        private object sortLock = new object();
+        private readonly object sortLock = new object();
         /// <summary>
         /// Lock to prevent concurrent cleanups from occurring
         /// </summary>
-        private object cleanupLock = new object();
+        private readonly object cleanupLock = new object();
 
-        private long lastStarted = 0;
+        private long lastStarted;
         /// <summary>
         /// Lock to prevent duplicate work items from being scheduled.
         /// </summary>
-        private object timerLock = new object();
+        private readonly object timerLock = new object();
 
         /// <summary>
         /// Starts cleanup on a thread pool thread if it hasn't been started within the desired interval. If cleanup starts and other cleanup is running, it cancels. The assumption is that one cleanup of either type is enough within the interval.
@@ -133,7 +131,8 @@ namespace Imazen.DiskCache.SourceMemCache {
             lock (timerLock) {
                 if (DateTime.Now.Ticks - lastStarted > cleanupInterval) {
                     
-                    if (System.Threading.ThreadPool.QueueUserWorkItem(delegate(object o){
+                    if (ThreadPool.QueueUserWorkItem(delegate
+                    {
                         Cleanup(CleanupMode.Maintenance);
                     })) lastStarted = DateTime.Now.Ticks;
                 }
@@ -143,11 +142,13 @@ namespace Imazen.DiskCache.SourceMemCache {
 
         private enum CleanupMode { MakeRoom, Maintenance }
         /// <summary>
-        /// Performs cleanup on the dictionaries in either MakeRoom or Maintenance mode. Returns true if the goal was achieved, false if the cleanup was canceled because another cleanup was executing concurrently.
+        /// Performs cleanup on the dictionaries in either MakeRoom or Maintenance mode.
+        /// Returns true if the goal was achieved, false if the cleanup was canceled because another cleanup was executing concurrently.
         /// </summary>
         /// <param name="mode"></param>
         private bool Cleanup(CleanupMode mode) {
-            if (mode == CleanupMode.MakeRoom && byteCeiling < 1) return true; //We don't perform minimal cleanups unless a ceiling is specified.
+            //We don't perform minimal cleanups unless a ceiling is specified.
+            if (mode == CleanupMode.MakeRoom && byteCeiling < 1) return true;
 
             //We have to track removed items so we can fire events later.
             List<KeyValuePair<T, int>> removed = CounterRemoved != null ? new List<KeyValuePair<T, int>>() : null;
@@ -163,7 +164,7 @@ namespace Imazen.DiskCache.SourceMemCache {
                 try {
                     EventCounter[] counters;
                     //In fast mode, only lock for the copy and delete. We can sort outside after taking a snapshot. 
-                    //We wont remove newly added ones, but thats ok. 
+                    //We wont remove newly added ones, but that's ok. 
                     lock (syncLock) {
                         if (mode == CleanupMode.MakeRoom && bytesUsed < byteCeiling) return true; //Nothing to do, there is still room
                         counters = new EventCounter[countersToKeys.Count];
@@ -173,12 +174,10 @@ namespace Imazen.DiskCache.SourceMemCache {
                     lock (sortLock) {
                         //Pause values
                         for (int i = 0; i < counters.Length; i++) {
-                            counters[i].sortValue = counters[i].GetValue();
+                            counters[i].SortValue = counters[i].GetValue();
                         }
                         //Sort lowest counters to the top using Quicksort
-                        Array.Sort<EventCounter>(counters, delegate(EventCounter a, EventCounter b) {
-                            return a.sortValue - b.sortValue;
-                        });
+                        Array.Sort(counters, (a, b) => a.SortValue - b.SortValue);
                     }
                     //Go back into lock
                     lock (syncLock) {
@@ -188,7 +187,7 @@ namespace Imazen.DiskCache.SourceMemCache {
                         for (int i = 0; i < counters.Length; i++) {
                             EventCounter c = counters[i];
                             if (mode == CleanupMode.MakeRoom && removedBytes >= goal) return true; //Done, we hit our goal!
-                            if (mode == CleanupMode.Maintenance && c.sortValue > 0) return true; //Done, We hit the end of the zeros
+                            if (mode == CleanupMode.Maintenance && c.SortValue > 0) return true; //Done, We hit the end of the zeros
                             if (mode == CleanupMode.Maintenance && c.GetValue() > 0) continue; //Skip counters that incremented while we were working.
                             //Look up key
                             T key;
@@ -202,7 +201,7 @@ namespace Imazen.DiskCache.SourceMemCache {
                             //Decrement global counter
                             bytesUsed = bytesUsed - c.CustomSize - itemSize;
                             //store removed keys
-                            if (removed != null) removed.Add(new KeyValuePair<T, int>(key, c.GetValue()));
+                            removed?.Add(new KeyValuePair<T, int>(key, c.GetValue()));
                         }
                     }
                 } finally {
@@ -233,8 +232,10 @@ namespace Imazen.DiskCache.SourceMemCache {
                     bytesUsed += itemSize + customSize;
 
                     if (byteCeiling > 0 && bytesUsed >= byteCeiling) Cleanup(CleanupMode.MakeRoom);
-                    c = new EventCounter(granularity,(int)_trackingDuration.Ticks / granularity);
-                    c.CustomSize = customSize;
+                    c = new EventCounter(granularity, (int) trackingDuration.Ticks / granularity)
+                    {
+                        CustomSize = customSize
+                    };
                     keysToCounters.Add(key,c);
                     countersToKeys.Add(c,key);
 
@@ -280,10 +281,10 @@ namespace Imazen.DiskCache.SourceMemCache {
     /// Maintains a rotating data structure to track events over a moving time period.
     /// </summary>
     internal class EventCounter {
-        private int[] data;
-        private int arraySize;
-        private int ticksPer;
-        private long started;
+        private readonly int[] data;
+        private readonly int arraySize;
+        private readonly int ticksPer;
+        private readonly long started;
         /// <summary>
         /// User-defined size of related item (key and/or a related cache object). Defaults to 0;
         /// </summary>
@@ -325,6 +326,6 @@ namespace Imazen.DiskCache.SourceMemCache {
         /// <summary>
         /// Warning! Not synchronized or updated. Use must be externally synchronized and value set externally
         /// </summary>
-        internal int sortValue;
+        internal int SortValue;
     }
 }
