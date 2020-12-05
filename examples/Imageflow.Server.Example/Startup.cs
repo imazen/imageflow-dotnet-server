@@ -85,8 +85,8 @@ namespace Imageflow.Server.Example
             services.AddImageflowHybridCache(
                 new HybridCacheOptions(Path.Combine(homeFolder, "imageflow_example_hybrid_cache"))
                 {
-                    MaxWriteQueueBytes = 0,
-                    CacheSizeLimitInBytes = 1024 * 1024 * 10,
+                    MaxWriteQueueBytes = 100 * 1000 * 1000,
+                    CacheSizeLimitInBytes = 1024 * 1024 * 50,
                     MinCleanupBytes = 1024,
                     MinAgeToDelete = TimeSpan.Zero
                 });
