@@ -315,7 +315,7 @@ namespace Imageflow.Server
             {
                 if (info.HasParams)
                 {
-                    logger?.LogInformation($"DiskCache Miss: Processing image {info.FinalVirtualPath}?{info}");
+                    logger?.LogInformation("DiskCache Miss: Processing image {VirtualPath}{QueryString}", info.FinalVirtualPath,info);
 
  
                     var result = await info.ProcessUncached();
@@ -330,7 +330,7 @@ namespace Imageflow.Server
                 }
                 else
                 {
-                    logger?.LogInformation($"DiskCache Miss: Proxying image {info.FinalVirtualPath}");
+                    logger?.LogInformation("DiskCache Miss: Proxying image {VirtualPath}", info.FinalVirtualPath);
                     await info.CopyPrimaryBlobToAsync(stream);
                 }
             });
