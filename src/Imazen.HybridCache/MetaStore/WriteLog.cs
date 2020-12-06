@@ -57,7 +57,7 @@ namespace Imazen.HybridCache.MetaStore
             try
             {
                 writeLogStream = new FileStream(writeLogPath, FileMode.CreateNew, FileAccess.Write, FileShare.None,
-                    4096, FileOptions.None);
+                    4096, FileOptions.SequentialScan);
                 binaryLogWriter = new BinaryWriter(writeLogStream, Encoding.UTF8,true);
             }
             catch (IOException ioException)

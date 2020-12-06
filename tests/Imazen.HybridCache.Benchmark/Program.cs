@@ -24,7 +24,7 @@ namespace Imazen.HybridCache.Benchmark
                 e.Cancel = true;
             };
 
-            //await TestSyncMediumLimitedCacheWavesMetaStore(cts.Token);
+            await TestAsyncMediumLimitedCacheWavesMetaStore(cts.Token);
             //await TestSyncVeryLimitedCacheWavesMetaStore(cts.Token);
             //await TestMassiveFileQuantityMetaStore(cts.Token);
             //await TestMassiveFileQuantity(cts.Token);
@@ -32,7 +32,7 @@ namespace Imazen.HybridCache.Benchmark
             //await TestRandomAsyncCache(cts.Token);
             //await TestRandomAsyncVeryLimitedCache(cts.Token);
 
-            await TestRandomSynchronousVeryLimitedCache(cts.Token);
+            //await TestRandomSynchronousVeryLimitedCache(cts.Token);
             //await TestRandomSynchronousLimitedCache(cts.Token);
 
             //await TestRandomSynchronousNoEviction(false, cts.Token);
@@ -41,7 +41,7 @@ namespace Imazen.HybridCache.Benchmark
 
         }
         
-        private static async Task TestSyncMediumLimitedCacheWavesMetaStore(CancellationToken cancellationToken)
+        private static async Task TestAsyncMediumLimitedCacheWavesMetaStore(CancellationToken cancellationToken)
         {
             var options = new TestParams()
             {
@@ -214,7 +214,8 @@ namespace Imazen.HybridCache.Benchmark
                         MinAgeToDelete = TimeSpan.Zero,
                         MinCleanupBytes =  0,
                         
-                    }
+                    },
+                    Subfolders = 1
                 },
                 FileSize = 81920,
                 FileCount = 500,
@@ -247,7 +248,8 @@ namespace Imazen.HybridCache.Benchmark
                         MinAgeToDelete = TimeSpan.Zero,
                         MinCleanupBytes = 0,
                         
-                    }
+                    },
+                    Subfolders = 1
                 },
                 FileSize = 81920,
                 FileCount = 100,
@@ -280,7 +282,8 @@ namespace Imazen.HybridCache.Benchmark
                         MinAgeToDelete = TimeSpan.Zero,
                         MinCleanupBytes = 0,
                         
-                    }
+                    },
+                    Subfolders = 1
                 },
                 FileSize = 81920,
                 FileCount = 500,
