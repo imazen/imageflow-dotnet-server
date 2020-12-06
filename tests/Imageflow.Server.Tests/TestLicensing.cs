@@ -176,7 +176,7 @@ namespace Imageflow.Server.Tests
                 // Create an HttpClient to send requests to the TestServer
                 using var client = host.GetTestClient();
                 
-                Assert.Equal(1, mgr.WaitForTasks());
+                mgr.WaitForTasks();
 
                 Assert.Empty(mgr.GetIssues());
                 
@@ -238,7 +238,7 @@ namespace Imageflow.Server.Tests
                 // Create an HttpClient to send requests to the TestServer
                 using var client = host.GetTestClient();
                 
-                Assert.Equal(1, mgr.WaitForTasks());
+                mgr.WaitForTasks();
 
                 Assert.Empty(mgr.GetIssues());
 
@@ -301,7 +301,7 @@ namespace Imageflow.Server.Tests
                     // Create an HttpClient to send requests to the TestServer
                     using var client = host.GetTestClient();
 
-                    Assert.Equal(1, mgr.WaitForTasks());
+                    mgr.WaitForTasks();
 
                     
                     url.Url = new Uri("https://domain.com");
