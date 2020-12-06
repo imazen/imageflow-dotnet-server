@@ -34,16 +34,13 @@ namespace Imageflow.Server.Example
 
             // See the README in src/Imageflow.Server.Storage.RemoteReader/ for more advanced configuration
             services.AddHttpClient();
-
-            var remoteReaderServiceOptions = new RemoteReaderServiceOptions
-            {
-                SigningKey = "ChangeMe"
-            }
-            .AddPrefix("/remote/");
-
-            services.AddImageflowRemoteReaderService(remoteReaderServiceOptions);
-
-
+            // To add the RemoteReaderService, you need to all .AddHttpClient() first
+            services.AddImageflowRemoteReaderService(new RemoteReaderServiceOptions
+                {
+                    SigningKey = "ChangeMe"
+                }
+                .AddPrefix("/remote/"));
+            
             // Make S3 containers available at /ri/ and /imageflow-resources/
             // If you use credentials, do not check them into your repository
             // You can call AddImageflowS3Service multiple times for each unique access key
@@ -73,28 +70,21 @@ namespace Imageflow.Server.Example
                    Environment.OSVersion.Platform == PlatformID.MacOSX)
                     ? Environment.GetEnvironmentVariable("HOME")
                     : Environment.ExpandEnvironmentVariables("%HOMEDRIVE%%HOMEPATH%");
-
-            // You can add a distributed cache, such as redis, if you add it and and
-            // call ImageflowMiddlewareOptions.SetAllowDistributedCaching(true)
-            //services.AddDistributedMemoryCache();
-            // You can add a memory cache and call ImageflowMiddlewareOptions.SetAllowMemoryCaching(true)
-            //services.AddMemoryCache();
-            // You can add a disk cache and call ImageflowMiddlewareOptions.SetAllowDiskCaching(true)
-            // If you're deploying to azure, provide a disk cache folder *not* inside ContentRootPath
-            // to prevent the app from recycling whenever folders are created.
-            services.AddImageflowDiskCache(new DiskCacheOptions(Path.Combine(homeFolder, "imageflow_example_cache")));
             
-            // You can add a hybrid cache (Database for tracking filenames, but filesystem used for bytes)
+
+            // You can add a hybrid cache (in-memory persisted database for tracking filenames, but filesystem used for bytes)
             // But remember to call ImageflowMiddlewareOptions.SetAllowCaching(true)
             // If you're deploying to azure, provide a disk cache folder *not* inside ContentRootPath
             // to prevent the app from recycling whenever folders are created.
             services.AddImageflowHybridCache(
                 new HybridCacheOptions(Path.Combine(homeFolder, "imageflow_example_hybrid_cache"))
                 {
-                    MaxWriteQueueBytes = 100 * 1000 * 1000,
+                    // How long after a file is created before it can be deleted
+                    MinAgeToDelete = TimeSpan.FromSeconds(10),
+                    // How much RAM to use for the write queue before switching to synchronous writes
+                    QueueSizeLimitInBytes = 100 * 1000 * 1000,
+                    // The maximum size of the cache 
                     CacheSizeLimitInBytes = 1024 * 1024 * 50,
-                    MinCleanupBytes = 1024,
-                    MinAgeToDelete = TimeSpan.Zero
                 });
 
         }
@@ -124,16 +114,8 @@ namespace Imageflow.Server.Example
                 // Allow localhost to access the diagnostics page or remotely via /imageflow.debug?password=fuzzy_caterpillar
                 .SetDiagnosticsPageAccess(env.IsDevelopment() ? AccessDiagnosticsFrom.AnyHost : AccessDiagnosticsFrom.LocalHost)
                 .SetDiagnosticsPagePassword("fuzzy_caterpillar")
-                
+                // Allow HybridCache or other registered IStreamCache to run
                 .SetAllowCaching(true)
-                // Allow Disk Caching
-                .SetAllowDiskCaching(false)
-                // Allow Sqlite Caching
-                .SetAllowSqliteCaching(false)
-                // We can only have one type of caching enabled at a time
-                .SetAllowDistributedCaching(false)
-                // Disable memory caching even if the service is installed
-                .SetAllowMemoryCaching(false)
                 // Cache publicly (including on shared proxies and CDNs) for 30 days
                 .SetDefaultCacheControlString("public, max-age=2592000")
                 // Allows extensionless images to be served within the given directory(ies)

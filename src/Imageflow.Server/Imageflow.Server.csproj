@@ -8,7 +8,7 @@
     <Description>Imageflow.Server - Middleware for fetching, processing, and caching images on-demand. Commercial licenses available.</Description>
   </PropertyGroup>
 
-  <Import Project="..\NugetPackages.targets"/>
+  <Import Project="..\NugetPackages.targets" />
   
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />    

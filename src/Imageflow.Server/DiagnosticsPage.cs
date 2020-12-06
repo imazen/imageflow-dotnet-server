@@ -8,15 +8,12 @@ using System.Reflection;
 using System.Security;
 using System.Text;
 using System.Threading.Tasks;
-using Imageflow.Server.Extensibility;
 using Imazen.Common.Extensibility.ClassicDiskCache;
+using Imazen.Common.Extensibility.StreamCache;
 using Imazen.Common.Issues;
 using Imazen.Common.Storage;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Caching.Distributed;
-using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Net.Http.Headers;
 
@@ -25,18 +22,17 @@ namespace Imageflow.Server
     internal class DiagnosticsPage
     {
         private readonly IWebHostEnvironment env;
-        private readonly IMemoryCache memoryCache;
-        private readonly IDistributedCache distributedCache;
+        private readonly IStreamCache streamCache;
         private readonly IClassicDiskCache diskCache;
         private readonly IList<IBlobProvider> blobProviders;
         private readonly ImageflowMiddlewareOptions options;
-        internal DiagnosticsPage(ImageflowMiddlewareOptions options,IWebHostEnvironment env, ILogger<ImageflowMiddleware> logger, ISqliteCache sqliteCache,  IMemoryCache memoryCache, IDistributedCache distributedCache,
+        internal DiagnosticsPage(ImageflowMiddlewareOptions options,IWebHostEnvironment env, ILogger<ImageflowMiddleware> logger, 
+            IStreamCache streamCache,
             IClassicDiskCache diskCache, IList<IBlobProvider> blobProviders)
         {
             this.options = options;
             this.env = env;
-            this.memoryCache = memoryCache;
-            this.distributedCache = distributedCache;
+            this.streamCache = streamCache;
             this.diskCache = diskCache;
             this.blobProviders = blobProviders;
         }
@@ -110,6 +106,7 @@ namespace Imageflow.Server
             
             s.AppendLine("Please remember to provide this page when contacting support.");
             var issues = diskCache?.GetIssues().ToList() ?? new List<IIssue>();
+            issues.AddRange(streamCache?.GetIssues() ?? new List<IIssue>());
             s.AppendLine($"{issues.Count} issues detected:\r\n");
             foreach (var i in issues.OrderBy(i => i?.Severity))
                 s.AppendLine($"{i?.Source}({i?.Severity}):\t{i?.Summary}\n\t\t\t{i?.Details?.Replace("\n", "\r\n\t\t\t")}\n");
@@ -120,8 +117,7 @@ namespace Imageflow.Server
             
             s.AppendLine("\nInstalled Plugins");
 
-            if (memoryCache != null) s.AppendLine(this.memoryCache.GetType().FullName);
-            if (distributedCache != null) s.AppendLine(this.distributedCache.GetType().FullName);
+            if (streamCache != null) s.AppendLine(this.streamCache.GetType().FullName);
             if (diskCache != null) s.AppendLine(this.diskCache.GetType().FullName);
             foreach (var provider in blobProviders)
             {

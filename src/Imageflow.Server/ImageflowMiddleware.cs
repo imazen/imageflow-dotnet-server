@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -9,14 +8,12 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Imageflow.Server.Extensibility;
 using Imazen.Common.Extensibility.ClassicDiskCache;
 using Imazen.Common.Extensibility.StreamCache;
 using Imazen.Common.Instrumentation;
 using Imazen.Common.Instrumentation.Support.InfoAccumulators;
 using Imazen.Common.Licensing;
 using Imazen.Common.Storage;
-using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Net.Http.Headers;
 
 namespace Imageflow.Server
@@ -28,11 +25,8 @@ namespace Imageflow.Server
         private readonly ILogger<ImageflowMiddleware> logger;
         // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
         private readonly IWebHostEnvironment env;
-        private readonly IMemoryCache memoryCache;
-        private readonly IDistributedCache distributedCache;
         private readonly IClassicDiskCache diskCache;
         private readonly IStreamCache streamCache;
-        private readonly ISqliteCache sqliteCache;
         private readonly BlobProvider blobProvider;
         private readonly DiagnosticsPage diagnosticsPage;
         private readonly LicensePage licensePage;
@@ -42,9 +36,6 @@ namespace Imageflow.Server
             RequestDelegate next, 
             IWebHostEnvironment env, 
             IEnumerable<ILogger<ImageflowMiddleware>> logger, 
-            IEnumerable<IMemoryCache> memoryCaches, 
-            IEnumerable<IDistributedCache> distributedCaches, 
-            IEnumerable<ISqliteCache> sqliteCaches,
             IEnumerable<IClassicDiskCache> diskCaches, 
             IEnumerable<IStreamCache> streamCaches, 
             IEnumerable<IBlobProvider> blobProviders, 
@@ -56,10 +47,7 @@ namespace Imageflow.Server
             this.options = options;
             this.env = env;
             this.logger = logger.FirstOrDefault();
-            memoryCache = memoryCaches.FirstOrDefault();
             diskCache = diskCaches.FirstOrDefault();
-            distributedCache = distributedCaches.FirstOrDefault();
-            sqliteCache = sqliteCaches.FirstOrDefault();
             streamCache = streamCaches.FirstOrDefault();
             var providers = blobProviders.ToList();
             var mappedPaths = options.MappedPaths.ToList();
@@ -72,33 +60,22 @@ namespace Imageflow.Server
             
             //Determine the active cache backend
             var streamCacheEnabled = streamCache != null && options.AllowCaching;
-
-            var memoryCacheEnabled = this.memoryCache != null && options.AllowMemoryCaching;
             var diskCacheEnabled = this.diskCache != null && options.AllowDiskCaching;
-            var distributedCacheEnabled = this.distributedCache != null && options.AllowDistributedCaching;
-            var sqliteCacheEnabled = this.sqliteCache != null && options.AllowSqliteCaching;
 
             if (streamCacheEnabled)
                 options.ActiveCacheBackend = CacheBackend.StreamCache;
-            else if (sqliteCacheEnabled)
-                options.ActiveCacheBackend = CacheBackend.SqliteCache;
             else if (diskCacheEnabled)
                 options.ActiveCacheBackend = CacheBackend.ClassicDiskCache;
-            else if (memoryCacheEnabled)
-                options.ActiveCacheBackend = CacheBackend.MemoryCache;
-            else if (distributedCacheEnabled)
-                options.ActiveCacheBackend = CacheBackend.DistributedCache;
             else
                 options.ActiveCacheBackend = CacheBackend.NoCache;
-            
             
             
             options.Licensing.Initialize(this.options);
 
             blobProvider = new BlobProvider(providers, mappedPaths);
-            diagnosticsPage = new DiagnosticsPage(options, env, this.logger, this.sqliteCache, this.memoryCache, this.distributedCache, this.diskCache, providers);
+            diagnosticsPage = new DiagnosticsPage(options, env, this.logger, streamCache, this.diskCache, providers);
             licensePage = new LicensePage(options);
-            globalInfoProvider = new GlobalInfoProvider(options, env, this.logger, this.sqliteCache, this.memoryCache, this.distributedCache, this.diskCache, providers);
+            globalInfoProvider = new GlobalInfoProvider(options, env, this.logger, streamCache,  this.diskCache, providers);
             
             options.Licensing.FireHeartbeat();
             GlobalPerf.Singleton.SetInfoProviders(new List<IInfoProvider>(){globalInfoProvider});
@@ -189,15 +166,6 @@ namespace Imageflow.Server
                 {
                     case CacheBackend.ClassicDiskCache:
                         await ProcessWithDiskCache(context, cacheKey, imageJobInfo);
-                        break;
-                    case CacheBackend.SqliteCache:
-                        await ProcessWithSqliteCache(context, cacheKey, imageJobInfo);
-                        break;
-                    case CacheBackend.MemoryCache:
-                        await ProcessWithMemoryCache(context, cacheKey, imageJobInfo);
-                        break;
-                    case CacheBackend.DistributedCache:
-                        await ProcessWithDistributedCache(context, cacheKey, imageJobInfo);
                         break;
                     case CacheBackend.NoCache:
                         await ProcessWithNoCache(context, imageJobInfo);
@@ -294,7 +262,7 @@ namespace Imageflow.Server
             {
                 if (cacheResult.Data.Length < 1)
                 {
-                    throw new InvalidOperationException("DiskCache returned cache entry with zero bytes");
+                    throw new InvalidOperationException("Cache returned cache entry with zero bytes");
                 }
                 SetCachingHeaders(context, cacheKey);
                 await MagicBytes.ProxyToStream(cacheResult.Data, context.Response);
@@ -377,152 +345,8 @@ namespace Imageflow.Server
             SetCachingHeaders(context, etag);
             await MagicBytes.ProxyToStream(readStream, context.Response);
         }
-
-        private async Task ProcessWithMemoryCache(HttpContext context, string cacheKey, ImageJobInfo info)
-        {
-            var isCached = memoryCache.TryGetValue(cacheKey, out ArraySegment<byte> imageBytes);
-            var isContentTypeCached = memoryCache.TryGetValue(cacheKey + ".contentType", out string contentType);
-            if (isCached && isContentTypeCached)
-            {
-                logger?.LogInformation("Serving {0}?{1} from memory cache", info.FinalVirtualPath, info.CommandString);
-            }
-            else
-            {
-                
-                if (info.HasParams)
-                {
-                    logger?.LogInformation($"Memory Cache Miss: Processing image {info.FinalVirtualPath}?{info.CommandString}");
-
-                    var imageData = await info.ProcessUncached();
-                    imageBytes = imageData.ResultBytes;
-                    contentType = imageData.ContentType;
-                }
-                else
-                {
-                    logger?.LogInformation($"Memory Cache Miss: Proxying image {info.FinalVirtualPath}?{info.CommandString}");
-                    
-                    var imageBytesArray = await info.GetPrimaryBlobBytesAsync();
-                    contentType = MagicBytes.GetContentTypeFromBytes(imageBytesArray);
-                    imageBytes = new ArraySegment<byte>(imageBytesArray);
-                }
-
-                // Set cache options.
-                var cacheEntryOptions = new MemoryCacheEntryOptions()
-                    .SetSize(imageBytes.Count)
-                    .SetSlidingExpiration(options.MemoryCacheSlidingExpiration);
-                
-                var cacheEntryMetaOptions = new MemoryCacheEntryOptions()
-                    .SetSize(contentType.Length * 2)
-                    .SetSlidingExpiration(options.MemoryCacheSlidingExpiration);
-                
-                memoryCache.Set(cacheKey, imageBytes, cacheEntryOptions);
-                memoryCache.Set(cacheKey + ".contentType", contentType, cacheEntryMetaOptions);
-            }
-
-            // write to stream
-            context.Response.ContentType = contentType;
-            context.Response.ContentLength = imageBytes.Count;
-            SetCachingHeaders(context, cacheKey);
-
-            if (imageBytes.Array == null)
-            {
-                throw new InvalidOperationException("Memory cache returned zero bytes.");
-            }
-            await context.Response.Body.WriteAsync(imageBytes.Array, imageBytes.Offset, imageBytes.Count);
-        }
-
-        private async Task ProcessWithDistributedCache(HttpContext context, string cacheKey, ImageJobInfo info)
-        {
-            var imageBytes = await distributedCache.GetAsync(cacheKey);
-            var contentType = await distributedCache.GetStringAsync(cacheKey + ".contentType");
-            if (imageBytes != null && contentType != null)
-            {
-                logger?.LogInformation("Serving {0}?{1} from distributed cache", info.FinalVirtualPath, info.CommandString);
-            }
-            else
-            {
-
-               
-                if (info.HasParams)
-                {
-                    logger?.LogInformation($"Distributed Cache Miss: Processing image {info.FinalVirtualPath}?{info.CommandString}");
-
-                    var imageData = await info.ProcessUncached();
-                    imageBytes = imageData.ResultBytes.Count != imageData.ResultBytes.Array?.Length 
-                        ? imageData.ResultBytes.ToArray() 
-                        : imageData.ResultBytes.Array;
-
-                    contentType = imageData.ContentType;
-                }
-                else
-                {
-                    logger?.LogInformation($"Distributed Cache Miss: Proxying image {info.FinalVirtualPath}?{info.CommandString}");
-                    
-                    imageBytes = await info.GetPrimaryBlobBytesAsync();
-                    contentType = MagicBytes.GetContentTypeFromBytes(imageBytes);
-                }
-
-                // Set cache options.
-                var cacheEntryOptions = new DistributedCacheEntryOptions()
-                    .SetSlidingExpiration(options.DistributedCacheSlidingExpiration);
-    
-                await distributedCache.SetAsync(cacheKey, imageBytes, cacheEntryOptions);
-                await distributedCache.SetStringAsync(cacheKey + ".contentType", contentType, cacheEntryOptions);
-            }
-
-            // write to stream
-            context.Response.ContentType = contentType;
-            context.Response.ContentLength = imageBytes.Length;
-            SetCachingHeaders(context, cacheKey);
-
-            await context.Response.Body.WriteAsync(imageBytes, 0, imageBytes.Length);
-        }
-        private async Task ProcessWithSqliteCache(HttpContext context, string cacheKey, ImageJobInfo info)
-        {
-            var cacheResult = await sqliteCache.GetOrCreate(cacheKey, async () =>
-            {
-                if (info.HasParams)
-                {
-                    logger?.LogInformation($"Sqlite Cache Miss: Processing image {info.FinalVirtualPath}?{info.CommandString}");
-
-                    var imageData = await info.ProcessUncached();
-                    var imageBytes = imageData.ResultBytes.Count != imageData.ResultBytes.Array?.Length
-                        ? imageData.ResultBytes.ToArray()
-                        : imageData.ResultBytes.Array;
-
-                    var contentType = imageData.ContentType;
-                    return new SqliteCacheEntry()
-                    {
-                        ContentType = contentType,
-                        Data = imageBytes
-                    };
-                }
-                else
-                {
-                    logger?.LogInformation($"Sqlite Cache Miss: Proxying image {info.FinalVirtualPath}?{info.CommandString}");
-
-                    var data = await info.GetPrimaryBlobBytesAsync();
-                    return new SqliteCacheEntry()
-                    {
-                        ContentType = MagicBytes.GetContentTypeFromBytes(data),
-                        Data = data
-                    };
-                }
-            });
-            
-
-            // write to stream
-            context.Response.ContentType = cacheResult.ContentType;
-            context.Response.ContentLength = cacheResult.Data.Length;
-            SetCachingHeaders(context, cacheKey);
-
-            await context.Response.Body.WriteAsync(cacheResult.Data, 0, cacheResult.Data.Length);
-        }
-        
         private async Task ProcessWithNoCache(HttpContext context, ImageJobInfo info)
         {
-
-            
             // If we're not caching, we should always use the modified date from source blobs as part of the etag
             
             var betterCacheKey = await info.GetExactCacheKey();
@@ -537,7 +361,7 @@ namespace Imageflow.Server
             GlobalPerf.Singleton.IncrementCounter("etag_miss");
             if (info.HasParams)
             {
-                logger?.LogInformation($"Processing image {info.FinalVirtualPath} with params {info.CommandString}");
+                logger?.LogInformation("Processing image {VirtualPath} with params {CommandString}", info.FinalVirtualPath, info.CommandString);
                 GlobalPerf.Singleton.IncrementCounter("nocache_processed");
                 var imageData = await info.ProcessUncached();
                 var imageBytes = imageData.ResultBytes;
@@ -556,7 +380,7 @@ namespace Imageflow.Server
             }
             else
             {
-                logger?.LogInformation($"Proxying image {info.FinalVirtualPath} with params {info.CommandString}");
+                logger?.LogInformation("Proxying image {VirtualPath} with params {CommandString}", info.FinalVirtualPath, info.CommandString);
                 GlobalPerf.Singleton.IncrementCounter("nocache_proxied");
                 await using var sourceStream = (await info.GetPrimaryBlob()).OpenRead();
                 SetCachingHeaders(context, betterCacheKey);

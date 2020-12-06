@@ -20,7 +20,7 @@ namespace Imageflow.Server.HybridCache
             {
                 AsyncCacheOptions = new AsyncCacheOptions()
                 {
-                    MaxQueuedBytes = options.MaxWriteQueueBytes,
+                    MaxQueuedBytes = options.QueueSizeLimitInBytes,
                     WriteSynchronouslyWhenQueueFull = true,
                 },
                 CleanupManagerOptions = new CleanupManagerOptions()

@@ -106,18 +106,21 @@ installed ([Install 32-bit](https://aka.ms/vs/16/release/vc_redist.x86.exe) or [
 
 
 ```c#
-using System.IO;
 using Amazon;
 using Azure.Storage.Blobs;
 using Imageflow.Fluent;
+using Imageflow.Server.DiskCache;
+using Imageflow.Server.Storage.AzureBlob;
+using Imageflow.Server.Storage.RemoteReader;
+using Imageflow.Server.Storage.S3;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Imageflow.Server.DiskCache;
-using Imageflow.Server.Storage.AzureBlob;
-using Imageflow.Server.Storage.S3;
+using System;
+using System.IO;
+using Imageflow.Server.HybridCache;
 
 namespace Imageflow.Server.Example
 {
@@ -136,29 +139,60 @@ namespace Imageflow.Server.Example
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllersWithViews();
+
+            // See the README in src/Imageflow.Server.Storage.RemoteReader/ for more advanced configuration
+            services.AddHttpClient();
+            // To add the RemoteReaderService, you need to all .AddHttpClient() first
+            services.AddImageflowRemoteReaderService(new RemoteReaderServiceOptions
+                {
+                    SigningKey = "ChangeMe"
+                }
+                .AddPrefix("/remote/"));
             
             // Make S3 containers available at /ri/ and /imageflow-resources/
             // If you use credentials, do not check them into your repository
-            services.AddImageflowS3Service(new S3ServiceOptions(null, null)
+            // You can call AddImageflowS3Service multiple times for each unique access key
+            services.AddImageflowS3Service(new S3ServiceOptions( null,null)
                 .MapPrefix("/ri/", RegionEndpoint.USEast1, "resizer-images")
                 .MapPrefix("/imageflow-resources/", RegionEndpoint.USWest2, "imageflow-resources"));
-
+            
             // Make Azure container available at /azure
+            // You can call AddImageflowAzureBlobService multiple times for each connection string
             services.AddImageflowAzureBlobService(
                 new AzureBlobServiceOptions(
                         "UseDevelopmentStorage=true;",
                         new BlobClientOptions())
                     .MapPrefix("/azure", "imageflow-demo" ));
 
-            // You can add a distributed cache, such as redis, if you add it and and
-            // call ImageflowMiddlewareOptions.SetAllowDistributedCaching(true)
-            services.AddDistributedMemoryCache();
-            // You can add a memory cache and call ImageflowMiddlewareOptions.SetAllowMemoryCaching(true)
-            services.AddMemoryCache();
-            // You can add a disk cache and call ImageflowMiddlewareOptions.SetAllowDiskCaching(true)
+            services.AddImageflowCustomBlobService(new CustomBlobServiceOptions()
+            {
+                Prefix = "/customblobs/",
+                IgnorePrefixCase = true,
+                ConnectionString = "UseDevelopmentStorage=true;",
+                // Only allow 'mycontainer' to be accessed. /customblobs/mycontainer/key.jpg would be an example path.
+                ContainerKeyFilterFunction = (container, key) =>
+                    container == "mycontainer" ? Tuple.Create(container, key) : null
+            });
+
+            var homeFolder = (Environment.OSVersion.Platform == PlatformID.Unix ||
+                   Environment.OSVersion.Platform == PlatformID.MacOSX)
+                    ? Environment.GetEnvironmentVariable("HOME")
+                    : Environment.ExpandEnvironmentVariables("%HOMEDRIVE%%HOMEPATH%");
+            
+
+            // You can add a hybrid cache (in-memory persisted database for tracking filenames, but filesystem used for bytes)
+            // But remember to call ImageflowMiddlewareOptions.SetAllowCaching(true)
             // If you're deploying to azure, provide a disk cache folder *not* inside ContentRootPath
             // to prevent the app from recycling whenever folders are created.
-            services.AddImageflowDiskCache(new DiskCacheOptions(Path.Combine(Env.ContentRootPath, "imageflow_cache")));
+            services.AddImageflowHybridCache(
+                new HybridCacheOptions(Path.Combine(homeFolder, "imageflow_example_hybrid_cache"))
+                {
+                    MaxWriteQueueBytes = 100 * 1000 * 1000,
+                    CacheSizeLimitInBytes = 1024 * 1024 * 50,
+                    MinCleanupBytes = 1024,
+                    MinAgeToDelete = TimeSpan.Zero
+                });
+
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -179,24 +213,19 @@ namespace Imageflow.Server.Example
             // You have a lot of configuration options
             app.UseImageflow(new ImageflowMiddlewareOptions()
                 // Maps / to WebRootPath
-                .SetMapWebRoot(true) 
-                // Register your license key
-                .SetLicenseKey(EnforceLicenseWith.RedDotWatermark, "License 50913....")
-                // Maps /folder to ContentRootPath/folder
+                .SetMapWebRoot(true)
+                .SetMyOpenSourceProjectUrl("https://github.com/imazen/imageflow-dotnet-server")
+                // Maps /folder to WebRootPath/folder
                 .MapPath("/folder", Path.Combine(Env.ContentRootPath, "folder"))
                 // Allow localhost to access the diagnostics page or remotely via /imageflow.debug?password=fuzzy_caterpillar
                 .SetDiagnosticsPageAccess(env.IsDevelopment() ? AccessDiagnosticsFrom.AnyHost : AccessDiagnosticsFrom.LocalHost)
                 .SetDiagnosticsPagePassword("fuzzy_caterpillar")
-                // Allow Disk Caching
-                .SetAllowDiskCaching(true)
-                // We can only have one type of caching enabled at a time
-                .SetAllowDistributedCaching(false)
-                // Disable memory caching even if the service is installed
-                .SetAllowMemoryCaching(false)
+                // Allow HybridCache or other registered IStreamCache to run
+                .SetAllowCaching(true)
                 // Cache publicly (including on shared proxies and CDNs) for 30 days
                 .SetDefaultCacheControlString("public, max-age=2592000")
                 // Allows extensionless images to be served within the given directory(ies)
-                .HandleExtensionlessRequestsUnder("/customblobs/", StringComparison.OrdinalIgnoreCase)                
+                .HandleExtensionlessRequestsUnder("/customblobs/", StringComparison.OrdinalIgnoreCase)
                 // Force all paths under "/gallery" to be watermarked
                 .AddRewriteHandler("/gallery", args =>
                 {
@@ -204,6 +233,7 @@ namespace Imageflow.Server.Example
                 })
                 .AddCommandDefault("down.filter", "mitchell")
                 .AddCommandDefault("f.sharpen", "15")
+                .AddCommandDefault("webp.quality", "90")
                 .AddCommandDefault("ignore_icc_errors", "true")
                 //When set to true, this only allows ?preset=value URLs, returning 403 if you try to use any other commands. 
                 .SetUsePresetsExclusively(false)
@@ -215,10 +245,10 @@ namespace Imageflow.Server.Example
                 // Use Imazen.Common.Helpers.Signatures.SignRequest(string pathAndQuery, string signingKey) to generate
                 //.ForPrefix allows you to set less restrictive rules for subfolders. 
                 // For example, you may want to allow unmodified requests through with SignatureRequired.ForQuerystringRequests
-                //.SetRequestSignatureOptions(
-                //        new RequestSignatureOptions(SignatureRequired.ForAllRequests, new []{"test key"})
-                //            .ForPrefix("/logos/", StringComparison.Ordinal, 
-                //                SignatureRequired.ForQuerystringRequests, new []{"test key"}))
+                // .SetRequestSignatureOptions(
+                //     new RequestSignatureOptions(SignatureRequired.ForAllRequests, new []{"test key"})
+                //         .ForPrefix("/logos/", StringComparison.Ordinal, 
+                //             SignatureRequired.ForQuerystringRequests, new []{"test key"}))
                 // It's a good idea to limit image sizes for security. Requests causing these to be exceeded will fail
                 // The last argument to FrameSizeLimit() is the maximum number of megapixels
                 .SetJobSecurityOptions(new SecurityOptions()
@@ -250,6 +280,7 @@ namespace Imageflow.Server.Example
                 }));
             
             
+            
             app.UseStaticFiles();
             app.UseRouting();
             app.UseAuthorization();
@@ -262,6 +293,7 @@ namespace Imageflow.Server.Example
         }
     }
 }
+
 
 ```
 

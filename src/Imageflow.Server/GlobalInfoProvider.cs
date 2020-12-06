@@ -2,16 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Imageflow.Server.Extensibility;
 using Imazen.Common.Extensibility.ClassicDiskCache;
+using Imazen.Common.Extensibility.StreamCache;
 using Imazen.Common.Instrumentation.Support;
 using Imazen.Common.Instrumentation.Support.InfoAccumulators;
 using Imazen.Common.Storage;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
-using Microsoft.Extensions.Caching.Distributed;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
 namespace Imageflow.Server
@@ -19,15 +17,18 @@ namespace Imageflow.Server
     internal class GlobalInfoProvider: IInfoProvider
     {
         private readonly IWebHostEnvironment env;
+        private readonly IStreamCache streamCache;
         private readonly ImageflowMiddlewareOptions options;
         private readonly List<string> pluginNames;
         private readonly List<IInfoProvider> infoProviders;
-        public GlobalInfoProvider(ImageflowMiddlewareOptions options,IWebHostEnvironment env, ILogger<ImageflowMiddleware> logger,  ISqliteCache sqliteCache,  IMemoryCache memoryCache, IDistributedCache distributedCache,
+        public GlobalInfoProvider(ImageflowMiddlewareOptions options,IWebHostEnvironment env, ILogger<ImageflowMiddleware> logger,  
+            IStreamCache streamCache,
             IClassicDiskCache diskCache, IList<IBlobProvider> blobProviders)
         {
             this.env = env;
+            this.streamCache = streamCache;
             this.options = options;
-            var plugins = new List<object>(){logger, memoryCache, diskCache, distributedCache}.Concat(blobProviders).ToList();
+            var plugins = new List<object>(){logger, streamCache, diskCache}.Concat(blobProviders).ToList();
             infoProviders = plugins.OfType<IInfoProvider>().ToList();
                 
             pluginNames = plugins

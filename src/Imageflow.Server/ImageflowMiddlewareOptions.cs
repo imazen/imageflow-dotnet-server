@@ -13,19 +13,16 @@ namespace Imageflow.Server
         internal Licensing Licensing { get; set; }
 
         public string MyOpenSourceProjectUrl { get; set; } = "https://i-need-a-license.com";
-
-        public bool AllowMemoryCaching { get; set; }
-
-        public bool AllowSqliteCaching { get; set; }
-
-
-        public TimeSpan MemoryCacheSlidingExpiration { get; set; } = TimeSpan.FromHours(24);
-        public TimeSpan DistributedCacheSlidingExpiration { get; set; } = TimeSpan.FromHours(24);
         
+        /// <summary>
+        /// Set to true to allow any registered IStreamCache plugin (such as Imageflow.Server.HybridCache) to be used.
+        /// </summary>
         public bool AllowCaching { get; set; } = true;
+        /// <summary>
+        /// Set to true to allow the legacy disk caching system (Imageflow.Server.DiskCache) to be used
+        /// </summary>
         public bool AllowDiskCaching { get; set; } = true;
-        public bool AllowDistributedCaching { get; set; }
-        
+
         internal CacheBackend ActiveCacheBackend { get; set; }
 
         private readonly List<NamedWatermark> namedWatermarks = new List<NamedWatermark>();
@@ -212,43 +209,25 @@ namespace Imageflow.Server
             return this;
         }
         
+        /// <summary>
+        /// Set to true to allow any registered IStreamCache plugin (such as Imageflow.Server.HybridCache) to be used.
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
         public ImageflowMiddlewareOptions SetAllowCaching(bool value)
         {
             this.AllowCaching = value;
             return this;
         }
 
-        
-        public ImageflowMiddlewareOptions SetAllowMemoryCaching(bool value)
-        {
-            this.AllowMemoryCaching = value;
-            return this;
-        }
-        
-        public ImageflowMiddlewareOptions SetAllowSqliteCaching(bool value)
-        {
-            this.AllowSqliteCaching = value;
-            return this;
-        }
-        
-        public ImageflowMiddlewareOptions SetMemoryCacheSlidingExpiration(TimeSpan value)
-        {
-            this.MemoryCacheSlidingExpiration = value;
-            return this;
-        }
-        public ImageflowMiddlewareOptions SetDistributedCacheSlidingExpiration(TimeSpan value)
-        {
-            this.DistributedCacheSlidingExpiration = value;
-            return this;
-        }
+        /// <summary>
+        /// Set to true to allow the legacy disk caching system (Imageflow.Server.DiskCache) to be used
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
         public ImageflowMiddlewareOptions SetAllowDiskCaching(bool value)
         {
             this.AllowDiskCaching = value;
-            return this;
-        }
-        public ImageflowMiddlewareOptions SetAllowDistributedCaching(bool value)
-        {
-            this.AllowDistributedCaching = value;
             return this;
         }
 
