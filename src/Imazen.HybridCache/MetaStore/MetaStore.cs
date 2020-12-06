@@ -64,11 +64,11 @@ namespace Imazen.HybridCache.MetaStore
             }
         }
 
-        public Task DeleteRecord(int shard, ICacheDatabaseRecord record, bool fileDeleted)
+        public Task DeleteRecord(int shard, ICacheDatabaseRecord record)
         {
             if (record.CreatedAt > DateTime.UtcNow)
                 throw new InvalidOperationException();
-            return shards[shard].DeleteRecord(record, fileDeleted);
+            return shards[shard].DeleteRecord(record);
         }
 
         public Task<IEnumerable<ICacheDatabaseRecord>> GetDeletionCandidates(int shard, DateTime maxLastDeletionAttemptTime, DateTime maxCreatedDate, int count,

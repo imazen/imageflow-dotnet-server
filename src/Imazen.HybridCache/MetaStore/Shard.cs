@@ -57,7 +57,7 @@ namespace Imazen.HybridCache.MetaStore
             }
         }
         
-        public async Task DeleteRecord(ICacheDatabaseRecord oldRecord, bool fileDeleted)
+        public async Task DeleteRecord(ICacheDatabaseRecord oldRecord)
         {
             using (await createLock.LockAsync())
             {
@@ -204,7 +204,7 @@ namespace Imazen.HybridCache.MetaStore
             {
                 throw new InvalidOperationException("Record already moved in database");
             }
-            await DeleteRecord(record, false);
+            await DeleteRecord(record);
         }
     }
 }

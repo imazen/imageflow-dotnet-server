@@ -24,8 +24,8 @@ namespace Imazen.HybridCache.Benchmark
                 e.Cancel = true;
             };
 
-            await TestAsyncMediumLimitedCacheWavesMetaStore(cts.Token);
-            //await TestSyncVeryLimitedCacheWavesMetaStore(cts.Token);
+            //await TestAsyncMediumLimitedCacheWavesMetaStore(cts.Token);
+            await TestSyncVeryLimitedCacheWavesMetaStore(cts.Token);
             //await TestMassiveFileQuantityMetaStore(cts.Token);
             //await TestMassiveFileQuantity(cts.Token);
             //await TestSyncVeryLimitedCacheWaves(cts.Token);

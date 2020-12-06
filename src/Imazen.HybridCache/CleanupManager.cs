@@ -181,12 +181,12 @@ namespace Imazen.HybridCache
                     if (File.Exists(physicalPath))
                     {
                         File.Delete(physicalPath);
-                        await Database.DeleteRecord(shard, record, true);
+                        await Database.DeleteRecord(shard, record);
                         bytesDeleted = record.DiskSize;
                     }
                     else
                     {
-                        await Database.DeleteRecord(shard, record, false); 
+                        await Database.DeleteRecord(shard, record); 
                     }
                 }
                 catch (IOException ioException)
@@ -204,15 +204,17 @@ namespace Imazen.HybridCache
                     try
                     {
                         //Move it so it usage will decrease and it can be deleted later
+                        //TODO: This is not transactional, as the db record is written *after* the file is moved
+                        //This should be split up into create and delete
                         (Options.MoveFileOverwriteFunc ?? File.Move)(physicalPath, movedPath);
                         await Database.ReplaceRelativePathAndUpdateLastDeletion(shard, record, movedRelativePath,
                             DateTime.UtcNow);
-                        Logger?.LogError(ioException,"HybridCache: Error deleting file, moved for eventual deletion");
+                        Logger?.LogError(ioException,"HybridCache: Error deleting file, moved for eventual deletion - {Path}", record.RelativePath);
                     }
                     catch (IOException ioException2)
                     {
                         await Database.UpdateLastDeletionAttempt(shard, record.RelativePath, DateTime.UtcNow);
-                        Logger?.LogError(ioException2,"HybridCache: Failed to move file for eventual deletion");
+                        Logger?.LogError(ioException2,"HybridCache: Failed to move file for eventual deletion - {Path}", record.RelativePath);
                     }
                 }
             });

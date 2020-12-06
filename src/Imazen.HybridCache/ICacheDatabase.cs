@@ -26,9 +26,8 @@ namespace Imazen.HybridCache
         /// </summary>
         /// <param name="shard"></param>
         /// <param name="record"></param>
-        /// <param name="fileDeleted">True if the file was just deleted</param>
         /// <returns></returns>
-        Task DeleteRecord(int shard, ICacheDatabaseRecord record, bool fileDeleted);
+        Task DeleteRecord(int shard, ICacheDatabaseRecord record);
 
         /// <summary>
         /// Return the oldest (by created date) records, sorted from oldest to newest, where
