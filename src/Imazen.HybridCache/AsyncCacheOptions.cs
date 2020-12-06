@@ -14,8 +14,14 @@ namespace Imazen.HybridCache
         
         /// <summary>
         /// If this is used from .NET Core, set to File.Move(from, to, true)
+        /// Used by deletion code even if MoveFilesIntoPlace is false
         /// </summary>
         public Action<string,string> MoveFileOverwriteFunc { get; set; }
-        
+
+        /// <summary>
+        /// If true, cache files are first written to a temp file, then moved into their correct place.
+        /// Slightly slower when true. Defaults to false.
+        /// </summary>
+        public bool MoveFilesIntoPlace { get; set; }
     }
 }

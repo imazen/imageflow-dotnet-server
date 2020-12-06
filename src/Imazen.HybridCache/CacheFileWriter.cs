@@ -23,8 +23,10 @@ namespace Imazen.HybridCache
         private readonly Action<string, string> moveFileOverwriteFunc;
         private AsyncLockProvider WriteLocks { get; }
 
-        public CacheFileWriter(AsyncLockProvider writeLocks, Action<string,string> moveFileOverwriteFunc)
+        private bool moveIntoPlace;
+        public CacheFileWriter(AsyncLockProvider writeLocks, Action<string,string> moveFileOverwriteFunc, bool moveIntoPlace)
         {
+            this.moveIntoPlace = moveIntoPlace;
             WriteLocks = writeLocks;
             this.moveFileOverwriteFunc = moveFileOverwriteFunc ?? File.Move;
         }
@@ -61,61 +63,74 @@ namespace Imazen.HybridCache
                     if (cancellationToken.IsCancellationRequested)
                         throw new OperationCanceledException(cancellationToken);
 
-                    //On the second check, use cached data for speed. The cached data should be updated if another thread updated a file (but not if another process did).
-                    if (!File.Exists(entry.PhysicalPath))
+                    if (File.Exists(entry.PhysicalPath)) return;
+
+
+                    var subdirectoryPath = Path.GetDirectoryName(entry.PhysicalPath);
+                    //Create subdirectory if needed.
+                    if (subdirectoryPath != null && !Directory.Exists(subdirectoryPath))
+                    {
+                        Directory.CreateDirectory(subdirectoryPath);
+                    }
+
+                    string writeToFile;
+                    if (moveIntoPlace)
                     {
 
-                        var subdirectoryPath = Path.GetDirectoryName(entry.PhysicalPath);
-                        //Create subdirectory if needed.
-                        if (subdirectoryPath != null && !Directory.Exists(subdirectoryPath))
+                        writeToFile = entry.PhysicalPath + ".tmp_" + new Random().Next(int.MaxValue).ToString("x") +
+                                      ".tmp";
+                    }
+                    else
+                    {
+                        writeToFile = entry.PhysicalPath;
+                    }
+
+
+                    var fs = new FileStream(writeToFile, FileMode.Create, FileAccess.Write, FileShare.None, 4096,
+                        FileOptions.Asynchronous);
+                    var finished = false;
+                    try
+                    {
+                        using (fs)
                         {
-                            Directory.CreateDirectory(subdirectoryPath);
+                            //Run callback to write the cached data
+                            await writeCallback(fs, cancellationToken); //Can throw any number of exceptions.
+                            await fs.FlushAsync(cancellationToken);
+                            fs.Flush(true);
                         }
 
-
-                        var tempFile = entry.PhysicalPath + ".tmp_" + new Random().Next(int.MaxValue).ToString("x") +
-                                       ".tmp";
-
-                        var fs = new FileStream(tempFile, FileMode.Create, FileAccess.Write, FileShare.None, 4096, FileOptions.Asynchronous);
-                        var finished = false;
                         try
                         {
-                            using (fs)
+                            if (moveIntoPlace)
                             {
-                                //Run callback to write the cached data
-                                await writeCallback(fs, cancellationToken); //Can throw any number of exceptions.
-                                await fs.FlushAsync(cancellationToken);
-                                fs.Flush(true);
+                                moveFileOverwriteFunc(writeToFile, entry.PhysicalPath);
                             }
 
+                            resultStatus = FileWriteStatus.FileCreated;
+                            finished = true;
+                        }
+                        //Will throw IO exception if already exists. Which we consider a hit, so we delete the tempFile
+                        catch (IOException)
+                        {
+                        }
+                    }
+                    finally
+                    {
+                        //Don't leave half-written files around.
+                        if (!finished)
+                        {
                             try
                             {
-                                
-                                moveFileOverwriteFunc(tempFile, entry.PhysicalPath);
-                                resultStatus = FileWriteStatus.FileCreated;
-                                finished = true;
+                                if (File.Exists(writeToFile)) File.Delete(writeToFile);
                             }
-                            //Will throw IO exception if already exists. Which we consider a hit, so we delete the tempFile
-                            catch (IOException)
+                            catch
                             {
-                            }
-                        }
-                        finally
-                        {
-                            //Don't leave half-written files around.
-                            if (!finished)
-                            {
-                                try
-                                {
-                                    if (File.Exists(tempFile)) File.Delete(tempFile);
-                                }
-                                catch
-                                {
-                                    // ignored
-                                }
+                                // ignored
                             }
                         }
                     }
+
+
                 });
 
             if (!lockingSucceeded)

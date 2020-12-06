@@ -46,7 +46,7 @@ namespace Imazen.HybridCache
             QueueLocks = new AsyncLockProvider();
             EvictAndWriteLocks = new AsyncLockProvider();
             CurrentWrites = new AsyncWriteCollection(options.MaxQueuedBytes);
-            FileWriter = new CacheFileWriter(FileWriteLocks, Options.MoveFileOverwriteFunc);
+            FileWriter = new CacheFileWriter(FileWriteLocks, Options.MoveFileOverwriteFunc, Options.MoveFilesIntoPlace);
         }
 
         
@@ -90,16 +90,21 @@ namespace Imazen.HybridCache
             return errorCode == errorSharingViolation || errorCode == errorLockViolation;
         }
 
-        private static async Task<FileStream> TryWaitForLockedFile(string physicalPath, int timeoutMs, CancellationToken cancellationToken)
+        private async Task<FileStream> TryWaitForLockedFile(string physicalPath, Stopwatch waitTime, int timeoutMs, CancellationToken cancellationToken)
         {
-            var waitForFile = new Stopwatch();
+            var waitForFile = waitTime;
+            waitTime.Stop();
             while (waitForFile.ElapsedMilliseconds < timeoutMs)
             {
                 waitForFile.Start();
                 try
                 {
-                    return new FileStream(physicalPath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096,
+                    var fs = new FileStream(physicalPath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096,
                         FileOptions.Asynchronous | FileOptions.SequentialScan);
+
+                    waitForFile.Stop();
+                    Logger?.LogInformation("Cache file locked, waited {WaitTime} to read {Path}", waitForFile.Elapsed, physicalPath);
+                    return fs;
                 }
                 catch (FileNotFoundException)
                 {
@@ -115,6 +120,33 @@ namespace Imazen.HybridCache
                 }
                 await Task.Delay((int)Math.Min(15, Math.Round(timeoutMs / 3.0)), cancellationToken); 
                 waitForFile.Stop();
+            }
+
+            return null;
+        }
+
+        private async Task<AsyncCacheResult> TryWaitForLockedFile(CacheEntry entry, string contentType, CancellationToken cancellationToken)
+        {
+            FileStream openedStream = null;
+            var waitTime = Stopwatch.StartNew();
+            if (!await FileWriteLocks.TryExecuteAsync(entry.StringKey, Options.WaitForIdenticalDiskWritesMs,
+                cancellationToken, async () =>
+                {
+                    openedStream = await TryWaitForLockedFile(entry.PhysicalPath, waitTime, 
+                        Options.WaitForIdenticalDiskWritesMs, cancellationToken);
+                }))
+            {
+                return null;
+            }
+
+            if (openedStream != null)
+            {
+                return new AsyncCacheResult
+                {
+                    Detail = AsyncCacheDetailResult.ContendedDiskHit,
+                    ContentType = contentType,
+                    Data = openedStream
+                };
             }
 
             return null;
@@ -151,30 +183,8 @@ namespace Imazen.HybridCache
             catch (UnauthorizedAccessException)
             {
                 if (!waitForFile) return null;
-                
-                FileStream openedStream = null;
 
-                if (!await FileWriteLocks.TryExecuteAsync(entry.StringKey, Options.WaitForIdenticalDiskWritesMs,
-                    cancellationToken, async () =>
-                    {
-                        openedStream = await TryWaitForLockedFile(entry.PhysicalPath,
-                            Options.WaitForIdenticalDiskWritesMs, cancellationToken);
-                    }))
-                {
-                    return null;
-                }
-
-                if (openedStream != null)
-                {
-                    return new AsyncCacheResult
-                    {
-                        Detail = AsyncCacheDetailResult.ContendedDiskHit,
-                        ContentType = contentType,
-                        Data = openedStream
-                    };
-                }
-
-                return null;
+                return await TryWaitForLockedFile(entry, contentType, cancellationToken);
             }
 
             catch (IOException ioException)
@@ -183,32 +193,7 @@ namespace Imazen.HybridCache
                 {
                     if (!waitForFile) return null;
 
-                    
-                    FileStream openedStream = null;
-
-                    if (!await FileWriteLocks.TryExecuteAsync(entry.StringKey, Options.WaitForIdenticalDiskWritesMs,
-                        cancellationToken, async () =>
-                        {
-                            openedStream = await TryWaitForLockedFile(entry.PhysicalPath,
-                                Options.WaitForIdenticalDiskWritesMs, cancellationToken);
-                        }))
-                    {
-                        return null;
-                    }
-
-                    if (openedStream != null)
-                    {
-                        return new AsyncCacheResult
-                        {
-                            Detail = AsyncCacheDetailResult.ContendedDiskHit,
-                            ContentType = contentType,
-                            Data = openedStream
-                        };
-                    }
-                    else
-                    {
-                        return null;
-                    }
+                    return await TryWaitForLockedFile(entry, contentType, cancellationToken);
                 }
                 else
                 {

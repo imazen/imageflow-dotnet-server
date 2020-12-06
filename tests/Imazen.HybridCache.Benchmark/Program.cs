@@ -53,7 +53,8 @@ namespace Imazen.HybridCache.Benchmark
                         MaxQueuedBytes = 100 * 100 * 1000,
                         FailRequestsOnEnqueueLockTimeout = true,
                         WriteSynchronouslyWhenQueueFull = true,
-                        MoveFileOverwriteFunc = (from, to) => File.Move(from,to,true)
+                        MoveFileOverwriteFunc = (from, to) => File.Move(from,to,true),
+                        MoveFilesIntoPlace = false
                     },
                     CleanupManagerOptions = new CleanupManagerOptions()
                     {
