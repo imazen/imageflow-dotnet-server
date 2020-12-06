@@ -48,7 +48,16 @@ namespace Imageflow.Server
             this.env = env;
             this.logger = logger.FirstOrDefault();
             diskCache = diskCaches.FirstOrDefault();
-            streamCache = streamCaches.FirstOrDefault();
+
+            var streamCacheArray = streamCaches.ToArray();
+            if (streamCacheArray.Count() > 1)
+            {
+                throw new InvalidOperationException("Only 1 IStreamCache instance can be registered at a time");
+            }
+            
+            streamCache = streamCacheArray.FirstOrDefault();
+
+            
             var providers = blobProviders.ToList();
             var mappedPaths = options.MappedPaths.ToList();
             if (options.MapWebRoot)
@@ -242,7 +251,7 @@ namespace Imageflow.Server
             {
                 if (info.HasParams)
                 {
-                    logger?.LogDebug($"Cache miss: Processing image {info.FinalVirtualPath}?{info}");
+                    logger?.LogDebug("{CacheName} miss: Processing image {VirtualPath}?{Querystring}", typeName, info.FinalVirtualPath,info.ToString());
                     var result = await info.ProcessUncached();
                     if (result.ResultBytes.Array == null)
                     {
@@ -250,24 +259,27 @@ namespace Imageflow.Server
                     }
                     return new Tuple<string, ArraySegment<byte>>(result.ContentType, result.ResultBytes);
                 }
-                else
-                {
-                    logger?.LogDebug($"Cache miss: Proxying image {info.FinalVirtualPath}");
-                    var bytes = await info.GetPrimaryBlobBytesAsync();
-                    return new Tuple<string, ArraySegment<byte>>(null, bytes);
-                }
+                
+                logger?.LogDebug("{CacheName} miss: Proxying image {VirtualPath}",typeName,  info.FinalVirtualPath);
+                var bytes = await info.GetPrimaryBlobBytesAsync();
+                return new Tuple<string, ArraySegment<byte>>(null, bytes);
+            
             },CancellationToken.None,false);
 
+            if (cacheResult.Status != null)
+            {
+                GlobalPerf.Singleton.IncrementCounter($"{typeName}_{cacheResult.Status}");
+            }
             if (cacheResult.Data != null)
             {
                 if (cacheResult.Data.Length < 1)
                 {
-                    throw new InvalidOperationException("Cache returned cache entry with zero bytes");
+                    throw new InvalidOperationException($"{typeName} returned cache entry with zero bytes");
                 }
                 SetCachingHeaders(context, cacheKey);
                 await MagicBytes.ProxyToStream(cacheResult.Data, context.Response);
                 
-                logger?.LogDebug("Serving from cache {0}?{1}", info.FinalVirtualPath, info.CommandString, typeName);
+                logger?.LogDebug("Serving from {CacheName} {VirtualPath}?{CommandString}", typeName, info.FinalVirtualPath, info.CommandString);
             }
             else
             {

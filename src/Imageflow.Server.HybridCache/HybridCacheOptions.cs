@@ -16,7 +16,7 @@ namespace Imageflow.Server.HybridCache
         public long QueueSizeLimitInBytes { get; set; } = 100 * 1024 * 1024;
 
         /// <summary>
-        /// Defaults to 1 GiB. Don't set below 35MB or no files will be cached
+        /// Defaults to 1 GiB. Don't set below 9MB or no files will be cached, since 9MB is reserved just for empty directory entries.
         /// </summary>
         public long CacheSizeLimitInBytes { get; set; } = 1 * 1024 * 1024 * 1024;
         
@@ -33,10 +33,9 @@ namespace Imageflow.Server.HybridCache
         /// <summary>
         /// The number of shards to split the metabase into. More shards means more open log files, slower shutdown.
         /// But more shards also mean less lock contention and faster start time for individual cached requests.
-        /// Defaults to 8.
+        /// Defaults to 8. You have to delete the database directory each time you change this number.
         /// </summary>
         public int DatabaseShards { get; set; } = 8;
-
 
         public HybridCacheOptions(string cacheDir)
         {

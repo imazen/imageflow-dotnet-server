@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -11,6 +12,7 @@ namespace Imazen.HybridCache
 {
     public class HybridCache : IStreamCache
     {
+        private readonly ILogger logger;
         private HashBasedPathBuilder PathBuilder { get; }
         internal AsyncCache AsyncCache { get; }
         private CleanupManager CleanupManager { get; }
@@ -19,6 +21,7 @@ namespace Imazen.HybridCache
         
         public HybridCache(ICacheDatabase cacheDatabase, HybridCacheOptions options, ILogger logger)
         {
+            this.logger = logger;
             Database = cacheDatabase;
             PathBuilder = new HashBasedPathBuilder(options.PhysicalCacheDir, options.Subfolders,
                 Path.DirectorySeparatorChar, ".jpg");
@@ -41,8 +44,12 @@ namespace Imazen.HybridCache
 
         public async Task StopAsync(CancellationToken cancellationToken)
         {
+            logger.LogInformation("HybridCache is shutting down...");
+            var sw = Stopwatch.StartNew();
             await AsyncCache.AwaitEnqueuedTasks();
             await Database.StopAsync(cancellationToken);
+            sw.Stop();
+            logger.LogInformation("HybridCache shut down in {ShutdownTime}", sw.Elapsed);
         }
 
         public Task AwaitEnqueuedTasks()

@@ -55,14 +55,15 @@ namespace Imageflow.Server.Example
                         new BlobClientOptions())
                     .MapPrefix("/azure", "imageflow-demo" ));
 
+            // Custom blob services can do whatever you need. See CustomBlobService.cs in src/Imageflow.Service.Example
             services.AddImageflowCustomBlobService(new CustomBlobServiceOptions()
             {
-                Prefix = "/customblobs/",
+                Prefix = "/custom_blobs/",
                 IgnorePrefixCase = true,
                 ConnectionString = "UseDevelopmentStorage=true;",
-                // Only allow 'mycontainer' to be accessed. /customblobs/mycontainer/key.jpg would be an example path.
+                // Only allow 'my_container' to be accessed. /custom_blobs/my_container/key.jpg would be an example path.
                 ContainerKeyFilterFunction = (container, key) =>
-                    container == "mycontainer" ? Tuple.Create(container, key) : null
+                    container == "my_container" ? Tuple.Create(container, key) : null
             });
 
             var homeFolder = (Environment.OSVersion.Platform == PlatformID.Unix ||
@@ -71,8 +72,8 @@ namespace Imageflow.Server.Example
                     : Environment.ExpandEnvironmentVariables("%HOMEDRIVE%%HOMEPATH%");
             
 
-            // You can add a hybrid cache (in-memory persisted database for tracking filenames, but filesystem used for bytes)
-            // But remember to call ImageflowMiddlewareOptions.SetAllowCaching(true)
+            // You can add a hybrid cache (in-memory persisted database for tracking filenames, but files used for bytes)
+            // But remember to call ImageflowMiddlewareOptions.SetAllowCaching(true) for it to take effect
             // If you're deploying to azure, provide a disk cache folder *not* inside ContentRootPath
             // to prevent the app from recycling whenever folders are created.
             services.AddImageflowHybridCache(
@@ -82,9 +83,10 @@ namespace Imageflow.Server.Example
                     MinAgeToDelete = TimeSpan.FromSeconds(10),
                     // How much RAM to use for the write queue before switching to synchronous writes
                     QueueSizeLimitInBytes = 100 * 1000 * 1000,
-                    // The maximum size of the cache 
-                    CacheSizeLimitInBytes = 1024 * 1024 * 50,
+                    // The maximum size of the cache (1GB)
+                    CacheSizeLimitInBytes = 1024 * 1024 * 1024,
                 });
+
 
         }
 
@@ -118,7 +120,7 @@ namespace Imageflow.Server.Example
                 // Cache publicly (including on shared proxies and CDNs) for 30 days
                 .SetDefaultCacheControlString("public, max-age=2592000")
                 // Allows extensionless images to be served within the given directory(ies)
-                .HandleExtensionlessRequestsUnder("/customblobs/", StringComparison.OrdinalIgnoreCase)
+                .HandleExtensionlessRequestsUnder("/custom_blobs/", StringComparison.OrdinalIgnoreCase)
                 // Force all paths under "/gallery" to be watermarked
                 .AddRewriteHandler("/gallery", args =>
                 {
