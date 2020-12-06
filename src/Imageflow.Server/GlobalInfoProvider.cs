@@ -102,7 +102,7 @@ namespace Imageflow.Server
 
             query.Add("imageflow",1);
             query.AddString("enabled_cache", options.ActiveCacheBackend.ToString());
-            query.AddString("stream_cache", streamCache.GetType().Name);
+            if (streamCache != null) query.AddString("stream_cache", streamCache.GetType().Name);
             query.Add("map_web_root", options.MapWebRoot);
             query.Add("use_presets_exclusively", options.UsePresetsExclusively);
             query.Add("request_signing_default", options.RequestSignatureOptions?.DefaultRequirement.ToString() ?? "never");
