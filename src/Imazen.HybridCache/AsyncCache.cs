@@ -83,9 +83,18 @@ namespace Imazen.HybridCache
         }
         
         private static bool IsFileLocked(IOException exception) {
+            //For linux
+            const int linuxEAgain = 11;
+            const int linuxEBusy = 16;
+            const int linuxEPerm = 13;
+            if (linuxEAgain == exception.HResult || linuxEBusy == exception.HResult || linuxEPerm == exception.HResult)
+            {
+                return true;
+            }
+            //For windows
             // See https://docs.microsoft.com/en-us/dotnet/standard/io/handling-io-errors
             const int errorSharingViolation = 0x20; 
-            const int errorLockViolation = 0x21; 
+            const int errorLockViolation = 0x21;
             var errorCode = exception.HResult & 0x0000FFFF; 
             return errorCode == errorSharingViolation || errorCode == errorLockViolation;
         }
@@ -189,10 +198,10 @@ namespace Imazen.HybridCache
 
             catch (IOException ioException)
             {
+                if (!waitForFile) return null;
+                
                 if (IsFileLocked(ioException))
                 {
-                    if (!waitForFile) return null;
-
                     return await TryWaitForLockedFile(entry, contentType, cancellationToken);
                 }
                 else
