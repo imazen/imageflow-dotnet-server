@@ -44,12 +44,12 @@ namespace Imazen.HybridCache
 
         public async Task StopAsync(CancellationToken cancellationToken)
         {
-            logger.LogInformation("HybridCache is shutting down...");
+            logger?.LogInformation("HybridCache is shutting down...");
             var sw = Stopwatch.StartNew();
             await AsyncCache.AwaitEnqueuedTasks();
             await Database.StopAsync(cancellationToken);
             sw.Stop();
-            logger.LogInformation("HybridCache shut down in {ShutdownTime}", sw.Elapsed);
+            logger?.LogInformation("HybridCache shut down in {ShutdownTime}", sw.Elapsed);
         }
 
         public Task AwaitEnqueuedTasks()

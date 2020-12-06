@@ -273,7 +273,7 @@ namespace Imazen.DiskCache.Cleanup {
                     var sw = Stopwatch.StartNew();
                     cache.Index.Populate(item.RelativePath, item.PhysicalPath);
                     sw.Stop();
-                    logger.LogTrace("{0}ms: Querying file system about {1}", sw.ElapsedMilliseconds.ToString(NumberFormatInfo.InvariantInfo).PadLeft(4), item.RelativePath);
+                    logger?.LogTrace("{0}ms: Querying file system about {1}", sw.ElapsedMilliseconds.ToString(NumberFormatInfo.InvariantInfo).PadLeft(4), item.RelativePath);
                 } else 
                     cache.Index.Populate(item.RelativePath, item.PhysicalPath);
             }

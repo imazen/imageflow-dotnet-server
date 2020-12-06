@@ -62,7 +62,7 @@ namespace Imazen.HybridCache.MetaStore
             }
             catch (IOException ioException)
             {
-                logger.LogError(ioException, "Failed to open log file {Path} for writing", writeLogPath);
+                logger?.LogError(ioException, "Failed to open log file {Path} for writing", writeLogPath);
                 throw;
             }
         }
@@ -111,7 +111,7 @@ namespace Imazen.HybridCache.MetaStore
                 }
                 catch (IOException ioException)
                 {
-                    logger.LogError(ioException, "Failed to open log file {Path} for reading in shard {ShardId}. Perhaps another process is still writing to the log?", lastOpenPath, shardId);
+                    logger?.LogError(ioException, "Failed to open log file {Path} for reading in shard {ShardId}. Perhaps another process is still writing to the log?", lastOpenPath, shardId);
                     throw;
                 }
                 
@@ -133,7 +133,7 @@ namespace Imazen.HybridCache.MetaStore
                     }
                     catch (Exception e)
                     {
-                        logger.LogError(e, "Failed to close log file {Path}", orderedLogs[ix].Item1);
+                        logger?.LogError(e, "Failed to close log file {Path}", orderedLogs[ix].Item1);
                     }
                 }
             }
@@ -190,7 +190,7 @@ namespace Imazen.HybridCache.MetaStore
                     }
                     catch (IOException ioException)
                     {
-                        logger.LogError(ioException, "Failed to delete log file {Path} after consolidation", t.Item1);
+                        logger?.LogError(ioException, "Failed to delete log file {Path} after consolidation", t.Item1);
                     }
                 }
             }

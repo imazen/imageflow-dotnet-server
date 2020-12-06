@@ -205,7 +205,7 @@ namespace Imazen.DiskCache {
             }
             if (logger != null) {
                 sw?.Stop();
-                logger.LogTrace("{0}ms: {1}{2} for {3}, Key: {4}", 
+                logger?.LogTrace("{0}ms: {1}{2} for {3}, Key: {4}", 
                     sw?.ElapsedMilliseconds.ToString(NumberFormatInfo.InvariantInfo).PadLeft(4), 
                     asynchronous ? (asyncFailed ? "AsyncHttpMode, fell back to sync write  " : "AsyncHttpMode+AsyncWrites ") : "AsyncHttpMode",
                     result.Result.ToString(), 
