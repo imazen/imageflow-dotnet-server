@@ -10,12 +10,9 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Polly;
 using System;
 using System.IO;
-using System.Net.Http;
 using Imageflow.Server.HybridCache;
-using Imageflow.Server.Storage.RemoteReader;
 
 namespace Imageflow.Server.Example
 {
@@ -35,7 +32,7 @@ namespace Imageflow.Server.Example
         {
             services.AddControllersWithViews();
 
-            // See the README for more advanced configuration
+            // See the README in src/Imageflow.Server.Storage.RemoteReader/ for more advanced configuration
             services.AddHttpClient();
 
             var remoteReaderServiceOptions = new RemoteReaderServiceOptions

@@ -103,7 +103,7 @@ namespace Imazen.HybridCache.Tests
                     },
                     CancellationToken.None, false);
                 Assert.NotNull(result.Data);
-                Assert.Equal("Miss", result.Status);
+                Assert.Equal("WriteSucceeded", result.Status);
 
                 await cache.AwaitEnqueuedTasks();
 

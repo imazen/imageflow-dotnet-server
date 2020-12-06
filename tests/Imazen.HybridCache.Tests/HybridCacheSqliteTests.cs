@@ -3,7 +3,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Imazen.Common.Extensibility.StreamCache;
-using Imazen.HybridCache.Sqlite;
+using Imazen.HybridCache.MetaStore;
 using Xunit;
 
 namespace Imazen.HybridCache.Tests
@@ -16,14 +16,15 @@ namespace Imazen.HybridCache.Tests
             var cancellationToken = CancellationToken.None;
             var path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}");
             Directory.CreateDirectory(path);
-            var database = new SqliteCacheDatabase(new SqliteCacheDatabaseOptions(path), null);
-            HybridCache cache = new HybridCache(database, new HybridCacheOptions(path)
+            var cacheOptions = new HybridCacheOptions(path)
             {
                 AsyncCacheOptions = new AsyncCacheOptions()
                 {
                     MaxQueuedBytes = 0
                 }
-            }, null);
+            };
+            var database = new MetaStore.MetaStore(new MetaStoreOptions(path), cacheOptions, null);
+            HybridCache cache = new HybridCache(database,cacheOptions, null);
             try
             {
                 await cache.StartAsync(cancellationToken);

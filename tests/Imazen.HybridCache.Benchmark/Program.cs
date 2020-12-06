@@ -6,7 +6,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Imazen.HybridCache.MetaStore;
-using Imazen.HybridCache.Sqlite;
 using MELT;
 using Microsoft.Extensions.Logging;
 using Microsoft.IO;
@@ -25,7 +24,7 @@ namespace Imazen.HybridCache.Benchmark
                 e.Cancel = true;
             };
 
-            await TestSyncMediumLimitedCacheWavesMetaStore(cts.Token);
+            //await TestSyncMediumLimitedCacheWavesMetaStore(cts.Token);
             //await TestSyncVeryLimitedCacheWavesMetaStore(cts.Token);
             //await TestMassiveFileQuantityMetaStore(cts.Token);
             //await TestMassiveFileQuantity(cts.Token);
@@ -33,7 +32,7 @@ namespace Imazen.HybridCache.Benchmark
             //await TestRandomAsyncCache(cts.Token);
             //await TestRandomAsyncVeryLimitedCache(cts.Token);
 
-            //await TestRandomSynchronousVeryLimitedCache(cts.Token);
+            await TestRandomSynchronousVeryLimitedCache(cts.Token);
             //await TestRandomSynchronousLimitedCache(cts.Token);
 
             //await TestRandomSynchronousNoEviction(false, cts.Token);
@@ -312,7 +311,8 @@ namespace Imazen.HybridCache.Benchmark
                         MaxCacheBytes = 8192000, // 1/5th the size of the files we are trying to write
                         MinAgeToDelete = TimeSpan.Zero,
                         
-                    }
+                    },
+                    Subfolders = 1
                 },
                 FileSize = 81920,
                 FileCount = 500,
@@ -402,7 +402,6 @@ namespace Imazen.HybridCache.Benchmark
             internal HybridCacheOptions CacheOptions { get; set; } = new HybridCacheOptions(null);
 
             internal bool UseMetaStore { get; set; }
-            internal SqliteCacheDatabaseOptions DatabaseOptions { get; set; } = new SqliteCacheDatabaseOptions(null);
             public int Seed { get; set; }
             public MetaStoreOptions MetaStoreOptions { get; set; } = new MetaStoreOptions(null);
             public bool WaitForKeypress { get; set; }
@@ -422,7 +421,6 @@ namespace Imazen.HybridCache.Benchmark
             try
             {
                 options.CacheOptions.PhysicalCacheDir = path;
-                options.DatabaseOptions.DatabaseDir = path;
                 options.MetaStoreOptions.DatabaseDir = path;
 
                 for (var reboot = 0; reboot < options.RebootCount; reboot++)
@@ -433,16 +431,7 @@ namespace Imazen.HybridCache.Benchmark
             
                     var logger = loggerFactory.CreateLogger<HybridCache>();
                     
-                    ICacheDatabase database;
-                    if (options.UseMetaStore)
-                    {
-                        database = new MetaStore.MetaStore(options.MetaStoreOptions, options.CacheOptions, logger);
-                    }
-                    else
-                    {
-                        database = new SqliteCacheDatabase(options.DatabaseOptions, logger);
-                    }
-
+                    ICacheDatabase database = new MetaStore.MetaStore(options.MetaStoreOptions, options.CacheOptions, logger);
                     HybridCache cache = new HybridCache(database, options.CacheOptions, logger);
                     try
                     {
@@ -656,16 +645,16 @@ namespace Imazen.HybridCache.Benchmark
 
         private static void PrintDiskUtilization(TestParams options)
         {
-            if (options.CacheOptions.PhysicalCacheDir == options.DatabaseOptions.DatabaseDir)
+            if (options.CacheOptions.PhysicalCacheDir == options.MetaStoreOptions.DatabaseDir)
             {
-                PrintDiskUtilization("Cache", options.DatabaseOptions.DatabaseDir,
+                PrintDiskUtilization("Cache", options.MetaStoreOptions.DatabaseDir,
                     options.CacheOptions.CleanupManagerOptions.MaxCacheBytes);
             }
             else
             {
                 PrintDiskUtilization("Files", options.CacheOptions.PhysicalCacheDir,
                     options.CacheOptions.CleanupManagerOptions.MaxCacheBytes);
-                PrintDiskUtilization("Database", options.DatabaseOptions.DatabaseDir,
+                PrintDiskUtilization("Database", options.MetaStoreOptions.DatabaseDir,
                     options.CacheOptions.CleanupManagerOptions.MaxCacheBytes);
             }
         }

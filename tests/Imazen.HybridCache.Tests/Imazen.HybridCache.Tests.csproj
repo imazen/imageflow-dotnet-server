@@ -10,7 +10,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\src\Imazen.HybridCache.Sqlite\Imazen.HybridCache.Sqlite.csproj" />
       <ProjectReference Include="..\..\src\Imazen.HybridCache\Imazen.HybridCache.csproj" />
     </ItemGroup>
 
