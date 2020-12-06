@@ -11,7 +11,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Imageflow.Server.DiskCache\Imageflow.Server.DiskCache.csproj" />
     <ProjectReference Include="..\..\src\Imageflow.Server.HybridCache\Imageflow.Server.HybridCache.csproj" />
     <ProjectReference Include="..\..\src\Imageflow.Server.Storage.AzureBlob\Imageflow.Server.Storage.AzureBlob.csproj" />
     <ProjectReference Include="..\..\src\Imageflow.Server.Storage.RemoteReader\Imageflow.Server.Storage.RemoteReader.csproj" />

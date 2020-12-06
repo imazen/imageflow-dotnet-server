@@ -26,11 +26,18 @@ namespace Imageflow.Server.HybridCache
         public long MinCleanupBytes { get; set; } = 1 * 1024 * 1024;
         
         /// <summary>
-        /// The minimum age of files to delete.
+        /// The minimum age of files to delete. Defaults to 10 seconds.
         /// </summary>
-        public TimeSpan MinAgeToDelete { get; set; } = TimeSpan.FromSeconds(60);
+        public TimeSpan MinAgeToDelete { get; set; } = TimeSpan.FromSeconds(10);
 
-        
+        /// <summary>
+        /// The number of shards to split the metabase into. More shards means more open log files, slower shutdown.
+        /// But more shards also mean less lock contention and faster start time for individual cached requests.
+        /// Defaults to 8.
+        /// </summary>
+        public int DatabaseShards { get; set; } = 8;
+
+
         public HybridCacheOptions(string cacheDir)
         {
             DiskCacheDirectory = cacheDir;

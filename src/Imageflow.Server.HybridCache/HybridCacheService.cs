@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,6 +23,7 @@ namespace Imageflow.Server.HybridCache
                 {
                     MaxQueuedBytes = options.QueueSizeLimitInBytes,
                     WriteSynchronouslyWhenQueueFull = true,
+                    MoveFileOverwriteFunc = (from, to) => File.Move(from, to, true)
                 },
                 CleanupManagerOptions = new CleanupManagerOptions()
                 {
@@ -30,9 +32,9 @@ namespace Imageflow.Server.HybridCache
                     MinAgeToDelete = options.MinAgeToDelete,
                 }
             };
-            var database = new Imazen.HybridCache.MetaStore.MetaStore(new MetaStoreOptions(options.DiskCacheDirectory)
+            var database = new MetaStore(new MetaStoreOptions(options.DiskCacheDirectory)
             {
-                Shards = 16,
+                Shards = options.DatabaseShards,
                 MaxLogFilesPerShard = 3,
             }, cacheOptions, logger);
             cache = new Imazen.HybridCache.HybridCache(database,cacheOptions , logger);
