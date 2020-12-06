@@ -33,9 +33,7 @@ All operations are designed to be fast enough for on-demand use.
 * Supports Windows, Mac, and Linux
 * Comes with [Dockerfiles](https://github.com/imazen/imageflow-dotnet-server/tree/main/examples/Imageflow.Server.ExampleDockerDiskCache) for cloud deployment.
 * Processes images located on disk, Azure Blob Storage or Amazon S3
-* Disk Caching
-* Memory Caching
-* Distributed Caching
+* Size-constrained Disk Caching with a write-ahead-log
 * Mapping arbitrary virtual paths to physical ones. 
 * Imageflow [Querystring API](https://docs.imageflow.io/querystring/introduction.html) (compatible with ImageResizer)
 * Production-ready for trusted image files. 

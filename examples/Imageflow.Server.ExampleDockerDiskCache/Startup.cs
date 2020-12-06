@@ -1,6 +1,6 @@
 using System.IO;
 using Imageflow.Fluent;
-using Imageflow.Server.DiskCache;
+using Imageflow.Server.HybridCache;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -8,7 +8,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-namespace Imageflow.Server.ExampleMinimal
+namespace Imageflow.Server.ExampleDockerDiskCache
 {
     public class Startup
     {
@@ -23,7 +23,10 @@ namespace Imageflow.Server.ExampleMinimal
         
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddImageflowDiskCache(new DiskCacheOptions(Path.Combine(Env.ContentRootPath, "imageflow_cache")));
+            services.AddImageflowHybridCache(new HybridCacheOptions(Path.Combine(Env.ContentRootPath, "imageflow_cache"))
+            {
+                CacheSizeLimitInBytes = (long)1 * 1024 * 1024 * 1024 //1 GiB
+            });
         }
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
@@ -43,7 +46,7 @@ namespace Imageflow.Server.ExampleMinimal
                 .SetMyOpenSourceProjectUrl("https://please-support-imageflow-with-a-license.com")
                 .SetMapWebRoot(true)
                 .MapPath("/images", Path.Combine(Env.ContentRootPath, "images"))
-                .SetAllowDiskCaching(true)
+                .SetAllowCaching(true)
                 .SetJobSecurityOptions(new SecurityOptions()
                     .SetMaxDecodeSize(new FrameSizeLimit(8000, 8000, 40))
                     .SetMaxFrameSize(new FrameSizeLimit(8000, 8000, 40))

@@ -5,8 +5,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Imageflow.Server" Version="0.4.3" />
-      <PackageReference Include="Imageflow.Server.DiskCache" Version="0.4.3" />
+      <PackageReference Include="Imageflow.Server" Version="0.5.0" />
+      <PackageReference Include="Imageflow.Server.HybridCache" Version="0.5.0" />
     </ItemGroup>
 
     <ItemGroup>

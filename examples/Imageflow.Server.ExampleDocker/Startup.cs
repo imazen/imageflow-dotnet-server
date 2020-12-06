@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-namespace Imageflow.Server.ExampleMinimal
+namespace Imageflow.Server.ExampleDocker
 {
     public class Startup
     {
