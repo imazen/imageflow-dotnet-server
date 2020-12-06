@@ -143,7 +143,7 @@ namespace Imazen.HybridCache.MetaStore
                 }
                 else
                 {
-                    logger?.LogWarning("Database entry already exists");
+                    logger?.LogWarning("CreateRecordIfSpace did nothing - database entry already exists - {Path}", relativePath);
                 }
             }
 

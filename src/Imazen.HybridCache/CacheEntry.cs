@@ -12,7 +12,6 @@ namespace Imazen.HybridCache
 
         public byte[] Hash { get; }
         public string PhysicalPath { get; }
-        public string DisplayPath => RelativePath;
         public string StringKey { get; }
         
         public string RelativePath { get; }

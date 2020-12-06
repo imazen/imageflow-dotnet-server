@@ -316,8 +316,13 @@ namespace Imazen.HybridCache
                         var syncString = queueFull ? "synchronous" : "async";
                         if (!reserveSpaceResult.Success)
                         {
-                            //We failed to lock the file.
-                            Logger?.LogError("HybridCache {0} eviction failed; {Message}. Time taken: {1}ms - {2}", syncString, reserveSpaceResult.Message, swReserveSpace.ElapsedMilliseconds, entry.DisplayPath);
+                            Logger?.LogError(
+                                queueFull
+                                    ? "HybridCache synchronous eviction failed; {Message}. Time taken: {1}ms - {2}"
+                                    : "HybridCache async eviction failed; {Message}. Time taken: {1}ms - {2}",
+                                syncString, reserveSpaceResult.Message, swReserveSpace.ElapsedMilliseconds,
+                                entry.RelativePath);
+
                             return AsyncCacheDetailResult.CacheEvictionFailed;
                         }
 
@@ -345,33 +350,33 @@ namespace Imazen.HybridCache
                         {
                             case CacheFileWriter.FileWriteStatus.LockTimeout:
                                 //We failed to lock the file.
-                                Logger?.LogWarning("HybridCache {Sync} write failed; disk lock timeout exceeded after {IoTime}ms - {DisplayPath}", 
-                                    syncString, swIo.ElapsedMilliseconds, entry.DisplayPath);
+                                Logger?.LogWarning("HybridCache {Sync} write failed; disk lock timeout exceeded after {IoTime}ms - {Path}", 
+                                    syncString, swIo.ElapsedMilliseconds, entry.RelativePath);
                                 return AsyncCacheDetailResult.WriteTimedOut;
                             case CacheFileWriter.FileWriteStatus.FileAlreadyExists:
-                                Logger?.LogTrace("HybridCache {Sync} write found file already exists in {IoTime}ms, after a {DelayTime}ms delay and {CreationTime}- {DisplayPath}", 
+                                Logger?.LogTrace("HybridCache {Sync} write found file already exists in {IoTime}ms, after a {DelayTime}ms delay and {CreationTime}- {Path}", 
                                     syncString, swIo.ElapsedMilliseconds, 
                                     delegateStartedAt.Subtract(w.JobCreatedAt).TotalMilliseconds, 
-                                    dataCreationTime, entry.DisplayPath);
+                                    dataCreationTime, entry.RelativePath);
                                 return AsyncCacheDetailResult.FileAlreadyExists;
                             case CacheFileWriter.FileWriteStatus.FileCreated:
                                 if (queueFull)
                                 {
-                                    Logger?.LogTrace(@"HybridCache synchronous write complete. Create: {CreateTime}ms. Write {WriteTime}ms. Mark Created: {MarkCreatedTime}ms. Eviction: {EvictionTime}ms - {DisplayPath}", 
+                                    Logger?.LogTrace(@"HybridCache synchronous write complete. Create: {CreateTime}ms. Write {WriteTime}ms. Mark Created: {MarkCreatedTime}ms. Eviction: {EvictionTime}ms - {Path}", 
                                         Math.Round(dataCreationTime.TotalMilliseconds).ToString(CultureInfo.InvariantCulture).PadLeft(4),
                                         swIo.ElapsedMilliseconds.ToString().PadLeft(4),
                                         swMarkCreated.ElapsedMilliseconds.ToString().PadLeft(4), 
-                                        swReserveSpace.ElapsedMilliseconds.ToString().PadLeft(4), entry.DisplayPath);
+                                        swReserveSpace.ElapsedMilliseconds.ToString().PadLeft(4), entry.RelativePath);
                                 }
                                 else
                                 {
-                                    Logger?.LogTrace(@"HybridCache async write complete. Create: {CreateTime}ms. Write {WriteTime}ms. Mark Created: {MarkCreatedTime}ms Eviction {EvictionTime}ms. Delay {DelayTime}ms. - {DisplayPath}", 
+                                    Logger?.LogTrace(@"HybridCache async write complete. Create: {CreateTime}ms. Write {WriteTime}ms. Mark Created: {MarkCreatedTime}ms Eviction {EvictionTime}ms. Delay {DelayTime}ms. - {Path}", 
                                         Math.Round(dataCreationTime.TotalMilliseconds).ToString(CultureInfo.InvariantCulture).PadLeft(4),
                                         swIo.ElapsedMilliseconds.ToString().PadLeft(4), 
                                         swMarkCreated.ElapsedMilliseconds.ToString().PadLeft(4), 
                                         swReserveSpace.ElapsedMilliseconds.ToString().PadLeft(4), 
                                         Math.Round(delegateStartedAt.Subtract(w.JobCreatedAt).TotalMilliseconds).ToString(CultureInfo.InvariantCulture).PadLeft(4), 
-                                        entry.DisplayPath);
+                                        entry.RelativePath);
                                 }
 
                                 return AsyncCacheDetailResult.WriteSucceeded;
@@ -409,8 +414,8 @@ namespace Imazen.HybridCache
                         }
                         catch (Exception ex)
                         {
-                            Logger?.LogError(ex, "HybridCache failed to flush async write, {Exception} {DisplayPath}\n{StackTrace}", ex.ToString(),
-                                entry.DisplayPath, ex.StackTrace);
+                            Logger?.LogError(ex, "HybridCache failed to flush async write, {Exception} {Path}\n{StackTrace}", ex.ToString(),
+                                entry.RelativePath, ex.StackTrace);
                         }
 
                     });

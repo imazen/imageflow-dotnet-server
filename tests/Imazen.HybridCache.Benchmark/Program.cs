@@ -102,7 +102,7 @@ namespace Imazen.HybridCache.Benchmark
                     },
                     CleanupManagerOptions = new CleanupManagerOptions()
                     {
-                        MaxCacheBytes = 8192000, // 1/10th the size of the files we are trying to write
+                        MaxCacheBytes = 8192000, // 1/50th the size of the files we are trying to write
                         MinAgeToDelete = TimeSpan.Zero,
                         MinCleanupBytes =  0,
                     },
@@ -125,7 +125,7 @@ namespace Imazen.HybridCache.Benchmark
                 MaxLogEntries = 75,
                 WaitForKeypress = true,
             };
-            Console.WriteLine("Starting HybridCache test with the async queue disabled and the cache limited to 1/5th the needed size");
+            Console.WriteLine("Starting HybridCache test with the async queue disabled and the cache limited to 1/50th the needed size");
             await TestRandom(options, cancellationToken);
         }
         private static async Task TestMassiveFileQuantityMetaStore(CancellationToken cancellationToken)
