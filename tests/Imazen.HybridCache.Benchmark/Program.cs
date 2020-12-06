@@ -421,6 +421,7 @@ namespace Imazen.HybridCache.Benchmark
             
             var path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}");
             Directory.CreateDirectory(path);
+            Console.WriteLine($"Created cache directory {path}");
             try
             {
                 options.CacheOptions.PhysicalCacheDir = path;
@@ -485,8 +486,9 @@ namespace Imazen.HybridCache.Benchmark
             }
             finally
             {
-                Console.WriteLine("Deleting cache from disk");
+                Console.WriteLine("Deleting cache from disk...");
                 Directory.Delete(path, true);
+                Console.WriteLine("Cache deleted");
             }
         }
 
@@ -536,8 +538,11 @@ namespace Imazen.HybridCache.Benchmark
                             options.RetrieveContentType);
                         if (cacheResult.Data != null)
                         {
-                            await using var ms = memoryStreamManager.GetStream();
-                            await cacheResult.Data.CopyToAsync(ms, cancellationToken);
+                            await using (cacheResult.Data)
+                            {
+                                await using var ms = memoryStreamManager.GetStream();
+                                await cacheResult.Data.CopyToAsync(ms, cancellationToken);
+                            }
                         }
 
                         itemSw.Stop();
