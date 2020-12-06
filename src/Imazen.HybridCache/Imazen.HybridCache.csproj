@@ -2,8 +2,14 @@
 
     <PropertyGroup>
         <TargetFramework>netstandard2.0</TargetFramework>
+        <Title>Imageflow.HybridCache - Modern disk caching system with write-ahead-logs and strict cache size limiting.</Title>
+        <Description>Imageflow.HybridCache - Modern disk caching system with write-ahead-logs and strict cache size limiting</Description>
+        <PackageVersion>0.1</PackageVersion>
     </PropertyGroup>
 
+    <Import Project="..\NugetPackages.targets"/>
+
+    
     <ItemGroup>
       <ProjectReference Include="..\Imazen.Common\Imazen.Common.csproj" />
     </ItemGroup>

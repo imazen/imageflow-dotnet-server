@@ -5,16 +5,11 @@
         <PackageVersion>0.1.0</PackageVersion>
         <Title>Imageflow.Server.DiskCache - Plugin for caching processed images to disk.</Title>
         <Description>Imageflow.Server plugin for caching processed images to disk.</Description>
-        <Authors>Imazen</Authors>
-        <PublishRepositoryUrl>true</PublishRepositoryUrl>
-        <EmbedUntrackedSources>true</EmbedUntrackedSources>
-        <IncludeSymbols>true</IncludeSymbols>
-        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        <Copyright>(c) 2020 Imazen LLC</Copyright>
-        <PackageProjectUrl>https://github.com/imazen/imageflow-dotnet-server</PackageProjectUrl>
-        <RepositoryUrl>https://github.com/imazen/imageflow-dotnet-server.git</RepositoryUrl>
     </PropertyGroup>
 
+    <Import Project="..\NugetPackages.targets"/>
+
+    
     <ItemGroup>
         <FrameworkReference Include="Microsoft.AspNetCore.App" />
     </ItemGroup>

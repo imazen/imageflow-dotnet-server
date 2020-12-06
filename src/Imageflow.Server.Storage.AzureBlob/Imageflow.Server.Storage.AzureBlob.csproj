@@ -4,16 +4,10 @@
         <TargetFramework>netcoreapp3.1</TargetFramework>
         <Title>Imageflow.Server.Storage.AzureBlob - Plugin for fetching source images from Azure Blob Storage.</Title>
         <Description>Imageflow.Server plugin for fetching source images from Azure Blob Storage.</Description>
-        <Authors>Imazen</Authors>
-        <PublishRepositoryUrl>true</PublishRepositoryUrl>
-        <EmbedUntrackedSources>true</EmbedUntrackedSources>
-        <IncludeSymbols>true</IncludeSymbols>
-        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        <Copyright>(c) 2020 Imazen LLC</Copyright>
-        <PackageProjectUrl>https://github.com/imazen/imageflow-dotnet-server</PackageProjectUrl>
-        <RepositoryUrl>https://github.com/imazen/imageflow-dotnet-server.git</RepositoryUrl>
         <PackageVersion>0.1</PackageVersion>
     </PropertyGroup>
+
+    <Import Project="..\NugetPackages.targets"/>
 
     <ItemGroup>
         <ProjectReference Include="..\Imazen.Common\Imazen.Common.csproj" />
