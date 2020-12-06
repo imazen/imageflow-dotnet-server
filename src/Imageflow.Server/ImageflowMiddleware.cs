@@ -272,13 +272,15 @@ namespace Imageflow.Server
             }
             if (cacheResult.Data != null)
             {
-                if (cacheResult.Data.Length < 1)
+                await using (cacheResult.Data)
                 {
-                    throw new InvalidOperationException($"{typeName} returned cache entry with zero bytes");
+                    if (cacheResult.Data.Length < 1)
+                    {
+                        throw new InvalidOperationException($"{typeName} returned cache entry with zero bytes");
+                    }
+                    SetCachingHeaders(context, cacheKey);
+                    await MagicBytes.ProxyToStream(cacheResult.Data, context.Response);
                 }
-                SetCachingHeaders(context, cacheKey);
-                await MagicBytes.ProxyToStream(cacheResult.Data, context.Response);
-                
                 logger?.LogDebug("Serving from {CacheName} {VirtualPath}?{CommandString}", typeName, info.FinalVirtualPath, info.CommandString);
             }
             else
