@@ -38,7 +38,6 @@ namespace Imazen.HybridCache.Tests
                 }
 
                 var result = await cache.GetOrCreateBytes(key, DataProvider, cancellationToken, true);
-                
                 Assert.Equal("WriteSucceeded", result.Status);
                 
                 var result2 = await cache.GetOrCreateBytes(key, DataProvider, cancellationToken, true);
@@ -53,7 +52,18 @@ namespace Imazen.HybridCache.Tests
                 Assert.Equal(contentType, result3.ContentType);
                 Assert.NotNull(result3.Data);
 
-
+                var key2 = new byte[] {2, 1, 2, 3};
+                Task<Tuple<string, ArraySegment<byte>>> DataProvider2(CancellationToken token)
+                {
+                    return Task.FromResult(new Tuple<string, ArraySegment<byte>>(null, new ArraySegment<byte>(new byte[4000])));
+                }
+                var result4 = await cache.GetOrCreateBytes(key2, DataProvider2, cancellationToken, true);
+                Assert.Equal("WriteSucceeded", result4.Status);
+                
+                var result5 = await cache.GetOrCreateBytes(key2, DataProvider, cancellationToken, true);
+                Assert.Equal("DiskHit", result5.Status);
+                Assert.Null(result5.ContentType);
+                Assert.NotNull(result5.Data);
             }
             finally
             {
