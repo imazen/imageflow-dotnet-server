@@ -116,7 +116,7 @@ namespace Imazen.HybridCache.MetaStore
             using (await createLock.LockAsync())
             {
                 var loadedDict = await GetLoadedDict();
-                var extraLogBytes = GetLogBytesOverhead(relativePath.Length + contentType.Length);
+                var extraLogBytes = GetLogBytesOverhead(relativePath.Length + (contentType?.Length ?? 0));
 
                 var existingDiskUsage = await GetShardSize();
                 if (existingDiskUsage + recordDiskSpace + extraLogBytes > diskSpaceLimit)

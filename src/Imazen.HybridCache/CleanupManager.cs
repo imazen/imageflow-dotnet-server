@@ -135,7 +135,7 @@ namespace Imazen.HybridCache
                 if (!allowEviction) return new ReserveSpaceResult(){ Success = false, Message = "Eviction disabled in sync mode"};
                 
                 var entryDiskSpace = EstimateEntryBytesWithOverhead(byteCount) +
-                                     Database.EstimateRecordDiskSpace(cacheEntry.RelativePath.Length + contentType.Length);
+                                     Database.EstimateRecordDiskSpace(cacheEntry.RelativePath.Length + (contentType?.Length ?? 0));
                 
                 var missingSpace = Math.Max(0, await Database.GetShardSize(shard) + entryDiskSpace - shardSizeLimit);
                 // Evict space 
