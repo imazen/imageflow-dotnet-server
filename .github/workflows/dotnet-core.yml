@@ -11,8 +11,8 @@ jobs:
     strategy:
       matrix:
         include:
-          - name: ubuntu-20.04
-            os: ubuntu-20.04
+          #- name: ubuntu-20.04
+          #  os: ubuntu-20.04
             
           - name: osx_11.0-x86_64
             os: macos-11.0
