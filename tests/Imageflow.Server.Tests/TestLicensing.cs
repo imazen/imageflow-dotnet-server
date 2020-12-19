@@ -284,14 +284,16 @@ namespace Imageflow.Server.Tests
             using (var contentRoot = new TempContentRoot()
                 .AddResource("images/fire.jpg", "TestFiles.fire-umbrella-small.jpg"))
             {
-                // set clock to present, and build date to far future
-                var clock = new FakeClock("2017-04-25", "2022-01-01");
-
+                
                 foreach (var set in LicenseStrings.GetSets("CancelledImageflow", "SoftRevocationImageflow",
                     "HardRevocationImageflow"))
                 {
 
                     output.WriteLine($"Testing revocation for {set.Name}");
+                    
+                    // set clock to present, and build date to far future
+                    var clock = new FakeClock("2017-04-25", "2022-01-01");
+
                     var mgr = new LicenseManagerSingleton(ImazenPublicKeys.Test, clock, new StringCacheMem());
                     MockHttpHelpers.MockRemoteLicense(mgr, HttpStatusCode.OK, set.Remote, null);
 
