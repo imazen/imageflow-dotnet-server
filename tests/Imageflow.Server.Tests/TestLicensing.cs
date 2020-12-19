@@ -280,7 +280,10 @@ namespace Imageflow.Server.Tests
         [Fact]
         public async void TestRevocations()
         {
+            // Skip this on CI
             var isCi = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("CI"));
+            if (isCi) return;
+            
             using (var contentRoot = new TempContentRoot()
                 .AddResource("images/fire.jpg", "TestFiles.fire-umbrella-small.jpg"))
             {
@@ -322,11 +325,11 @@ namespace Imageflow.Server.Tests
                     
                     url.Url = new Uri("https://domain.com");
                     using var notLicensedResponse = await client.GetAsync("/fire.jpg?w=1");
-                    if (!isCi) Assert.Equal(HttpStatusCode.PaymentRequired,notLicensedResponse.StatusCode);
+                    Assert.Equal(HttpStatusCode.PaymentRequired,notLicensedResponse.StatusCode);
 
                     url.Url = null;
                     using var notLicensedResponse2 = await client.GetAsync("/fire.jpg?w=1");
-                    if (!isCi) Assert.Equal(HttpStatusCode.PaymentRequired,notLicensedResponse2.StatusCode);
+                    Assert.Equal(HttpStatusCode.PaymentRequired,notLicensedResponse2.StatusCode);
 
                     
                     Assert.NotEmpty(mgr.GetIssues());
