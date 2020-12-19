@@ -180,7 +180,7 @@ namespace Imageflow.Server.Tests
                 using var isReady = await client.GetAsync("/imageflow.ready");
                 isReady.EnsureSuccessStatusCode();
                 
-                mgr.WaitForTasks();
+                await mgr.AwaitTasks();
 
                 Assert.Empty(mgr.GetIssues());
                 
@@ -246,7 +246,7 @@ namespace Imageflow.Server.Tests
                 using var isReady = await client.GetAsync("/imageflow.ready");
                 isReady.EnsureSuccessStatusCode();
                 
-                mgr.WaitForTasks();
+                await mgr.AwaitTasks();
 
                 Assert.Empty(mgr.GetIssues());
 
