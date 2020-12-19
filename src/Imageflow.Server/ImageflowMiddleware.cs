@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Imageflow.Bindings;
 using Imazen.Common.Extensibility.ClassicDiskCache;
 using Imazen.Common.Extensibility.StreamCache;
 using Imazen.Common.Instrumentation;
@@ -110,6 +111,24 @@ namespace Imageflow.Server
                 await licensePage.Invoke(context);
                 return;
             }
+
+            // Respond to /imageflow.ready
+            if ( "/imageflow.ready".Equals(path.Value, StringComparison.Ordinal))
+            {
+                using (new JobContext())
+                {
+                    await StringResponseNoCache(context, 200, "Imageflow.Server is ready to accept requests.");
+                }
+                return;
+            }
+            
+            // Respond to /imageflow.health
+            if ( "/imageflow.health".Equals(path.Value, StringComparison.Ordinal))
+            {
+                await StringResponseNoCache(context, 200, "Imageflow.Server is healthy.");
+                return;
+            }
+            
 
             // We only handle requests with an image extension or if we configured a path prefix for which to handle
             // extensionless requests

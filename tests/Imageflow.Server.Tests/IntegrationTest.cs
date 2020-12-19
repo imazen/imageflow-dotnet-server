@@ -121,6 +121,10 @@ namespace Imageflow.Server.Tests
                 var responseBytes7 = await response7.Content.ReadAsByteArrayAsync();
                 Assert.True(responseBytes7.Length < 1000);
                 
+                using var response8 = await client.GetAsync("/imageflow.health");
+                response8.EnsureSuccessStatusCode();
+                using var response9 = await client.GetAsync("/imageflow.ready");
+                response9.EnsureSuccessStatusCode();
                 
                 await host.StopAsync(CancellationToken.None);
             }
