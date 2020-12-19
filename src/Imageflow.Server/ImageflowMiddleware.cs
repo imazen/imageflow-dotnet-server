@@ -99,6 +99,7 @@ namespace Imageflow.Server
             
             var path = context.Request.Path;
 
+            
             // Delegate to the diagnostics page if it is requested
             if (DiagnosticsPage.MatchesPath(path.Value))
             {
