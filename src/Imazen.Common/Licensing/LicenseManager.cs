@@ -307,6 +307,13 @@ using Imazen.Common.Issues;
             Task.WaitAll(tasks);
             return tasks.Length;
         }
+        
+        public async Task<int> AwaitTasks()
+        {
+            var tasks = GetAsyncTasksSnapshot().ToArray();
+            await Task.WhenAll(tasks);
+            return tasks.Length;
+        }
 
         public LicenseBlob TryDeserialize(string license, string licenseSource, bool locallySourced)
         {

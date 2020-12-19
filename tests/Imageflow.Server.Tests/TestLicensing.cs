@@ -313,7 +313,7 @@ namespace Imageflow.Server.Tests
                     using var isReady = await client.GetAsync("/imageflow.ready");
                     isReady.EnsureSuccessStatusCode();
                     
-                    mgr.WaitForTasks();
+                    await mgr.AwaitTasks();
 
                     
                     url.Url = new Uri("https://domain.com");
