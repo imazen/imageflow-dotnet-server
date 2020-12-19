@@ -115,6 +115,7 @@ namespace Imageflow.Server
             // Respond to /imageflow.ready
             if ( "/imageflow.ready".Equals(path.Value, StringComparison.Ordinal))
             {
+                options.Licensing.FireHeartbeat();
                 using (new JobContext())
                 {
                     await StringResponseNoCache(context, 200, "Imageflow.Server is ready to accept requests.");
@@ -125,6 +126,7 @@ namespace Imageflow.Server
             // Respond to /imageflow.health
             if ( "/imageflow.health".Equals(path.Value, StringComparison.Ordinal))
             {
+                options.Licensing.FireHeartbeat();
                 await StringResponseNoCache(context, 200, "Imageflow.Server is healthy.");
                 return;
             }

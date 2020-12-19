@@ -176,6 +176,10 @@ namespace Imageflow.Server.Tests
                 // Create an HttpClient to send requests to the TestServer
                 using var client = host.GetTestClient();
                 
+                //Trigger license heartbeat.
+                using var isReady = await client.GetAsync("/imageflow.ready");
+                isReady.EnsureSuccessStatusCode();
+                
                 mgr.WaitForTasks();
 
                 Assert.Empty(mgr.GetIssues());
@@ -237,6 +241,10 @@ namespace Imageflow.Server.Tests
                 
                 // Create an HttpClient to send requests to the TestServer
                 using var client = host.GetTestClient();
+                
+                //Trigger license heartbeat.
+                using var isReady = await client.GetAsync("/imageflow.ready");
+                isReady.EnsureSuccessStatusCode();
                 
                 mgr.WaitForTasks();
 
@@ -300,7 +308,11 @@ namespace Imageflow.Server.Tests
 
                     // Create an HttpClient to send requests to the TestServer
                     using var client = host.GetTestClient();
-
+                    
+                    //Trigger license heartbeat.
+                    using var isReady = await client.GetAsync("/imageflow.ready");
+                    isReady.EnsureSuccessStatusCode();
+                    
                     mgr.WaitForTasks();
 
                     
