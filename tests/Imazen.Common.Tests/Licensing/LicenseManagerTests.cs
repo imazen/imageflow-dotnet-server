@@ -241,7 +241,7 @@ namespace Imazen.Common.Tests.Licensing
         [Fact]
         public void Test_Remote_License_Success()
         {
-            if (Environment.GetEnvironmentVariable("APPVEYOR") == "True") {
+            if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("CI"))) {
                 return;
             }
             var clock = new OffsetClock("2017-04-25", "2017-04-25");
