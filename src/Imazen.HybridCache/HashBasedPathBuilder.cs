@@ -69,12 +69,12 @@ namespace Imazen.HybridCache
             //Start with the subfolder distribution in bits, so we can easily delete old folders
             //When we change the subfolder size
             sb.AppendFormat(NumberFormatInfo.InvariantInfo, "{0:D}",subfolderBits);
-            sb.Append(Path.DirectorySeparatorChar);
+            sb.Append(RelativeDirSeparator);
             //If subfolders is set above 256, it will nest files in multiple directories, one for each byte
             foreach (var b in allBits)
             {
                 sb.AppendFormat(NumberFormatInfo.InvariantInfo, "{0:x2}",b);
-                sb.Append(Path.DirectorySeparatorChar);
+                sb.Append(RelativeDirSeparator);
             }
 
             sb.AppendFormat(NumberFormatInfo.InvariantInfo, 
