@@ -46,6 +46,7 @@ namespace Imazen.HybridCache.Tests
                     },
                     CancellationToken.None, false);
                 Assert.NotNull(result.Data);
+                await result.Data.DisposeAsync();
                 Assert.Equal("Miss", result.Status);
 
                 await cache.AwaitEnqueuedTasks();
@@ -57,6 +58,7 @@ namespace Imazen.HybridCache.Tests
                     },
                     CancellationToken.None, false);
                 Assert.NotNull(result2.Data);
+                await result2.Data.DisposeAsync();
                 Assert.Equal("DiskHit", result2.Status);
 
                 
@@ -68,7 +70,8 @@ namespace Imazen.HybridCache.Tests
             {
                 try
                 {
-                    cache?.AwaitEnqueuedTasks();
+                    await cache.AwaitEnqueuedTasks();
+                    
                 }
                 finally
                 {
@@ -103,6 +106,7 @@ namespace Imazen.HybridCache.Tests
                     },
                     CancellationToken.None, false);
                 Assert.NotNull(result.Data);
+                await result.Data.DisposeAsync();
                 Assert.Equal("WriteSucceeded", result.Status);
 
                 await cache.AwaitEnqueuedTasks();
@@ -114,6 +118,7 @@ namespace Imazen.HybridCache.Tests
                     },
                     CancellationToken.None, false);
                 Assert.NotNull(result2.Data);
+                await result2.Data.DisposeAsync();
                 Assert.Equal("DiskHit", result2.Status);
                 var hash = builder.HashKeyBasis(keyBasis);
                 var expectedPhysicalPath = builder.GetPhysicalPathFromHash(hash);
