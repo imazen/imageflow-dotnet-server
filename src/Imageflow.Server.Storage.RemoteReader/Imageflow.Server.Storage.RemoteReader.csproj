@@ -6,11 +6,7 @@
     <Description>Imageflow.Server plugin for fetching source images from remote URLs.</Description>
     <PackageVersion>0.1</PackageVersion>
   </PropertyGroup>
-  <Import Project="..\NugetPackages.targets"/>
-
-  <ItemGroup>
-    <None Remove="README.md" />
-  </ItemGroup>
+  <Import Project="..\NugetPackages.targets" />
 
   <ItemGroup>
     <ProjectReference Include="..\Imageflow.Server\Imageflow.Server.csproj" />
