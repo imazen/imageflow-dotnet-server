@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Amazon.Runtime;
 using Amazon.S3;
 using Imazen.Common.Storage;
 using Microsoft.Extensions.Logging;
@@ -13,19 +12,8 @@ namespace Imageflow.Server.Storage.S3
     {
         private readonly List<PrefixMapping> mappings = new List<PrefixMapping>();
 
-        private readonly AWSCredentials credentials;
         public S3Service(S3ServiceOptions options, ILogger<S3Service> logger)
         {
-
-            if (options.AccessKeyId == null)
-            {
-                credentials = new AnonymousAWSCredentials();
-            }
-            else
-            {
-                credentials = new  BasicAWSCredentials(options.AccessKeyId, options.SecretAccessKey);
-            }
-
             foreach (var m in options.Mappings)
             {
                 mappings.Add(m);;
@@ -66,7 +54,7 @@ namespace Imageflow.Server.Storage.S3
 
             try
             {
-                using var client = new AmazonS3Client(credentials, mapping.Config);
+                using var client = mapping.ClientFactory();
                 var req = new Amazon.S3.Model.GetObjectRequest() { BucketName = mapping.Bucket, Key = key };
 
                 var s = await client.GetObjectAsync(req);

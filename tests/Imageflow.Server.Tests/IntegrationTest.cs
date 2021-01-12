@@ -5,6 +5,8 @@ using System.Net;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Amazon;
+using Amazon.Runtime;
+using Amazon.S3;
 using Imageflow.Fluent;
 using Imageflow.Server.DiskCache;
 using Imageflow.Server.Storage.RemoteReader;
@@ -220,6 +222,56 @@ namespace Imageflow.Server.Tests
                         services.AddImageflowS3Service(
                             new S3ServiceOptions(null, null)
                                 .MapPrefix("/ri/", RegionEndpoint.USEast1, "resizer-images"));
+                    })
+                    .ConfigureWebHost(webHost =>
+                    {
+                        // Add TestServer
+                        webHost.UseTestServer();
+                        webHost.Configure(app =>
+                        {
+                            app.UseImageflow(new ImageflowMiddlewareOptions()
+                                .SetMapWebRoot(false)
+                                .SetAllowDiskCaching(true)
+                                // Maps / to ContentRootPath/images
+                                .MapPath("/", Path.Combine(contentRoot.PhysicalPath, "images")));
+                        });
+                    });
+
+                // Build and start the IHost
+                using var host = await hostBuilder.StartAsync();
+
+                // Create an HttpClient to send requests to the TestServer
+                using var client = host.GetTestClient();
+
+                using var response = await client.GetAsync("/ri/not_there.jpg");
+                Assert.Equal(HttpStatusCode.NotFound,response.StatusCode);
+                
+                using var response2 = await client.GetAsync("/ri/imageflow-icon.png?width=1");
+                response2.EnsureSuccessStatusCode();
+                
+                await host.StopAsync(CancellationToken.None);
+                
+                var cacheFiles = Directory.GetFiles(diskCacheDir, "*.png", SearchOption.AllDirectories);
+                Assert.Single(cacheFiles);
+            }
+        }
+        
+         [Fact]
+        public async void TestAmazonS3WithCustomClient()
+        {
+            using (var contentRoot = new TempContentRoot()
+                .AddResource("images/fire.jpg", "TestFiles.fire-umbrella-small.jpg")
+                .AddResource("images/logo.png", "TestFiles.imazen_400.png"))
+            {
+
+                var diskCacheDir = Path.Combine(contentRoot.PhysicalPath, "diskcache");
+                var hostBuilder = new HostBuilder()
+                    .ConfigureServices(services =>
+                    {
+                        services.AddImageflowDiskCache(new DiskCacheOptions(diskCacheDir) {AsyncWrites = false});
+                        services.AddImageflowS3Service(
+                            new S3ServiceOptions()
+                                .MapPrefix("/ri/", () => new AmazonS3Client(new AnonymousAWSCredentials(), RegionEndpoint.USEast1), "resizer-images", "", false, false));
                     })
                     .ConfigureWebHost(webHost =>
                     {
