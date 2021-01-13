@@ -151,7 +151,9 @@ namespace Imageflow.Server.Example
             // You can call AddImageflowS3Service multiple times for each unique access key
             services.AddImageflowS3Service(new S3ServiceOptions( null,null)
                 .MapPrefix("/ri/", RegionEndpoint.USEast1, "resizer-images")
-                .MapPrefix("/imageflow-resources/", RegionEndpoint.USWest2, "imageflow-resources"));
+                .MapPrefix("/imageflow-resources/", RegionEndpoint.USWest2, "imageflow-resources")
+                .MapPrefix("/custom-s3client/", () => new AmazonS3Client(), "custom-client", "", false, false)
+            );
             
             // Make Azure container available at /azure
             // You can call AddImageflowAzureBlobService multiple times for each connection string
