@@ -363,3 +363,9 @@ namespace Imageflow.Server.Example
  * Blurring is not yet supported, so `a.blur` is ignored.
  * ICC profiles are never ignored, so `ignoreicc` is ignored.
  * 404 redirects are not implemented, so `404` is ignored.
+
+## Integrations into Other Systems
+
+The following platforms / solutions have a direct integration
+
+1. **Oqtane Blazor platform** ([website](https://oqtane.org/) / [docs](https://docs.oqtane.org/) / [git](https://github.com/oqtane/oqtane.framework)): Use the **ToSic.ImageFlow.Oqtane** ([git](https://github.com/2sic/oqtane-imageflow) / [nuget](https://www.nuget.org/packages/ToSic.Imageflow.Oqtane/)) middleware. The package will automatically appear in Oqtane as an installable extension. 
