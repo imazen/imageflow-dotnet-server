@@ -5,13 +5,17 @@ using System.Net;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Amazon;
+using Amazon.Runtime;
+using Amazon.S3;
 using Imageflow.Fluent;
 using Imageflow.Server.DiskCache;
+using Imageflow.Server.Storage.RemoteReader;
 using Imageflow.Server.Storage.S3;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Xunit;
 
@@ -252,6 +256,56 @@ namespace Imageflow.Server.Tests
             }
         }
         
+         [Fact]
+        public async void TestAmazonS3WithCustomClient()
+        {
+            using (var contentRoot = new TempContentRoot()
+                .AddResource("images/fire.jpg", "TestFiles.fire-umbrella-small.jpg")
+                .AddResource("images/logo.png", "TestFiles.imazen_400.png"))
+            {
+
+                var diskCacheDir = Path.Combine(contentRoot.PhysicalPath, "diskcache");
+                var hostBuilder = new HostBuilder()
+                    .ConfigureServices(services =>
+                    {
+                        services.AddImageflowDiskCache(new DiskCacheOptions(diskCacheDir) {AsyncWrites = false});
+                        services.AddImageflowS3Service(
+                            new S3ServiceOptions()
+                                .MapPrefix("/ri/", () => new AmazonS3Client(new AnonymousAWSCredentials(), RegionEndpoint.USEast1), "resizer-images", "", false, false));
+                    })
+                    .ConfigureWebHost(webHost =>
+                    {
+                        // Add TestServer
+                        webHost.UseTestServer();
+                        webHost.Configure(app =>
+                        {
+                            app.UseImageflow(new ImageflowMiddlewareOptions()
+                                .SetMapWebRoot(false)
+                                .SetAllowDiskCaching(true)
+                                // Maps / to ContentRootPath/images
+                                .MapPath("/", Path.Combine(contentRoot.PhysicalPath, "images")));
+                        });
+                    });
+
+                // Build and start the IHost
+                using var host = await hostBuilder.StartAsync();
+
+                // Create an HttpClient to send requests to the TestServer
+                using var client = host.GetTestClient();
+
+                using var response = await client.GetAsync("/ri/not_there.jpg");
+                Assert.Equal(HttpStatusCode.NotFound,response.StatusCode);
+                
+                using var response2 = await client.GetAsync("/ri/imageflow-icon.png?width=1");
+                response2.EnsureSuccessStatusCode();
+                
+                await host.StopAsync(CancellationToken.None);
+                
+                var cacheFiles = Directory.GetFiles(diskCacheDir, "*.png", SearchOption.AllDirectories);
+                Assert.Single(cacheFiles);
+            }
+        }
+        
         [Fact]
         public async void TestPresetsExclusive()
         {
@@ -427,6 +481,70 @@ namespace Imageflow.Server.Tests
                 var url5 = Imazen.Common.Helpers.Signatures.SignRequest("/fire umbrella.jpg?width=1&ke%20y=val%2fue&another key=another val/ue", key);
                 using var response5 = await client.GetAsync(url5);
                 response5.EnsureSuccessStatusCode();
+                
+                await host.StopAsync(CancellationToken.None);
+            }
+        }
+        
+        [Fact]
+        public async void TestRemoteReaderPlusRequestSigning()
+        {
+            // This is the key we use to encode the remote URL and ensure that we are authorized to fetch the given url
+            const string remoteReaderKey = "remoteReaderSigningKey_changeMe";
+            // This is the key we use to ensure that the set of modifications to the remote file is permitted.
+            const string requestSigningKey = "test key";
+            using (var contentRoot = new TempContentRoot()
+                .AddResource("images/fire.jpg", "TestFiles.fire-umbrella-small.jpg"))
+            {
+
+                var hostBuilder = new HostBuilder()
+                    .ConfigureServices(services =>
+                    {
+                        services.AddHttpClient();
+                        services.AddImageflowRemoteReaderService(new RemoteReaderServiceOptions()
+                            {
+                                SigningKey = remoteReaderKey
+                            }.AddPrefix("/remote")
+                        );
+                    })
+                    .ConfigureWebHost(webHost =>
+                    {
+                        // Add TestServer
+                        webHost.UseTestServer();
+                        webHost.Configure(app =>
+                        {
+                            app.UseImageflow(new ImageflowMiddlewareOptions()
+                                .SetMapWebRoot(false)
+                                // Maps / to ContentRootPath/images
+                                .MapPath("/", Path.Combine(contentRoot.PhysicalPath, "images"))
+                                .SetRequestSignatureOptions(
+                                    new RequestSignatureOptions(SignatureRequired.ForAllRequests, 
+                                            new []{requestSigningKey})
+                                ));
+                        });
+                    });
+                using var host = await hostBuilder.StartAsync();
+                using var client = host.GetTestClient();
+
+                // The origin file
+                var remoteUrl = "https://imageflow-resources.s3-us-west-2.amazonaws.com/test_inputs/imazen_400.png";
+                // We encode it, but this doesn't add the /remote/ prefix since that is configurable
+                var encodedRemoteUrl = RemoteReaderService.EncodeAndSignUrl(remoteUrl, remoteReaderKey);
+                // Now we add the /remote/ prefix and add some commands
+                var modifiedUrl = $"/remote/{encodedRemoteUrl}?width=1";
+                
+                
+                // Now we could stop here, but we also enabled request signing which is different from remote reader signing
+                var signedModifiedUrl = Imazen.Common.Helpers.Signatures.SignRequest(modifiedUrl, requestSigningKey);
+                using var signedResponse = await client.GetAsync(signedModifiedUrl);
+                signedResponse.EnsureSuccessStatusCode();
+                
+                // Now, verify that the remote url can't be fetched without signing it the second time, 
+                // since we called .SetRequestSignatureOptions
+                using var halfSignedResponse = await client.GetAsync(modifiedUrl);
+                Assert.Equal(HttpStatusCode.Forbidden, halfSignedResponse.StatusCode);
+
+                
                 
                 await host.StopAsync(CancellationToken.None);
             }

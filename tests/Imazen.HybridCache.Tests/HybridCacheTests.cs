@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Imazen.HybridCache.Tests
 {
-    public class HybridCacheSqliteTests
+    public class HybridCacheTests
     {
         [Fact]
         public async void SmokeTest()
@@ -39,19 +39,20 @@ namespace Imazen.HybridCache.Tests
 
                 var result = await cache.GetOrCreateBytes(key, DataProvider, cancellationToken, true);
                 Assert.Equal("WriteSucceeded", result.Status);
+                await result.Data.DisposeAsync();
                 
                 var result2 = await cache.GetOrCreateBytes(key, DataProvider, cancellationToken, true);
                 Assert.Equal("DiskHit", result2.Status);
                 Assert.Equal(contentType, result2.ContentType);
                 Assert.NotNull(result2.Data);
-                
+                await result2.Data.DisposeAsync();
                 await cache.AsyncCache.AwaitEnqueuedTasks();
                 
                 var result3 = await cache.GetOrCreateBytes(key, DataProvider, cancellationToken, true);
                 Assert.Equal("DiskHit", result3.Status);
                 Assert.Equal(contentType, result3.ContentType);
                 Assert.NotNull(result3.Data);
-
+                await result3.Data.DisposeAsync();
                 var key2 = new byte[] {2, 1, 2, 3};
                 Task<Tuple<string, ArraySegment<byte>>> DataProvider2(CancellationToken token)
                 {
@@ -59,11 +60,12 @@ namespace Imazen.HybridCache.Tests
                 }
                 var result4 = await cache.GetOrCreateBytes(key2, DataProvider2, cancellationToken, true);
                 Assert.Equal("WriteSucceeded", result4.Status);
-                
+                await result4.Data.DisposeAsync();
                 var result5 = await cache.GetOrCreateBytes(key2, DataProvider, cancellationToken, true);
                 Assert.Equal("DiskHit", result5.Status);
                 Assert.Null(result5.ContentType);
                 Assert.NotNull(result5.Data);
+                await result5.Data.DisposeAsync();
             }
             finally
             {

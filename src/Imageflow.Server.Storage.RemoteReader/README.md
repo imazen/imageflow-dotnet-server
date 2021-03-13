@@ -15,6 +15,29 @@
     services.AddImageflowRemoteReaderService(remoteReaderServiceOptions);
 ```
 
+## Usage
+
+```c#
+// The origin file
+var remoteUrl = "https://imageflow-resources.s3-us-west-2.amazonaws.com/test_inputs/imazen_400.png";
+// We encode it, but this doesn't add the /remote/ prefix since that is configurable
+var encodedRemoteUrl = RemoteReaderService.EncodeAndSignUrl(remoteUrl, remoteReaderKey);
+// Now we add the /remote/ prefix and add some commands
+var modifiedUrl = $"/remote/{encodedRemoteUrl}?width=100";
+```
+
+If we are also doing request signing (a different signing key and purpose), we would use,
+```c#
+var signedModifiedUrl = Imazen.Common.Helpers.Signatures.SignRequest(modifiedUrl, requestSigningKey);
+
+//This of course assumes that in Startup.cs you set requestSigningKey as one of the valid keys
+app.UseImageflow(new ImageflowMiddlewareOptions()
+                    .SetRequestSignatureOptions(
+                        new RequestSignatureOptions(SignatureRequired.ForAllRequests, 
+                                new []{requestSigningKey})
+                    ));
+                                
+```
 ## Add Custom Headers
 To configure the client to send custom headers, we need to use an overload of `AddHttpClient()` that returns an `IHttpClientBuilder`.
 ```
