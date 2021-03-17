@@ -18,6 +18,7 @@ namespace Imazen.HybridCache.MetaStore
         private readonly MetaStoreOptions options;
         private readonly ILogger logger;
         private long startedAt;
+        private bool startupComplete;
         private FileStream writeLogStream;
         private BinaryWriter binaryLogWriter;
         private readonly object writeLock = new object();
@@ -67,10 +68,10 @@ namespace Imazen.HybridCache.MetaStore
             }
         }
         
-        // Returns a dictionary of the database
+        // Returns a dictionary of the database 
         public async Task<ConcurrentDictionary<string, CacheDatabaseRecord>> Startup()
         {
-            if (startedAt != 0) throw new InvalidOperationException("Startup() can only be called once");
+            if (startupComplete) throw new InvalidOperationException("Startup() can only be called once");
             startedAt = Stopwatch.GetTimestamp();
 
             if (!Directory.Exists(databaseDir))
@@ -200,6 +201,7 @@ namespace Imazen.HybridCache.MetaStore
                 diskBytes += dict.Values.Sum(r => r.DiskSize);
             }
 
+            startupComplete = true;
             return dict;
         }
 
@@ -246,7 +248,7 @@ namespace Imazen.HybridCache.MetaStore
             lock (writeLock)
             {
                 if (startedAt == 0)
-                    throw new InvalidOperationException("WriteLog cannot be used before calling ReadAll()");
+                    throw new InvalidOperationException("WriteLog cannot be used before calling Startup()");
                 if (writeLogStream == null)
                     throw new InvalidOperationException("WriteLog cannot be after StopAsync is called");
                 var startPos = writeLogStream.Position;
