@@ -6,7 +6,7 @@ namespace Imageflow.Server.Storage.S3
     internal struct PrefixMapping
     {
         internal string Prefix;
-        internal Func<IAmazonS3> ClientFactory;
+        internal IAmazonS3 S3Client;
         internal string Bucket;
         internal string BlobPrefix;
         internal bool IgnorePrefixCase;

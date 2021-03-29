@@ -13,6 +13,7 @@ using System;
 using System.IO;
 using Amazon.S3;
 using Imageflow.Server.HybridCache;
+using Amazon.Runtime;
 
 namespace Imageflow.Server.Example
 {
@@ -30,6 +31,8 @@ namespace Imageflow.Server.Example
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddAWSService<IAmazonS3>();
+
             services.AddControllersWithViews();
 
             // See the README in src/Imageflow.Server.Storage.RemoteReader/ for more advanced configuration
@@ -40,14 +43,19 @@ namespace Imageflow.Server.Example
                     SigningKey = "ChangeMe"
                 }
                 .AddPrefix("/remote/"));
-            
+
+
+            var s3client = new AmazonS3Client(new AnonymousAWSCredentials(), RegionEndpoint.USEast1);
+            var s3client1 = Configuration.GetAWSOptions("AWS1").CreateServiceClient<IAmazonS3>();
+            var s3client2 = Configuration.GetAWSOptions("AWS2").CreateServiceClient<IAmazonS3>();
+
             // Make S3 containers available at /ri/ and /imageflow-resources/
             // If you use credentials, do not check them into your repository
             // You can call AddImageflowS3Service multiple times for each unique access key
-            services.AddImageflowS3Service(new S3ServiceOptions( null,null)
-                .MapPrefix("/ri/", RegionEndpoint.USEast1, "resizer-images")
-                .MapPrefix("/imageflow-resources/", RegionEndpoint.USWest2, "imageflow-resources")
-                .MapPrefix("/custom-s3client/", () => new AmazonS3Client(), "custom-client", "", false, false)
+            services.AddImageflowS3Service(new S3ServiceOptions()
+                .MapPrefix("/ri/", s3client, "resizer-images", "", false, false)
+                .MapPrefix("/imageflow-resources/", s3client1, "imageflow-resources", "", false, false)
+                .MapPrefix("/default-s3client/", "custom-client")
             );
             
             // Make Azure container available at /azure

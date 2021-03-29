@@ -11,36 +11,15 @@ namespace Imageflow.Server.Storage.S3
         private readonly AWSCredentials credentials;
         internal readonly List<PrefixMapping> Mappings = new List<PrefixMapping>();
 
-        public S3ServiceOptions()
-        {
-            credentials = new AnonymousAWSCredentials();
-        }
+        public S3ServiceOptions MapPrefix(string prefix, string bucket)
+            => MapPrefix(prefix, bucket, "");
 
-        public S3ServiceOptions(AWSCredentials credentials)
-        {
-            this.credentials = credentials;
-        }
-
-        public S3ServiceOptions(string accessKeyId, string secretAccessKey)
-        {
-            credentials = accessKeyId == null
-                ? (AWSCredentials) new AnonymousAWSCredentials()
-                : new BasicAWSCredentials(accessKeyId, secretAccessKey);
-        }
-
-        public S3ServiceOptions MapPrefix(string prefix, RegionEndpoint region, string bucket)
-            => MapPrefix(prefix, region, bucket, "");
-
-        public S3ServiceOptions MapPrefix(string prefix, RegionEndpoint region, string bucket, bool ignorePrefixCase,
+        public S3ServiceOptions MapPrefix(string prefix, string bucket, bool ignorePrefixCase,
             bool lowercaseBlobPath)
-            => MapPrefix(prefix, region, bucket, "", ignorePrefixCase, lowercaseBlobPath);
-        public S3ServiceOptions MapPrefix(string prefix, RegionEndpoint region, string bucket, string blobPrefix)
-            => MapPrefix(prefix, region, bucket, blobPrefix, false, false);
+            => MapPrefix(prefix, bucket, "", ignorePrefixCase, lowercaseBlobPath);
+        public S3ServiceOptions MapPrefix(string prefix, string bucket, string blobPrefix)
+            => MapPrefix(prefix, bucket, blobPrefix, false, false);
 
-        public S3ServiceOptions MapPrefix(string prefix, RegionEndpoint region, string bucket, string blobPrefix,
-            bool ignorePrefixCase, bool lowercaseBlobPath)
-            => MapPrefix(prefix, new AmazonS3Config() { RegionEndpoint = region }, bucket,
-                blobPrefix, ignorePrefixCase, lowercaseBlobPath);
 
         /// <summary>
         /// Maps a given prefix to a specified location within a bucket
@@ -55,11 +34,10 @@ namespace Imageflow.Server.Storage.S3
         /// (requires that actual blobs all be lowercase).</param>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
-        public S3ServiceOptions MapPrefix(string prefix, AmazonS3Config s3Config, string bucket, string blobPrefix,
+        public S3ServiceOptions MapPrefix(string prefix, string bucket, string blobPrefix,
             bool ignorePrefixCase, bool lowercaseBlobPath)
         {
-            Func<IAmazonS3> client = () => new AmazonS3Client(credentials, s3Config);
-            return MapPrefix(prefix, client, bucket, blobPrefix, ignorePrefixCase, lowercaseBlobPath);
+            return MapPrefix(prefix, null, bucket, blobPrefix, ignorePrefixCase, lowercaseBlobPath);
         }
 
         /// <summary>
@@ -75,7 +53,7 @@ namespace Imageflow.Server.Storage.S3
         /// (requires that actual blobs all be lowercase).</param>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
-        public S3ServiceOptions MapPrefix(string prefix, Func<IAmazonS3> s3ClientFactory, string bucket, string blobPrefix, bool ignorePrefixCase, bool lowercaseBlobPath)
+        public S3ServiceOptions MapPrefix(string prefix, IAmazonS3 s3Client, string bucket, string blobPrefix, bool ignorePrefixCase, bool lowercaseBlobPath)
         {
             prefix = prefix.TrimStart('/').TrimEnd('/');
             if (prefix.Length == 0)
@@ -90,7 +68,7 @@ namespace Imageflow.Server.Storage.S3
             {
                 Bucket = bucket,
                 Prefix = prefix,
-                ClientFactory = s3ClientFactory,
+                S3Client = s3Client,
                 BlobPrefix = blobPrefix,
                 IgnorePrefixCase = ignorePrefixCase,
                 LowercaseBlobPath = lowercaseBlobPath
