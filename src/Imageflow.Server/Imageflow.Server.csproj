@@ -19,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Imageflow.AllPlatforms" Version="0.7.22" />
+    <PackageReference Include="Imageflow.AllPlatforms" Version="0.7.24" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
   </ItemGroup>
 
