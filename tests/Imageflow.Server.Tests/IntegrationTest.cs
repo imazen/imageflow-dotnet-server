@@ -218,10 +218,11 @@ namespace Imageflow.Server.Tests
                 var hostBuilder = new HostBuilder()
                     .ConfigureServices(services =>
                     {
+                        services.AddSingleton<IAmazonS3>(new AmazonS3Client(new AnonymousAWSCredentials(), RegionEndpoint.USEast1));
                         services.AddImageflowDiskCache(new DiskCacheOptions(diskCacheDir) {AsyncWrites = false});
                         services.AddImageflowS3Service(
-                            new S3ServiceOptions(null, null)
-                                .MapPrefix("/ri/", RegionEndpoint.USEast1, "resizer-images"));
+                            new S3ServiceOptions()
+                                .MapPrefix("/ri/", "resizer-images"));
                     })
                     .ConfigureWebHost(webHost =>
                     {
@@ -268,10 +269,11 @@ namespace Imageflow.Server.Tests
                 var hostBuilder = new HostBuilder()
                     .ConfigureServices(services =>
                     {
+                        services.AddSingleton<IAmazonS3>(new AmazonS3Client(new AnonymousAWSCredentials(), RegionEndpoint.USEast1));
                         services.AddImageflowDiskCache(new DiskCacheOptions(diskCacheDir) {AsyncWrites = false});
                         services.AddImageflowS3Service(
                             new S3ServiceOptions()
-                                .MapPrefix("/ri/", () => new AmazonS3Client(new AnonymousAWSCredentials(), RegionEndpoint.USEast1), "resizer-images", "", false, false));
+                                .MapPrefix("/ri/", new AmazonS3Client(new AnonymousAWSCredentials(), RegionEndpoint.USEast1), "resizer-images", "", false, false));
                     })
                     .ConfigureWebHost(webHost =>
                     {
