@@ -36,9 +36,7 @@ namespace Imageflow.Server.Storage.S3
         /// <exception cref="ArgumentException"></exception>
         public S3ServiceOptions MapPrefix(string prefix, string bucket, string blobPrefix,
             bool ignorePrefixCase, bool lowercaseBlobPath)
-        {
-            return MapPrefix(prefix, null, bucket, blobPrefix, ignorePrefixCase, lowercaseBlobPath);
-        }
+            => MapPrefix(prefix, null, bucket, blobPrefix, ignorePrefixCase, lowercaseBlobPath);
 
         /// <summary>
         /// Maps a given prefix to a specified location within a bucket
