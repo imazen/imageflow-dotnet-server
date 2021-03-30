@@ -218,6 +218,7 @@ namespace Imageflow.Server.Tests
                 var hostBuilder = new HostBuilder()
                     .ConfigureServices(services =>
                     {
+                        services.AddSingleton<IAmazonS3>(new AmazonS3Client(new AnonymousAWSCredentials(), RegionEndpoint.USEast1));
                         services.AddImageflowDiskCache(new DiskCacheOptions(diskCacheDir) {AsyncWrites = false});
                         services.AddImageflowS3Service(
                             new S3ServiceOptions()
@@ -268,6 +269,7 @@ namespace Imageflow.Server.Tests
                 var hostBuilder = new HostBuilder()
                     .ConfigureServices(services =>
                     {
+                        services.AddSingleton<IAmazonS3>(new AmazonS3Client(new AnonymousAWSCredentials(), RegionEndpoint.USEast1));
                         services.AddImageflowDiskCache(new DiskCacheOptions(diskCacheDir) {AsyncWrites = false});
                         services.AddImageflowS3Service(
                             new S3ServiceOptions()
