@@ -8,7 +8,6 @@ namespace Imageflow.Server.Storage.S3
 {
     public class S3ServiceOptions
     {
-        private readonly AWSCredentials credentials;
         internal readonly List<PrefixMapping> Mappings = new List<PrefixMapping>();
 
         public S3ServiceOptions MapPrefix(string prefix, string bucket)
@@ -62,7 +61,7 @@ namespace Imageflow.Server.Storage.S3
             prefix = '/' + prefix + '/';
             blobPrefix = blobPrefix.Trim('/');
 
-            Mappings.Add(new PrefixMapping()
+            Mappings.Add(new PrefixMapping
             {
                 Bucket = bucket,
                 Prefix = prefix,

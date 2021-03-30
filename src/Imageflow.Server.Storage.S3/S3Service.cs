@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Imageflow.Server.Storage.S3
 {
-    public class S3Service : IBlobProvider
+    public class S3Service : IBlobProvider, IDisposable
     {
         private readonly List<PrefixMapping> mappings = new List<PrefixMapping>();
         private readonly IAmazonS3 s3client;
@@ -69,6 +69,11 @@ namespace Imageflow.Server.Storage.S3
                     throw new BlobMissingException($"Amazon S3 blob \"{key}\" not accessible. The blob may not exist or you may not have permission to access it.\n({se.Message})", se);
                 throw;
             }
+        }
+
+        public void Dispose()
+        {
+            try { s3client?.Dispose(); } catch { }
         }
     }
 }
