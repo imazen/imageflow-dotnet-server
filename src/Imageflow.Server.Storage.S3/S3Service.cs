@@ -8,12 +8,14 @@ using Microsoft.Extensions.Logging;
 
 namespace Imageflow.Server.Storage.S3
 {
-    public class S3Service : IBlobProvider
+    public class S3Service : IBlobProvider, IDisposable
     {
         private readonly List<PrefixMapping> mappings = new List<PrefixMapping>();
+        private readonly IAmazonS3 s3client;
 
-        public S3Service(S3ServiceOptions options, ILogger<S3Service> logger)
+        public S3Service(S3ServiceOptions options, IAmazonS3 s3client, ILogger<S3Service> logger)
         {
+            this.s3client = s3client;
             foreach (var m in options.Mappings)
             {
                 mappings.Add(m);;
@@ -54,7 +56,7 @@ namespace Imageflow.Server.Storage.S3
 
             try
             {
-                using var client = mapping.ClientFactory();
+                var client = mapping.S3Client ?? this.s3client;
                 var req = new Amazon.S3.Model.GetObjectRequest() { BucketName = mapping.Bucket, Key = key };
 
                 var s = await client.GetObjectAsync(req);
@@ -67,6 +69,11 @@ namespace Imageflow.Server.Storage.S3
                     throw new BlobMissingException($"Amazon S3 blob \"{key}\" not accessible. The blob may not exist or you may not have permission to access it.\n({se.Message})", se);
                 throw;
             }
+        }
+
+        public void Dispose()
+        {
+            try { s3client?.Dispose(); } catch { }
         }
     }
 }
