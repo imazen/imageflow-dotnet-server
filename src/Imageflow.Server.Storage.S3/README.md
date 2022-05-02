@@ -2,7 +2,14 @@
 ## Overview
 This release moves construction of the S3 client outside of `ImageFlowServer` leveraging the configuration helpers provided by `AWSSDK.Extensions.NETCore.Setup`.  In most cases, this is all that should be needed to configure the S3Service.
 
+
+```xml
+<PackageReference Include="AWSSDK.Extensions.NETCore.Setup" Version="3.3.101" />
+```
+
+
 ```c#
+
 services.AddAWSService<IAmazonS3>();
 services.AddImageflowS3Service(new S3ServiceOptions()
   .MapPrefix("/images/", "image-bucket")

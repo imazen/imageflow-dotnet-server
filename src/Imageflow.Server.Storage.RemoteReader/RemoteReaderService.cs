@@ -55,12 +55,18 @@ namespace Imageflow.Server.Storage.RemoteReader
 
             var urlBase64 = remote[0];
             var hmac = remote[1];
+            
             var sig = Signatures.SignString(urlBase64, options.SigningKey, 8);
-
             if (hmac != sig)
             {
-                logger?.LogWarning("Missing or Invalid signature on remote path: {VirtualPath}", virtualPath);
-                throw new BlobMissingException($"Missing or Invalid signature on remote path: {virtualPath}");
+                //Try the fallback keys
+                if (options.SigningKeys == null ||
+                    !options.SigningKeys.Select(key => Signatures.SignString(urlBase64, key, 8)).Contains(hmac))
+                {
+
+                    logger?.LogWarning("Missing or Invalid signature on remote path: {VirtualPath}", virtualPath);
+                    throw new BlobMissingException($"Missing or Invalid signature on remote path: {virtualPath}");
+                }
             }
 
             var url = EncodingUtils.FromBase64UToString(urlBase64);
@@ -73,6 +79,7 @@ namespace Imageflow.Server.Storage.RemoteReader
 
             var httpClientName = httpClientSelector(uri);
             using var http = httpFactory.CreateClient(httpClientName);
+           
 
             try
             {
