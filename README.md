@@ -1,6 +1,6 @@
 [![.NET Core](https://github.com/imazen/imageflow-dotnet-server/workflows/.NET%20Core/badge.svg)](https://github.com/imazen/imageflow-dotnet-server/actions?query=workflow%3A%22.NET+Core%22) [![Build status](https://ci.appveyor.com/api/projects/status/5hm0ekhe455i56fp/branch/main?svg=true)](https://ci.appveyor.com/project/imazen/imageflow-dotnet-server/branch/main)
 
-#### Imageflow.NET Server is image processing and optimizing middleware for .NET 5 and ASP.NET Core 3.1. 
+#### Imageflow.NET Server is image processing and optimizing middleware for .NET 5/6 and ASP.NET Core 3.1. 
 
 If you don't need an HTTP server, [try Imageflow.NET](https://github.com/imazen/imageflow-dotnet). If you don't want to use .NET, try [Imageflow](https://imageflow.io), which has a server, command-line tool, and library with language bindings for Go, C, Rust, Node, Ruby and more. Imageflow is specifically designed for web servers and focuses on security, quality, and performance. 
 
@@ -316,7 +316,7 @@ namespace Imageflow.Server.Example
 .png or .jpg before migrating to Imageflow.NET Server. There is no secure open-source codec for .TIFF files, so we chose to not support the format.
 * Nearly all querystring commands are supported, with few infrequently exceptions:
     * We no longer support adding borders to images as that can be done better in CSS.
-    * We no longer support rounding the corners of images or adding drop shadows; this can also be done in CSS.
+    * We no longer support adding drop shadows; this can also be done in CSS.
     * Rotation must be in intervals of 90 degrees.
     * Blurring and noise removal is not yet supported.
 * Blob storage providers now expect blobs to be treated as immutable, as there is too much latency to check the modified date.
@@ -344,7 +344,7 @@ namespace Imageflow.Server.Example
     `jpeg_idct_downscale_linear`, `watermark`, `s.invert`, `s.sepia`, 
     `s.grayscale`, `s.alpha`, `s.brightness`, `s.contrast`, `s.saturation`, 
     `trim.threshold`, `trim.percentpadding`, `a.balancewhite`,  `jpeg.progressive`,
-    `decoder.min_precise_scaling_ratio`, `scale`, `preset`
+    `decoder.min_precise_scaling_ratio`, `scale`, `preset`, `s.roundcorners`
  * TIFF files are not supported, so `page=x` is not supported.
  * Animated GIFs are fully supported, so `frame=x` is ignored.
  * Images are always auto-rotated based on Exif information, so `autorotate` is ignored.
@@ -355,7 +355,6 @@ namespace Imageflow.Server.Example
  * Adding margins, padding, and borders to images is obsolete, so 
     `paddingwidth`, `paddingheight`, `margin`
     `borderwidth`, `bordercolor` and `paddingcolor` are now ignored. 
- * Rounding corners is not supported, so `s.roundcorners` is ignored.
  * Caching, processing, and encoders/builders/decoders are not configurable via the querystring,
     so `cache`, `process`, `encoder`, `decoder`, and `builder` are ignored.
  * Sharpening is now done with `f.sharpen`, not `a.sharpen`, and `a.sharpen` is ignored.
