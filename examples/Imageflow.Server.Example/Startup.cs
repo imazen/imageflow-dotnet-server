@@ -11,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
 using System.IO;
+using Amazon.Extensions.NETCore.Setup;
 using Amazon.S3;
 using Imageflow.Server.HybridCache;
 using Amazon.Runtime;
@@ -31,7 +32,12 @@ namespace Imageflow.Server.Example
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddAWSService<IAmazonS3>();
+            services.AddAWSService<IAmazonS3>(new AWSOptions 
+            {
+                Credentials = new AnonymousAWSCredentials(),
+                Region = RegionEndpoint.USEast1
+            });
+
 
             services.AddControllersWithViews();
 
@@ -45,16 +51,15 @@ namespace Imageflow.Server.Example
                 .AddPrefix("/remote/"));
 
 
-            var s3client = new AmazonS3Client(new AnonymousAWSCredentials(), RegionEndpoint.USEast1);
-            var s3client1 = Configuration.GetAWSOptions("AWS1").CreateServiceClient<IAmazonS3>();
-            var s3client2 = Configuration.GetAWSOptions("AWS2").CreateServiceClient<IAmazonS3>();
+            var s3east1 = new AmazonS3Client(new AnonymousAWSCredentials(), RegionEndpoint.USEast1);
+            var s3west2 = new AmazonS3Client(new AnonymousAWSCredentials(), RegionEndpoint.USWest2);
 
             // Make S3 containers available at /ri/ and /imageflow-resources/
             // If you use credentials, do not check them into your repository
             // You can call AddImageflowS3Service multiple times for each unique access key
             services.AddImageflowS3Service(new S3ServiceOptions()
-                .MapPrefix("/ri/", s3client, "resizer-images", "", false, false)
-                .MapPrefix("/imageflow-resources/", s3client1, "imageflow-resources", "", false, false)
+                .MapPrefix("/ri/", s3east1, "resizer-images", "", false, false)
+                .MapPrefix("/imageflow-resources/", s3west2, "imageflow-resources", "", false, false)
                 .MapPrefix("/default-s3client/", "custom-client")
             );
             

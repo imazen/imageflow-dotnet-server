@@ -4,7 +4,7 @@ This release moves construction of the S3 client outside of `ImageFlowServer` le
 
 
 ```xml
-<PackageReference Include="AWSSDK.Extensions.NETCore.Setup" Version="3.3.101" />
+<PackageReference Include="AWSSDK.Extensions.NETCore.Setup" Version="3.7.2" />
 ```
 
 
