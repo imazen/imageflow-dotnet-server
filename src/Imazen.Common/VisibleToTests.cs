@@ -4,3 +4,4 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("Imageflow.Server")]
 [assembly: InternalsVisibleTo("Imageflow.Server.Tests")]
 [assembly: InternalsVisibleTo("ImageResizer")]
+[assembly: InternalsVisibleTo("ImageResizer.LicensingTests")]
