@@ -33,11 +33,11 @@ namespace Imageflow.Server
             }
             
             // We really only need 12 bytes but it would be a waste to only read that many. 
-            var bufferSize = 4096;
-            byte[] buffer = ArrayPool<byte>.Shared.Rent(bufferSize);
+            const int bufferSize = 4096;
+            var buffer = ArrayPool<byte>.Shared.Rent(bufferSize);
             try
             {
-                int bytesRead = await sourceStream.ReadAsync(new Memory<byte>(buffer)).ConfigureAwait(false);
+                var bytesRead = await sourceStream.ReadAsync(new Memory<byte>(buffer)).ConfigureAwait(false);
                 if (bytesRead == 0)
                 {
                     throw new InvalidOperationException("Source blob has zero bytes.");

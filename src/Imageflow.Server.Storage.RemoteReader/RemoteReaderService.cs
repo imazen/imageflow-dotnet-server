@@ -78,29 +78,36 @@ namespace Imageflow.Server.Storage.RemoteReader
             }
 
             var httpClientName = httpClientSelector(uri);
-            using var http = httpFactory.CreateClient(httpClientName);
-           
-
-            try
+            using (var http = httpFactory.CreateClient(httpClientName))
             {
-                var resp = await http.GetAsync(url);
 
-                if (!resp.IsSuccessStatusCode)
+
+                try
                 {
-                    logger?.LogWarning("RemoteReader blob {VirtualPath} not found. The remote {Url} responded with status: {StatusCode}", virtualPath, url, resp.StatusCode);
-                    throw new BlobMissingException($"RemoteReader blob \"{virtualPath}\" not found. The remote \"{url}\" responded with status: {resp.StatusCode}");
-                }
+                    var resp = await http.GetAsync(url);
 
-                return new RemoteReaderBlob(resp);
-            }
-            catch (BlobMissingException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                logger?.LogWarning(ex, "RemoteReader blob error retrieving {Url} for {VirtualPath}.", url, virtualPath);
-                throw new BlobMissingException($"RemoteReader blob error retrieving \"{url}\" for \"{virtualPath}\".", ex);
+                    if (!resp.IsSuccessStatusCode)
+                    {
+                        logger?.LogWarning(
+                            "RemoteReader blob {VirtualPath} not found. The remote {Url} responded with status: {StatusCode}",
+                            virtualPath, url, resp.StatusCode);
+                        throw new BlobMissingException(
+                            $"RemoteReader blob \"{virtualPath}\" not found. The remote \"{url}\" responded with status: {resp.StatusCode}");
+                    }
+
+                    return new RemoteReaderBlob(resp);
+                }
+                catch (BlobMissingException)
+                {
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    logger?.LogWarning(ex, "RemoteReader blob error retrieving {Url} for {VirtualPath}", url,
+                        virtualPath);
+                    throw new BlobMissingException(
+                        $"RemoteReader blob error retrieving \"{url}\" for \"{virtualPath}\".", ex);
+                }
             }
         }
 
@@ -115,12 +122,34 @@ namespace Imageflow.Server.Storage.RemoteReader
                 options.IgnorePrefixCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal));
         }
         
+        private static string SanitizeImageExtension(string extension)
+        {
+            //TODO: Deduplicate this function when making Imazen.ImageAPI.Client
+            extension = extension.ToLowerInvariant().TrimStart('.');
+            switch (extension)
+            {
+                case "png":
+                    return "png";
+                case "gif":
+                    return "gif";
+                case "webp":
+                    return "webp";
+                case "jpeg":
+                case "jfif":
+                case "jif":
+                case "jfi":
+                case "jpe":
+                    return "jpg";
+                default:
+                    return null;
+            }
+        }
         public static string EncodeAndSignUrl(string url, string key)
         {
             var uri = new Uri(url);
             var path = uri.AbsolutePath;
             var extension = Path.GetExtension(path);
-            var sanitizedExtension = PathHelpers.SanitizeImageExtension(extension)?? "jpg";
+            var sanitizedExtension = SanitizeImageExtension(extension)?? "jpg";
             var data = EncodingUtils.ToBase64U(url);
             var sig = Signatures.SignString(data, key,8);
             return $"{data}.{sig}.{sanitizedExtension}";
