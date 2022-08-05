@@ -41,8 +41,8 @@ namespace Imazen.HybridCache.Tests
                 var keyBasis = new byte[] {6,1,2};
                 var result = await cache.GetOrCreateBytes(keyBasis, (token) =>
                     {
-                        return Task.FromResult(new Tuple<string, ArraySegment<byte>>(
-                            null, new ArraySegment<byte>(new byte[] {3, 2, 1})));
+                        return Task.FromResult(new StreamCacheInput(
+                            null, new ArraySegment<byte>(new byte[] {3, 2, 1})).ToIStreamCacheInput());
                     },
                     CancellationToken.None, false);
                 Assert.NotNull(result.Data);
@@ -53,8 +53,8 @@ namespace Imazen.HybridCache.Tests
 
                 var result2 = await cache.GetOrCreateBytes(keyBasis, (token) =>
                     {
-                        return Task.FromResult(new Tuple<string, ArraySegment<byte>>(
-                            null, new ArraySegment<byte>(new byte[] {3, 2, 1})));
+                        return Task.FromResult(new StreamCacheInput(
+                            null, new ArraySegment<byte>(new byte[] {3, 2, 1})).ToIStreamCacheInput());
                     },
                     CancellationToken.None, false);
                 Assert.NotNull(result2.Data);
@@ -101,8 +101,8 @@ namespace Imazen.HybridCache.Tests
                 var keyBasis = new byte[] {6,1,2};
                 var result = await cache.GetOrCreateBytes(keyBasis, (token) =>
                     {
-                        return Task.FromResult(new Tuple<string, ArraySegment<byte>>(
-                            null, new ArraySegment<byte>(new byte[] {3, 2, 1})));
+                        return Task.FromResult(new StreamCacheInput(
+                            null, new ArraySegment<byte>(new byte[] {3, 2, 1})).ToIStreamCacheInput());
                     },
                     CancellationToken.None, false);
                 Assert.NotNull(result.Data);
@@ -113,8 +113,8 @@ namespace Imazen.HybridCache.Tests
 
                 var result2 = await cache.GetOrCreateBytes(keyBasis, (token) =>
                     {
-                        return Task.FromResult(new Tuple<string, ArraySegment<byte>>(
-                            null, new ArraySegment<byte>(new byte[] {3, 2, 1})));
+                        return Task.FromResult(new StreamCacheInput(
+                            null, new ArraySegment<byte>(new byte[] {3, 2, 1})).ToIStreamCacheInput());
                     },
                     CancellationToken.None, false);
                 Assert.NotNull(result2.Data);

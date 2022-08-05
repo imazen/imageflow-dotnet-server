@@ -32,9 +32,9 @@ namespace Imazen.HybridCache.Tests
                 var key = new byte[] {0, 1, 2, 3};
                 var contentType = "application/octet-stream";
 
-                Task<Tuple<string, ArraySegment<byte>>> DataProvider(CancellationToken token)
+                Task<IStreamCacheInput> DataProvider(CancellationToken token)
                 {
-                    return Task.FromResult(new Tuple<string, ArraySegment<byte>>(contentType, new ArraySegment<byte>(new byte[4000])));
+                    return Task.FromResult(new StreamCacheInput(contentType, new ArraySegment<byte>(new byte[4000])).ToIStreamCacheInput());
                 }
 
                 var result = await cache.GetOrCreateBytes(key, DataProvider, cancellationToken, true);
@@ -54,9 +54,9 @@ namespace Imazen.HybridCache.Tests
                 Assert.NotNull(result3.Data);
                 await result3.Data.DisposeAsync();
                 var key2 = new byte[] {2, 1, 2, 3};
-                Task<Tuple<string, ArraySegment<byte>>> DataProvider2(CancellationToken token)
+                Task<IStreamCacheInput> DataProvider2(CancellationToken token)
                 {
-                    return Task.FromResult(new Tuple<string, ArraySegment<byte>>(null, new ArraySegment<byte>(new byte[4000])));
+                    return Task.FromResult(new StreamCacheInput(null, new ArraySegment<byte>(new byte[4000])).ToIStreamCacheInput());
                 }
                 var result4 = await cache.GetOrCreateBytes(key2, DataProvider2, cancellationToken, true);
                 Assert.Equal("WriteSucceeded", result4.Status);

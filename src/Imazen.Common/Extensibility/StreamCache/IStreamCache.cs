@@ -8,7 +8,8 @@ using Microsoft.Extensions.Hosting;
 
 namespace Imazen.Common.Extensibility.StreamCache
 {
-    public delegate Task<Tuple<string,ArraySegment<byte>>> AsyncBytesResult(CancellationToken cancellationToken);
+    // A tuple 
+    public delegate Task<IStreamCacheInput> AsyncBytesResult(CancellationToken cancellationToken);
     
     public interface IStreamCache : IIssueProvider, IHostedService
     {

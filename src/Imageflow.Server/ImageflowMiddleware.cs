@@ -279,12 +279,12 @@ namespace Imageflow.Server
                     {
                         throw new InvalidOperationException("Image job returned zero bytes.");
                     }
-                    return new Tuple<string, ArraySegment<byte>>(result.ContentType, result.ResultBytes);
+                    return new StreamCacheInput(result.ContentType, result.ResultBytes);
                 }
                 
                 logger?.LogDebug("{CacheName} miss: Proxying image {VirtualPath}",typeName,  info.FinalVirtualPath);
                 var bytes = await info.GetPrimaryBlobBytesAsync();
-                return new Tuple<string, ArraySegment<byte>>(null, bytes);
+                return new StreamCacheInput(null, bytes);
             
             },CancellationToken.None,false);
 

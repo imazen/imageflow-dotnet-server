@@ -304,7 +304,7 @@ namespace Imazen.HybridCache
                     swDataCreation.Stop();
                     
                     //Create AsyncWrite object to enqueue
-                    var w = new AsyncWrite(entry.StringKey, result.Item2, result.Item1);
+                    var w = new AsyncWrite(entry.StringKey, result.Bytes, result.ContentType);
 
                     cacheResult.Detail = AsyncCacheDetailResult.Miss;
                     cacheResult.ContentType = w.ContentType;
@@ -447,12 +447,12 @@ namespace Imazen.HybridCache
                 if (!Options.FailRequestsOnEnqueueLockTimeout)
                 {
                     // We run the callback with no intent of caching
-                    var (contentType, arraySegment) = await dataProviderCallback(cancellationToken);
+                    var cacheInputEntry = await dataProviderCallback(cancellationToken);
                     
                     cacheResult.Detail = AsyncCacheDetailResult.QueueLockTimeoutAndCreated;
-                    cacheResult.ContentType = contentType;
-                    cacheResult.Data = new MemoryStream(arraySegment.Array ?? throw new NullReferenceException(), 
-                        arraySegment.Offset, arraySegment.Count, false, true);
+                    cacheResult.ContentType = cacheInputEntry.ContentType;
+                    cacheResult.Data = new MemoryStream(cacheInputEntry.Bytes.Array ?? throw new NullReferenceException(), 
+                        cacheInputEntry.Bytes.Offset, cacheInputEntry.Bytes.Count, false, true);
                 }
                 else
                 {

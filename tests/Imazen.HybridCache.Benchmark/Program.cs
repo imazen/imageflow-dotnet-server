@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Imazen.Common.Extensibility.StreamCache;
 using Imazen.HybridCache.MetaStore;
 using MELT;
 using Microsoft.Extensions.Logging;
@@ -500,7 +501,7 @@ namespace Imazen.HybridCache.Benchmark
             var dataSegment = new ArraySegment<byte>(data);
             var contentType = "application/octet-stream";
 
-            async Task<Tuple<string, ArraySegment<byte>>> DataProvider(CancellationToken token)
+            async Task<IStreamCacheInput> DataProvider(CancellationToken token)
             {
                 if (options.CreationTaskDelay.Ticks > 0)
                 {
@@ -510,7 +511,7 @@ namespace Imazen.HybridCache.Benchmark
                 {
                     Thread.Sleep(options.CreationThreadSleep);
                 }
-                return new Tuple<string, ArraySegment<byte>>(contentType, dataSegment);
+                return new StreamCacheInput(contentType, dataSegment).ToIStreamCacheInput();
             }
 
             var random = new Random(options.Seed);

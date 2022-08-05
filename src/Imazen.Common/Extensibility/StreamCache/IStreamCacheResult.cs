@@ -6,7 +6,7 @@ namespace Imazen.Common.Extensibility.StreamCache
     public interface IStreamCacheResult
     {
         /// <summary>
-        /// An open stream to the data. Must be disposed by caller.
+        /// An open stream to the data. Must be disposed by caller. Null if something went so wrong that even an uncached result isn't available
         /// </summary>
         Stream Data { get; }
 
@@ -16,7 +16,7 @@ namespace Imazen.Common.Extensibility.StreamCache
         string ContentType { get; }
 
         /// <summary>
-        /// The result of the cache check
+        /// The result of the cache check.
         /// </summary>
         string Status { get; }
     }
