@@ -1,7 +1,7 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <PropertyGroup>
         
-        <Copyright>(c) 2020 Imazen LLC</Copyright>
+        <Copyright>(c) 2022 Imazen LLC</Copyright>
         <PackageProjectUrl>https://github.com/imazen/imageflow-dotnet-server</PackageProjectUrl>
         <RepositoryUrl>https://github.com/imazen/imageflow-dotnet-server.git</RepositoryUrl>
         <RepositoryBranch>main</RepositoryBranch>
