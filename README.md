@@ -344,10 +344,11 @@ namespace Imageflow.Server.Example
     `jpeg_idct_downscale_linear`, `watermark`, `s.invert`, `s.sepia`, 
     `s.grayscale`, `s.alpha`, `s.brightness`, `s.contrast`, `s.saturation`, 
     `trim.threshold`, `trim.percentpadding`, `a.balancewhite`,  `jpeg.progressive`,
-    `decoder.min_precise_scaling_ratio`, `scale`, `preset`, `s.roundcorners`
+    `decoder.min_precise_scaling_ratio`, `scale`, `preset`, `s.roundcorners`, 'ignoreicc'
  * TIFF files are not supported, so `page=x` is not supported.
  * Animated GIFs are fully supported, so `frame=x` is ignored.
- * Images are always auto-rotated based on Exif information, so `autorotate` is ignored.
+ * Images are always auto-rotated based on Exif information, so `autorotate` is ignored. 
+   This is a breaking change from ImageResizer 4.x where images are not autorotated by default.
  * Images can only be rotated in 90 degree intervals, so `rotate` is partially supported.
  * PNG encoding adapts the palette size as needed, so `colors` is ignored.
  * PNG and GIFs are always dithered, so `dither` is ignored.
@@ -360,7 +361,6 @@ namespace Imageflow.Server.Example
  * Sharpening is now done with `f.sharpen`, not `a.sharpen`, and `a.sharpen` is ignored.
  * Noise removal is not yet supported, so `a.removenoise` is ignored.
  * Blurring is not yet supported, so `a.blur` is ignored.
- * ICC profiles are never ignored, so `ignoreicc` is ignored.
  * 404 redirects are not implemented, so `404` is ignored.
 
 ## Integrations into Other Systems
