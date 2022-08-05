@@ -192,7 +192,7 @@ namespace Imageflow.Server.Tests
                 
                 url.Url = new Uri("https://acme.com");
                 using var licensedResponse1 = await client.GetAsync("/fire.jpg?w=1");
-                licensedResponse1.EnsureSuccessStatusCode();
+                licensedResponse1.EnsureSuccessStatusCode(); // ON CI once got System.Net.Http.HttpRequestException : Response status code does not indicate success: 402 (Payment Required).
 
                 url.Url = new Uri("https://acmestaging.com");
                 using var licensedResponse2 = await client.GetAsync("/fire.jpg?w=1");
