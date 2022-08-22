@@ -5,18 +5,17 @@ namespace Imazen.Common.Licensing
     [AttributeUsage(AttributeTargets.Assembly)]
     public class BuildDateAttribute : Attribute
     {
-        readonly string str;
-        public BuildDateAttribute() { str = string.Empty; }
-        public BuildDateAttribute(string txt) { str = txt; }
+        public BuildDateAttribute() { Value = string.Empty; }
+        public BuildDateAttribute(string buildDateStringRoundTrip) { Value = buildDateStringRoundTrip; }
 
-        public string Value => str;
+        public string Value { get; }
 
         public DateTimeOffset? ValueDate
         {
             get
             {
                 DateTimeOffset v;
-                if (DateTimeOffset.TryParse(str, null, System.Globalization.DateTimeStyles.RoundtripKind, out v))
+                if (DateTimeOffset.TryParse(Value, null, System.Globalization.DateTimeStyles.RoundtripKind, out v))
                 {
                     return v;
                 }else
@@ -28,7 +27,7 @@ namespace Imazen.Common.Licensing
 
         public override string ToString()
         {
-            return str;
+            return Value;
         }
 
     }
