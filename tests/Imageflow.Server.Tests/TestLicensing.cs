@@ -184,15 +184,19 @@ namespace Imageflow.Server.Tests
 
                 Assert.Empty(mgr.GetIssues());
                 
+                Thread.Sleep(50); //In case this helps with async
+                
                 url.Url = new Uri("https://unlicenseddomain.com");
                 using var notLicensedResponse = await client.GetAsync("/fire.jpg?w=1");
+                
+                // ON CI we sometimes get OK instead of 402 (Payment Required).
                 Assert.Equal(HttpStatusCode.PaymentRequired,notLicensedResponse.StatusCode);
 
                 
                 
                 url.Url = new Uri("https://acme.com");
                 using var licensedResponse1 = await client.GetAsync("/fire.jpg?w=1");
-                licensedResponse1.EnsureSuccessStatusCode(); // ON CI once got System.Net.Http.HttpRequestException : Response status code does not indicate success: 402 (Payment Required).
+                licensedResponse1.EnsureSuccessStatusCode(); // ON CI we sometimes get System.Net.Http.HttpRequestException : Response status code does not indicate success: 402 (Payment Required).
 
                 url.Url = new Uri("https://acmestaging.com");
                 using var licensedResponse2 = await client.GetAsync("/fire.jpg?w=1");
