@@ -45,16 +45,17 @@ jobs:
         echo Set version to ${{ steps.version.outputs.full_without_prefix }}
       shell: bash
       if: steps.version.outputs.is_valid == 'true' && github.event_name == 'release'
-    
-    
-    - name: Setup .NET 6
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: '6.0.x'
-    - name: Setup .NET Core 3.1
-      uses: actions/setup-dotnet@v1
+
+    - name: Setup .NET Core 3.1.x
+      uses: actions/setup-dotnet@v2
       with:
         dotnet-version: '3.1.x'
+        
+    - name: Setup .NET 6.0.x
+      uses: actions/setup-dotnet@v2
+      with:
+        dotnet-version: '6.0.x'
+
     - run: dotnet clean --configuration Release 
     - run: dotnet nuget locals all --clear
     - name: Restore packages
