@@ -30,10 +30,9 @@ jobs:
     - uses: actions/cache@v3
       with:
         path: ~/.nuget/packages
-        # Look to see if there is a cache hit for the corresponding requirements file
         key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
-        restore-keys: |
-          ${{ runner.os }}-nuget
+        restore-keys: ${{ runner.os }}-nuget
+        
     - uses: nowsprinting/check-version-format-action@v3
       id: version
       with:
@@ -46,24 +45,24 @@ jobs:
       shell: bash
       if: steps.version.outputs.is_valid == 'true' && github.event_name == 'release'
 
-    - name: Setup .NET Core 3.1.x
+    - name: Setup .NET Core 3.1.x and 6.0.x
       uses: actions/setup-dotnet@v2
       with:
-        dotnet-version: '3.1.x'
-        
-    - name: Setup .NET 6.0.x
-      uses: actions/setup-dotnet@v2
-      with:
-        dotnet-version: '6.0.x'
+        dotnet-version: |
+          3.1.x
+          6.0.x
 
     - run: dotnet clean --configuration Release 
     - run: dotnet nuget locals all --clear
+      
     - name: Restore packages
       run: dotnet restore -v quiet
+      
     - name: Build
-      run: dotnet build --configuration Release --no-restore
+      run: dotnet build -c Release
+      
     - name: Test
-      run: dotnet test --configuration Release --no-restore --verbosity normal --filter "FullyQualifiedName!~SkipOnCI"
+      run: dotnet test -c Release --verbosity normal
 
     - name: Pack
       run: dotnet pack -c Release --include-source
