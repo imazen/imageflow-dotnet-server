@@ -16,7 +16,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Imazen.DiskCache\Imazen.DiskCache.csproj" />
-        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
     </ItemGroup>
 
 </Project>
