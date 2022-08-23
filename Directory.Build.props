@@ -56,6 +56,10 @@
         <UseCommonOutputDirectory>true</UseCommonOutputDirectory>
     </PropertyGroup>
 
+    <PropertyGroup>
+        <!-- https://github.com/dotnet/sdk/issues/22201 -->
+        <_EnableMacOSCodeSign>false</_EnableMacOSCodeSign>
+    </PropertyGroup>
 
     <ItemGroup>
         <None Include="..\icon.png" Pack="true" PackagePath=""/>
