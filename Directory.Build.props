@@ -2,4 +2,62 @@
     <ItemGroup>
         <SourceRoot Include="$(MSBuildThisFileDirectory)/"/>
     </ItemGroup>
+
+    <PropertyGroup>
+        <Copyright>Copyright © 2022 Imazen LLC</Copyright>
+        <PackageProjectUrl>https://github.com/imazen/imageflow-dotnet-server</PackageProjectUrl>
+        <RepositoryUrl Condition="'$(GITHUB_REPOSITORY)' != ''">$(GITHUB_SERVER_URL)/$(GITHUB_REPOSITORY)</RepositoryUrl>
+        <SourceRevisionId Condition="'$(SourceRevisionId)' == ''">$(GITHUB_SHA)</SourceRevisionId>
+        <RepositoryBranch>main</RepositoryBranch>
+        <Authors>imazen,lilith</Authors>
+        <Owners>imazen,lilith</Owners>
+        <Company>Imazen</Company>
+        <CompanyName>Imazen</CompanyName>
+        <Product>Imageflow Server</Product>
+        <RepositoryType>git</RepositoryType>
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  
+        <Version Condition="'$(Version)' == ''">$(TAGGED_VERSION)</Version>
+        <VersionPrefix>0.1.0</VersionPrefix>
+        <VersionSuffix>-notset</VersionSuffix>
+        
+        <IsPackable>false</IsPackable>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <PackageTags>Image;Resize;Optimize;Crop;Gif;Jpg;Jpeg;Bitmap;Png;Core;WebP;ImageResizer;Imageflow;Rotate;Imaging;Crunch</PackageTags>
+        <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
+    </PropertyGroup>
+
+
+    <PropertyGroup Condition="'$(CI)' == 'True'">
+        <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+        <RestoreLockedMode>true</RestoreLockedMode>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(CI)' == 'true'">
+        <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+        <RestoreLockedMode>true</RestoreLockedMode>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+        <NoWarn>NU1603</NoWarn>
+        <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
+    </PropertyGroup>
+    <PropertyGroup>
+        <IntermediateOutputPath>$(SolutionDir)\obj\$(Configuration)</IntermediateOutputPath>
+        <OutputPath>$(SolutionDir)\bin\$(Configuration)</OutputPath>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="!$(MSBuildProjectName.EndsWith('Tests'))">
+        <UseCommonOutputDirectory>true</UseCommonOutputDirectory>
+    </PropertyGroup>
+
+
+    <ItemGroup>
+        <None Include="..\icon.png" Pack="true" PackagePath=""/>
+    </ItemGroup>
 </Project>

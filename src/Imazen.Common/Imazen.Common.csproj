@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <PackageVersion>0.1</PackageVersion>
     <Title>Imageflow.Common - Interfaces and utilites shared by Imageflow and ImageResizer.</Title>
+    <IsPackable>true</IsPackable>
   </PropertyGroup>
 
   <Import Project="..\NugetPackages.targets" />

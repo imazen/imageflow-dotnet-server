@@ -2,9 +2,9 @@
 
     <PropertyGroup>
         <TargetFramework>netcoreapp3.1</TargetFramework>
-        <PackageVersion>0.1.0</PackageVersion>
         <Title>Imageflow.Server.HybridCache - Plugin for caching processed images to disk while limiting the overall cache size.</Title>
         <Description>Imageflow.Server plugin for caching processed images to a limit amount of space on disk.</Description>
+        <IsPackable>true</IsPackable>
     </PropertyGroup>
 
     <Import Project="..\NugetPackages.targets"/>

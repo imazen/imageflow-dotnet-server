@@ -5,7 +5,9 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
-
+  release:
+    types: [ published ]
+    
 jobs:
   build:
     strategy:
@@ -13,16 +15,38 @@ jobs:
         include:
           - name: ubuntu-20.04
             os: ubuntu-20.04
+            handles-release: true
             
           - name: osx_11.0-x86_64
             os: macos-11.0
             
           - name: win-x86_64
-            os: windows-2019
+            os: windows-latest
 
     runs-on: ${{matrix.os}}
+    
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
+    - uses: actions/cache@v3
+      with:
+        path: ~/.nuget/packages
+        # Look to see if there is a cache hit for the corresponding requirements file
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget
+    - uses: nowsprinting/check-version-format-action@v3
+      id: version
+      with:
+        prefix: 'v'
+        
+    - name: Set the release version (if applicable)
+      run: |
+        echo "TAGGED_VERSION=${{ steps.version.outputs.full_without_prefix }}" >> $GITHUB_ENV
+        echo Set version to ${{ steps.version.outputs.full_without_prefix }}
+      shell: bash
+      if: steps.version.outputs.is_valid == 'true' && github.event_name == 'release'
+    
+    
     - name: Setup .NET 6
       uses: actions/setup-dotnet@v1
       with:
@@ -33,9 +57,18 @@ jobs:
         dotnet-version: '3.1.x'
     - run: dotnet clean --configuration Release 
     - run: dotnet nuget locals all --clear
-    - name: Install dependencies
-      run: dotnet restore
+    - name: Restore packages
+      run: dotnet restore -v quiet
     - name: Build
       run: dotnet build --configuration Release --no-restore
     - name: Test
-      run: dotnet test --no-restore --verbosity normal
+      run: dotnet test --configuration Release --no-restore --verbosity normal --filter "FullyQualifiedName!~SkipOnCI"
+
+    - name: Pack
+      run: dotnet pack -c Release --include-source
+      if: matrix.handles-release == 'true'
+
+    - name: Publish nuget packages to Nuget.org (if a release)
+      if: steps.version.outputs.is_valid == 'true' && github.event_name == 'release' && matrix.handles-release == 'true'
+      run: |
+        dotnet nuget push bin\Release\*.nupkg --skip-duplicate --api-key ${{ secrets.NUGET_API_KEY }} 
