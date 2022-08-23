@@ -14,7 +14,7 @@ namespace Imageflow.Server
             {
                 return "application/octet-stream";
             }
-            return Fluent.ImageJob.GetContentTypeForBytes(data) ?? "application/octet-stream";
+            return new Imazen.Common.FileTypeDetection.FileTypeDetector().GuessMimeType(data) ?? "application/octet-stream";
         }
         
         
