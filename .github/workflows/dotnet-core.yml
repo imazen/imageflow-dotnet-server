@@ -75,7 +75,7 @@ jobs:
       run: dotnet build -c Release
       
     - name: Test
-      run: dotnet test -c Release --blame-crash --blame -no-build
+      run: dotnet test -c Release --blame-crash --blame --no-build
 
     - name: Pack
       run: dotnet pack -c Release --include-source
