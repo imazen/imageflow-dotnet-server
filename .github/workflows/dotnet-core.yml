@@ -82,9 +82,9 @@ jobs:
       
     - name: Pack
       run: dotnet pack -c Release --include-source
-      if: matrix.handles_release == 'true'
+      if: ${{ matrix.handles_release }} == 'true'
 
     - name: Publish nuget packages to Nuget.org (if a release)
-      if: steps.version.outputs.is_valid == 'true' && github.event_name == 'release' && matrix.handles_release == 'true'
+      if: steps.version.outputs.is_valid == 'true' && github.event_name == 'release' && ${{ matrix.handles_release }} == 'true'
       run: |
         dotnet nuget push bin\Release\*.nupkg --skip-duplicate --api-key ${{ secrets.NUGET_API_KEY }} 
