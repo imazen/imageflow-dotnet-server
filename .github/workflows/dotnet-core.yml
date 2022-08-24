@@ -51,7 +51,7 @@ jobs:
         dotnet --list-runtimes >> $GITHUB_ENV
         echo "EOF" >> $GITHUB_ENV
       shell: bash
-
+      
     - name: Setup .NET Core 3.1.x and 6.0.x
       uses: actions/setup-dotnet@v2
       if: !contains(env.DOTNET_VERSION_LIST, "Microsoft.NETCore.App 6.0.") || !contains(env.DOTNET_VERSION_LIST, "Microsoft.NETCore.App 3.1.")
