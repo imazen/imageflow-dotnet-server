@@ -16,7 +16,7 @@ jobs:
         include:
           - name: ubuntu-20.04
             os: ubuntu-20.04
-            handles-release: true
+            handles_release: true
             
           - name: osx_11.0-x86_64
             os: macos-11.0
@@ -81,9 +81,9 @@ jobs:
       
     - name: Pack
       run: dotnet pack -c Release --include-source
-      if: matrix.handles-release == 'true'
+      if: matrix.handles_release == 'true'
 
     - name: Publish nuget packages to Nuget.org (if a release)
-      if: steps.version.outputs.is_valid == 'true' && github.event_name == 'release' && matrix.handles-release == 'true'
+      if: steps.version.outputs.is_valid == 'true' && github.event_name == 'release' && matrix.handles_release == 'true'
       run: |
         dotnet nuget push bin\Release\*.nupkg --skip-duplicate --api-key ${{ secrets.NUGET_API_KEY }} 
