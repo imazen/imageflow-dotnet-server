@@ -59,10 +59,11 @@ jobs:
           3.1.x
           6.0.x
 
-    - run: dotnet clean --configuration Release -v detailed
-#      if: steps.version.outputs.is_valid == 'true'
+    - run: dotnet clean --configuration Release
+      if: github.event_name == 'release'
+      
     - run: dotnet nuget locals all --clear
-#      if: steps.version.outputs.is_valid == 'true'
+      if: github.event_name == 'release'
       
     - name: Restore packages
       run: dotnet restore
