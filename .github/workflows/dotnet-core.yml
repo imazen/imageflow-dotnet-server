@@ -27,9 +27,6 @@ jobs:
     runs-on: ${{matrix.os}}
     steps:
 
-    - name: Responsible for uploading to Nuget.org?
-      run: echo "This runner is (${{matrix.uploader}}) responsible for uploading to Nuget.org"
-      if: matrix.uploader
       
     - uses: actions/checkout@v3
     - uses: actions/cache@v3
@@ -41,7 +38,11 @@ jobs:
       id: version
       with:
         prefix: 'v'
-        
+
+    - name: Upload planned for Nuget.org?
+      run: echo "This runner will upload to Nuget.org if tests pass"
+      if: matrix.uploader && github.event_name == 'release' &&  steps.version.outputs.is_valid == 'true'
+      
     - name: Set the release version (if applicable)
       run: |
         echo "TAGGED_VERSION=${{ steps.version.outputs.full_without_prefix }}" >> $GITHUB_ENV
@@ -90,10 +91,9 @@ jobs:
       
     - name: Pack
       run: dotnet pack -c Release --include-source
-      if: contains(matrix.uploader,'true')
 
     - name: Publish nuget packages to Nuget.org (if a release)
-      if: steps.version.outputs.is_valid == 'true' && github.event_name == 'release' && matrix.uploader == 'true'
+      if: steps.version.outputs.is_valid == 'true' && github.event_name == 'release' && matrix.uploader
       run: |
         dotnet nuget add source https://api.nuget.org/v3/index.json -n nuget.org
         dotnet nuget push bin\Release\*.nupkg --skip-duplicate --api-key ${{ secrets.NUGET_API_KEY }} --source nuget.org
