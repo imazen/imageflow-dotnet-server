@@ -26,6 +26,10 @@ jobs:
 
     runs-on: ${{matrix.os}}
     steps:
+
+    - name: This runner is responsible for uploading to Nuget.org
+      if: contains(matrix.uploader,'true')
+      
     - uses: actions/checkout@v3
     - uses: actions/cache@v3
       with:
@@ -76,7 +80,7 @@ jobs:
     
     - name: Check matrix value
       run: echo ${{ matrix.os }}, ${{ matrix.uploader }}
-    
+
     - uses: actions/upload-artifact@v3
       if: failure()
       with:
@@ -85,7 +89,7 @@ jobs:
       
     - name: Pack
       run: dotnet pack -c Release --include-source
-      if: matrix.uploader == 'true'
+      if: contains(matrix.uploader,'true')
 
     - name: Publish nuget packages to Nuget.org (if a release)
       if: steps.version.outputs.is_valid == 'true' && github.event_name == 'release' && matrix.uploader == 'true'
