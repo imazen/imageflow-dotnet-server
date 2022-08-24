@@ -71,8 +71,14 @@ jobs:
       run: dotnet build -c Release
       
     - name: Test
-      run: dotnet test -c Release --blame-crash --blame --no-build
-
+      run: dotnet test -c Release --blame --no-build
+      
+    - uses: actions/upload-artifact@v3
+      if: failure()
+      with:
+        name: TestResults-${{matrix.os}}
+        path: TestResults/
+      
     - name: Pack
       run: dotnet pack -c Release --include-source
       if: matrix.handles-release == 'true'
