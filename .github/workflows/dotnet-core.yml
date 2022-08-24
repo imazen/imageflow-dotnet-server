@@ -27,9 +27,9 @@ jobs:
     runs-on: ${{matrix.os}}
     steps:
 
-    - name: This runner is responsible for uploading to Nuget.org
-      run: echo "This runner is responsible for uploading to Nuget.org"
-      if: matrix.uploader == 'true'
+    - name: Responsible for uploading to Nuget.org?
+      run: echo "This runner is (${{matrix.uploader}}) responsible for uploading to Nuget.org"
+      if: matrix.uploader
       
     - uses: actions/checkout@v3
     - uses: actions/cache@v3
