@@ -61,7 +61,5 @@
         <_EnableMacOSCodeSign>false</_EnableMacOSCodeSign>
     </PropertyGroup>
 
-    <ItemGroup>
-        <None Include="..\icon.png" Pack="true" PackagePath=""/>
-    </ItemGroup>
+
 </Project>
