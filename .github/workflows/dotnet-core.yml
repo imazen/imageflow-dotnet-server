@@ -33,7 +33,7 @@ jobs:
       id: cache
       with:
         path: ~/.nuget/packages
-        key: ${{ runner.os }}-nuget-breaker2-${{ hashFiles('**/packages.lock.json') }}
+        key: ${{ runner.os }}-nuget-breaker3-${{ hashFiles('**/packages.lock.json') }}
         
     - uses: nowsprinting/check-version-format-action@v3
       id: version
@@ -70,7 +70,7 @@ jobs:
       run: |
         dotnet clean --configuration Release
         dotnet nuget locals all --clear
-      if: steps.cache.outputs.cache-hit == 'false' || github.event_name == 'release'
+      if: steps.cache.outputs.cache-hit != 'true' || github.event_name == 'release'
       
     - name: Restore packages
       run: dotnet restore
