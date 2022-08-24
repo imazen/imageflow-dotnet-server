@@ -79,9 +79,6 @@ jobs:
       
     - name: Test
       run: dotnet test -c Release --blame --no-build
-    
-    - name: Check matrix value
-      run: echo ${{ matrix.os }}, ${{ matrix.uploader }}
 
     - uses: actions/upload-artifact@v3
       if: failure()
@@ -95,5 +92,4 @@ jobs:
     - name: Publish nuget packages to Nuget.org (if a release)
       if: steps.version.outputs.is_valid == 'true' && github.event_name == 'release' && matrix.uploader
       run: |
-        dotnet nuget add source https://api.nuget.org/v3/index.json -n nuget.org
         dotnet nuget push bin\Release\*.nupkg --skip-duplicate --api-key ${{ secrets.NUGET_API_KEY }} --source nuget.org
