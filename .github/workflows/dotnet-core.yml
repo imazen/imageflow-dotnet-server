@@ -65,11 +65,11 @@ jobs:
           3.1.x
           6.0.x
 
-    - run: dotnet clean --configuration Release
-      if: github.event_name == 'release'
-      
-    - run: dotnet nuget locals all --clear
-      if: github.event_name == 'release'
+    - name: Clear & clean on release or cache miss
+      run: |
+        dotnet clean --configuration Release
+        dotnet nuget locals all --clear
+      if: steps.cache.outputs.cache-hit == 'false' || github.event_name == 'release'
       
     - name: Restore packages
       run: dotnet restore
@@ -89,7 +89,7 @@ jobs:
     - name: Pack
       run: dotnet pack -c Release --include-source
 
-    - name: Publish nuget packages to Nuget.org (if a release)
+    - name: Publish NuGet packages to Nuget.org
       if: steps.version.outputs.is_valid == 'true' && github.event_name == 'release' && matrix.uploader
       run: |
-        dotnet nuget push bin\Release\*.nupkg --skip-duplicate --api-key ${{ secrets.NUGET_API_KEY }} --source nuget.org
+        dotnet nuget push bin/Release/*.nupkg --skip-duplicate --api-key ${{ secrets.NUGET_API_KEY }} --source nuget.org
