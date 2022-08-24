@@ -16,7 +16,7 @@ jobs:
         include:
           - name: ubuntu-20.04
             os: ubuntu-20.04
-            handles_release: true
+            uploader: true
             
           - name: osx_11.0-x86_64
             os: macos-11.0
@@ -73,7 +73,10 @@ jobs:
       
     - name: Test
       run: dotnet test -c Release --blame --no-build
-      
+    
+    - name: Check matrix value
+      run: echo ${{ matrix.os }}, ${{ matrix.uploader }}
+    
     - uses: actions/upload-artifact@v3
       if: failure()
       with:
@@ -82,9 +85,10 @@ jobs:
       
     - name: Pack
       run: dotnet pack -c Release --include-source
-      if: ${{ matrix.handles_release }} == 'true'
+      if: matrix.uploader == 'true'
 
     - name: Publish nuget packages to Nuget.org (if a release)
-      if: steps.version.outputs.is_valid == 'true' && github.event_name == 'release' && ${{ matrix.handles_release }} == 'true'
+      if: steps.version.outputs.is_valid == 'true' && github.event_name == 'release' && matrix.uploader == 'true'
       run: |
-        dotnet nuget push bin\Release\*.nupkg --skip-duplicate --api-key ${{ secrets.NUGET_API_KEY }} 
+        dotnet nuget add source https://api.nuget.org/v3/index.json -n nuget.org
+        dotnet nuget push bin\Release\*.nupkg --skip-duplicate --api-key ${{ secrets.NUGET_API_KEY }} --source nuget.org
