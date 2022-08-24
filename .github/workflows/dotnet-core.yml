@@ -28,6 +28,7 @@ jobs:
     steps:
 
     - name: This runner is responsible for uploading to Nuget.org
+      run: echo "This runner is responsible for uploading to Nuget.org
       if: contains(matrix.uploader,'true')
       
     - uses: actions/checkout@v3
