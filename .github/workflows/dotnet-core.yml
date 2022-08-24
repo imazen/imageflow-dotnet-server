@@ -46,15 +46,19 @@ jobs:
       if: steps.version.outputs.is_valid == 'true' && github.event_name == 'release'
 
     - name: Check .NET versions available
+      shell: bash
+      
+      
       run: |
         echo "DOTNET_VERSION_LIST<<EOF" >> $GITHUB_ENV
-        dotnet --list-runtimes >> $GITHUB_ENV
+        dotnet --list-sdks >> $GITHUB_ENV
         echo "EOF" >> $GITHUB_ENV
-      shell: bash
+      
+      
       
     - name: Setup .NET Core 3.1.x and 6.0.x
       uses: actions/setup-dotnet@v2
-      if: !contains(env.DOTNET_VERSION_LIST, "Microsoft.NETCore.App 6.0.") || !contains(env.DOTNET_VERSION_LIST, "Microsoft.NETCore.App 3.1.")
+      if: !contains(env.DOTNET_VERSION_LIST, "6.0.") || !contains(env.DOTNET_VERSION_LIST, "3.1.")
       with:
         dotnet-version: |
           3.1.x
