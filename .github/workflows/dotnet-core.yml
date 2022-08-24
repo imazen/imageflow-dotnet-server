@@ -25,14 +25,12 @@ jobs:
             os: windows-latest
 
     runs-on: ${{matrix.os}}
-    
     steps:
     - uses: actions/checkout@v3
     - uses: actions/cache@v3
       with:
         path: ~/.nuget/packages
         key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
-        restore-keys: ${{ runner.os }}-nuget
         
     - uses: nowsprinting/check-version-format-action@v3
       id: version
@@ -46,16 +44,12 @@ jobs:
       shell: bash
       if: steps.version.outputs.is_valid == 'true' && github.event_name == 'release'
 
-    - name: Check .NET versions available
+    - name: Check .NET versions available to see if we can skip install
       shell: bash
-      
-      
       run: |
         echo "DOTNET_VERSION_LIST<<EOF" >> $GITHUB_ENV
         dotnet --list-sdks >> $GITHUB_ENV
         echo "EOF" >> $GITHUB_ENV
-      
-      
       
     - name: Setup .NET Core 3.1.x and 6.0.x
       uses: actions/setup-dotnet@v2
@@ -65,8 +59,10 @@ jobs:
           3.1.x
           6.0.x
 
-    - run: dotnet clean --configuration Release 
+    - run: dotnet clean --configuration Release -v detailed
+#      if: steps.version.outputs.is_valid == 'true'
     - run: dotnet nuget locals all --clear
+#      if: steps.version.outputs.is_valid == 'true'
       
     - name: Restore packages
       run: dotnet restore
