@@ -17,23 +17,25 @@ jobs:
           - name: ubuntu-20.04
             os: ubuntu-20.04
             uploader: true
+            cache_dependencies: true
             
           - name: osx_11.0-x86_64
             os: macos-11.0
+            cache_dependencies: true
             
           - name: win-x86_64
             os: windows-latest
+            cache_dependencies: false
 
     runs-on: ${{matrix.os}}
-    steps:
-
-      
+    steps:     
     - uses: actions/checkout@v3
     - uses: actions/cache@v3
       id: cache
       with:
         path: ~/.nuget/packages
         key: ${{ runner.os }}-nuget-breaker3-${{ hashFiles('**/packages.lock.json') }}
+      if: matrix.cache_dependencies
         
     - uses: nowsprinting/check-version-format-action@v3
       id: version
