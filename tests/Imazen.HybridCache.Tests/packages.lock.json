@@ -1147,7 +1147,7 @@
       "imazen.hybridcache": {
         "type": "Project",
         "dependencies": {
-          "Imazen.Common": "0.1.0"
+          "Imazen.Common": "0.1.0--notset"
         }
       }
     },
@@ -2297,7 +2297,7 @@
       "imazen.hybridcache": {
         "type": "Project",
         "dependencies": {
-          "Imazen.Common": "0.1.0"
+          "Imazen.Common": "0.1.0--notset"
         }
       }
     }

@@ -1130,7 +1130,7 @@
         "type": "Project",
         "dependencies": {
           "Imageflow.AllPlatforms": "0.8.3",
-          "Imazen.Common": "0.1.0"
+          "Imazen.Common": "0.1.0--notset"
         }
       },
       "imazen.common": {

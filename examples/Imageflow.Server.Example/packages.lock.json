@@ -1261,14 +1261,14 @@
         "type": "Project",
         "dependencies": {
           "Imageflow.AllPlatforms": "0.8.3",
-          "Imazen.Common": "0.1.0"
+          "Imazen.Common": "0.1.0--notset"
         }
       },
       "imageflow.server.hybridcache": {
         "type": "Project",
         "dependencies": {
-          "Imazen.Common": "0.1.0",
-          "Imazen.HybridCache": "0.1.0",
+          "Imazen.Common": "0.1.0--notset",
+          "Imazen.HybridCache": "0.1.0--notset",
           "Microsoft.Extensions.Hosting.Abstractions": "2.2.0"
         }
       },
@@ -1276,13 +1276,13 @@
         "type": "Project",
         "dependencies": {
           "Azure.Storage.Blobs": "12.13.0",
-          "Imazen.Common": "0.1.0"
+          "Imazen.Common": "0.1.0--notset"
         }
       },
       "imageflow.server.storage.remotereader": {
         "type": "Project",
         "dependencies": {
-          "Imazen.Common": "0.1.0",
+          "Imazen.Common": "0.1.0--notset",
           "Microsoft.Extensions.Http": "5.0.0"
         }
       },
@@ -1290,7 +1290,7 @@
         "type": "Project",
         "dependencies": {
           "AWSSDK.S3": "3.7.9.36",
-          "Imazen.Common": "0.1.0"
+          "Imazen.Common": "0.1.0--notset"
         }
       },
       "imazen.common": {
@@ -1302,7 +1302,7 @@
       "imazen.hybridcache": {
         "type": "Project",
         "dependencies": {
-          "Imazen.Common": "0.1.0"
+          "Imazen.Common": "0.1.0--notset"
         }
       }
     },
@@ -2563,14 +2563,14 @@
         "type": "Project",
         "dependencies": {
           "Imageflow.AllPlatforms": "0.8.3",
-          "Imazen.Common": "0.1.0"
+          "Imazen.Common": "0.1.0--notset"
         }
       },
       "imageflow.server.hybridcache": {
         "type": "Project",
         "dependencies": {
-          "Imazen.Common": "0.1.0",
-          "Imazen.HybridCache": "0.1.0",
+          "Imazen.Common": "0.1.0--notset",
+          "Imazen.HybridCache": "0.1.0--notset",
           "Microsoft.Extensions.Hosting.Abstractions": "2.2.0"
         }
       },
@@ -2578,13 +2578,13 @@
         "type": "Project",
         "dependencies": {
           "Azure.Storage.Blobs": "12.13.0",
-          "Imazen.Common": "0.1.0"
+          "Imazen.Common": "0.1.0--notset"
         }
       },
       "imageflow.server.storage.remotereader": {
         "type": "Project",
         "dependencies": {
-          "Imazen.Common": "0.1.0",
+          "Imazen.Common": "0.1.0--notset",
           "Microsoft.Extensions.Http": "5.0.0"
         }
       },
@@ -2592,7 +2592,7 @@
         "type": "Project",
         "dependencies": {
           "AWSSDK.S3": "3.7.9.36",
-          "Imazen.Common": "0.1.0"
+          "Imazen.Common": "0.1.0--notset"
         }
       },
       "imazen.common": {
@@ -2604,7 +2604,7 @@
       "imazen.hybridcache": {
         "type": "Project",
         "dependencies": {
-          "Imazen.Common": "0.1.0"
+          "Imazen.Common": "0.1.0--notset"
         }
       }
     }
