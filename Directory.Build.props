@@ -25,6 +25,7 @@
         <VersionSuffix>-notset</VersionSuffix>
         
         <IsPackable>false</IsPackable>
+        <RestoreLockedMode>false</RestoreLockedMode>
     </PropertyGroup>
 
     <PropertyGroup>
