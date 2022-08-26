@@ -23,7 +23,7 @@ namespace Imageflow.Server
             ".webp"
         };
 
-
+        //TODO: Some of these are only modifier keys, and as such, should not trigger processing
         private static readonly string[] QuerystringKeys = new string[]
         {
             "mode", "anchor", "flip", "sflip", "scale", "cache", "process",

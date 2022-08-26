@@ -179,7 +179,9 @@ namespace Imageflow.Server
             if (cachingPath != CacheBackend.NoCache)
             {
                 cacheKey = await imageJobInfo.GetFastCacheKey();
-
+                
+                //TODO: W/"etag" should be used instead, since we might have to regenerate the result non-deterministically
+            
                 if (context.Request.Headers.TryGetValue(HeaderNames.IfNoneMatch, out var etag) && cacheKey == etag)
                 {
                     GlobalPerf.Singleton.IncrementCounter("etag_hit");
