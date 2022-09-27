@@ -78,7 +78,7 @@ jobs:
       run: dotnet restore
       
     - name: Build
-      run: dotnet build -c Release
+      run: dotnet build --maxcpucount:1 -c Release
       
     - name: Test
       run: dotnet test -c Release --blame --no-build
