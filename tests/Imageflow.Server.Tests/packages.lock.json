@@ -55,15 +55,15 @@
       },
       "AWSSDK.Core": {
         "type": "Transitive",
-        "resolved": "3.7.12.18",
-        "contentHash": "T5IkNtO921kQV8gMzfbEKoz0zki3tGB2+sJiTlr4cmzb1LIs2pvnIQjClDee4k5kQN2DGKTJxoQM3J2aXVGnwA=="
+        "resolved": "3.7.13.13",
+        "contentHash": "q/d45lJuJywgOgIsKuQnDMDUnxH0HkydI8jVSGgYBthFzRubYa2tKa3qbV+yl2xTvebCzA9Qyv2/jWXGWejMOA=="
       },
       "AWSSDK.S3": {
         "type": "Transitive",
-        "resolved": "3.7.9.36",
-        "contentHash": "J6U5XVzI6cAC1C6SwgOwvnAFSNOlSzEF0pKKB4kcp+icG6/kPvKGQeOqaTrg9Qf4bgC4JtJYzvSHADj4i6p4Xg==",
+        "resolved": "3.7.9.62",
+        "contentHash": "6WCeK8/U0VzpW3pxdjqejvPozKPZ+lEd2gVLaAkgLbP9uRHTDuoCrWTgYFvkDeSJJL4F0DTgYRyjwNaGFXoW3w==",
         "dependencies": {
-          "AWSSDK.Core": "[3.7.12.18, 4.0.0)"
+          "AWSSDK.Core": "[3.7.13.13, 4.0.0)"
         }
       },
       "Azure.Core": {
@@ -117,40 +117,40 @@
       },
       "Imageflow.AllPlatforms": {
         "type": "Transitive",
-        "resolved": "0.8.3",
-        "contentHash": "bqht/u6KHdfqWG4XvhF+xdGlMN2J/qvIbT+JepMn95o1JHN85aNpPgKIrvgpVQfUAGOAcqz0bPSq24tHh5w2rw==",
+        "resolved": "0.9.0",
+        "contentHash": "tjrshyaqg4U5O2gw8WJjdDJa1dkRivxmOIQFgaKGwCI3q6LDDQGUnlBQNHDMZsrIliInhjmpGFm9xWQMDJ0BHA==",
         "dependencies": {
-          "Imageflow.NativeRuntime.osx-x86_64": "1.7.3-rc67",
-          "Imageflow.NativeRuntime.ubuntu-x86_64": "1.7.3-rc67",
-          "Imageflow.NativeRuntime.win-x86": "1.7.3-rc67",
-          "Imageflow.NativeRuntime.win-x86_64": "1.7.3-rc67",
-          "Imageflow.Net": "0.8.3"
+          "Imageflow.NativeRuntime.osx-x86_64": "2.0.0-preview1",
+          "Imageflow.NativeRuntime.ubuntu-x86_64": "2.0.0-preview1",
+          "Imageflow.NativeRuntime.win-x86": "2.0.0-preview1",
+          "Imageflow.NativeRuntime.win-x86_64": "2.0.0-preview1",
+          "Imageflow.Net": "0.9.0"
         }
       },
       "Imageflow.NativeRuntime.osx-x86_64": {
         "type": "Transitive",
-        "resolved": "1.7.3-rc67",
-        "contentHash": "rypwm+SDZ4hYrWGM8k84MCMnGnhzOanZ7RHUun+f77zeOVh+4fLm/NM16YPXd69iZD5Qstu6tV3IxUiK1vlYDg=="
+        "resolved": "2.0.0-preview1",
+        "contentHash": "gMK3K1DMaqHDWSPekidm1g/ndAYgKK4gILACW8A8kbyj5nnPq1a7ghmK8FtDyT1YyImmfSzjXBb8e1kHwtDBEg=="
       },
       "Imageflow.NativeRuntime.ubuntu-x86_64": {
         "type": "Transitive",
-        "resolved": "1.7.3-rc67",
-        "contentHash": "eCeCX4PS27PNql9Tj7XVvhMjR4nfYJphff/8CU3IuELoyXl+1iqE2mLtN2M0KyOtPnOfRjKn1BqXbbP0p3xlAg=="
+        "resolved": "2.0.0-preview1",
+        "contentHash": "lGNZGqR03pYRHX6dvXAW9VeZZz/1e06W+Hn1RRtwYIz3PyAnJSHtIFQfn88Sh41/nsZFh78LJNpSect2oOMerQ=="
       },
       "Imageflow.NativeRuntime.win-x86": {
         "type": "Transitive",
-        "resolved": "1.7.3-rc67",
-        "contentHash": "mhhTqkSaSaMHMJIqiVU9aGpDEFqE5qZNxI8wY22a8lKPJMdQTl3n4e61JlFKrPHPxv/H2UJ9sAagfTmqV1/zSw=="
+        "resolved": "2.0.0-preview1",
+        "contentHash": "pto7e/mqMW4BoJnQ62OJgIMVXvh+ER3Zc6Anpc7F577NJ8kiJ6aKZ9GoWkzhb+KqKjvDSBA2ByavqP8Y6FxywA=="
       },
       "Imageflow.NativeRuntime.win-x86_64": {
         "type": "Transitive",
-        "resolved": "1.7.3-rc67",
-        "contentHash": "70f1jodgmbiWHxd3KxR8fo+8CK55oMD/f/5OYYSnBCSdTxzec8ks4bhXASzmx7bgCujipCa4E1s0uQt3PCf8+w=="
+        "resolved": "2.0.0-preview1",
+        "contentHash": "/pDTpaTq1lVxVt8oekwIHjOeyCq8100oyE0whuRun3BSMv83iawdENC8eGYeInRguDLGaLtdgO1UCSHmdsLpjw=="
       },
       "Imageflow.Net": {
         "type": "Transitive",
-        "resolved": "0.8.3",
-        "contentHash": "f84gzbUGrMRxU1Nes/Pk/q1zs1tweoqEyMDSSA7bg8Nn975rbXba3xFQaGdFjyFQI1/G+OqKzCX6N76rQlBDBQ==",
+        "resolved": "0.9.0",
+        "contentHash": "IOZ49Bt9I3i6CQ9u/ZmVxVDC0CBY8gKjidDf2vzkIHuLokym39XPJo8AbBGftlLbQ5r7kfZ3ezaD+v6PjzE6CA==",
         "dependencies": {
           "Microsoft.CSharp": "4.7.0",
           "Microsoft.IO.RecyclableMemoryStream": "[1.2.2, 3.0.0)",
@@ -1421,7 +1421,7 @@
       "imageflow.server": {
         "type": "Project",
         "dependencies": {
-          "Imageflow.AllPlatforms": "0.8.3",
+          "Imageflow.AllPlatforms": "0.9.0",
           "Imazen.Common": "0.1.0--notset"
         }
       },
@@ -1448,7 +1448,7 @@
       "imageflow.server.storage.s3": {
         "type": "Project",
         "dependencies": {
-          "AWSSDK.S3": "3.7.9.36",
+          "AWSSDK.S3": "3.7.9.62",
           "Imazen.Common": "0.1.0--notset"
         }
       },
@@ -1529,15 +1529,15 @@
       },
       "AWSSDK.Core": {
         "type": "Transitive",
-        "resolved": "3.7.12.18",
-        "contentHash": "T5IkNtO921kQV8gMzfbEKoz0zki3tGB2+sJiTlr4cmzb1LIs2pvnIQjClDee4k5kQN2DGKTJxoQM3J2aXVGnwA=="
+        "resolved": "3.7.13.13",
+        "contentHash": "q/d45lJuJywgOgIsKuQnDMDUnxH0HkydI8jVSGgYBthFzRubYa2tKa3qbV+yl2xTvebCzA9Qyv2/jWXGWejMOA=="
       },
       "AWSSDK.S3": {
         "type": "Transitive",
-        "resolved": "3.7.9.36",
-        "contentHash": "J6U5XVzI6cAC1C6SwgOwvnAFSNOlSzEF0pKKB4kcp+icG6/kPvKGQeOqaTrg9Qf4bgC4JtJYzvSHADj4i6p4Xg==",
+        "resolved": "3.7.9.62",
+        "contentHash": "6WCeK8/U0VzpW3pxdjqejvPozKPZ+lEd2gVLaAkgLbP9uRHTDuoCrWTgYFvkDeSJJL4F0DTgYRyjwNaGFXoW3w==",
         "dependencies": {
-          "AWSSDK.Core": "[3.7.12.18, 4.0.0)"
+          "AWSSDK.Core": "[3.7.13.13, 4.0.0)"
         }
       },
       "Azure.Core": {
@@ -1591,40 +1591,40 @@
       },
       "Imageflow.AllPlatforms": {
         "type": "Transitive",
-        "resolved": "0.8.3",
-        "contentHash": "bqht/u6KHdfqWG4XvhF+xdGlMN2J/qvIbT+JepMn95o1JHN85aNpPgKIrvgpVQfUAGOAcqz0bPSq24tHh5w2rw==",
+        "resolved": "0.9.0",
+        "contentHash": "tjrshyaqg4U5O2gw8WJjdDJa1dkRivxmOIQFgaKGwCI3q6LDDQGUnlBQNHDMZsrIliInhjmpGFm9xWQMDJ0BHA==",
         "dependencies": {
-          "Imageflow.NativeRuntime.osx-x86_64": "1.7.3-rc67",
-          "Imageflow.NativeRuntime.ubuntu-x86_64": "1.7.3-rc67",
-          "Imageflow.NativeRuntime.win-x86": "1.7.3-rc67",
-          "Imageflow.NativeRuntime.win-x86_64": "1.7.3-rc67",
-          "Imageflow.Net": "0.8.3"
+          "Imageflow.NativeRuntime.osx-x86_64": "2.0.0-preview1",
+          "Imageflow.NativeRuntime.ubuntu-x86_64": "2.0.0-preview1",
+          "Imageflow.NativeRuntime.win-x86": "2.0.0-preview1",
+          "Imageflow.NativeRuntime.win-x86_64": "2.0.0-preview1",
+          "Imageflow.Net": "0.9.0"
         }
       },
       "Imageflow.NativeRuntime.osx-x86_64": {
         "type": "Transitive",
-        "resolved": "1.7.3-rc67",
-        "contentHash": "rypwm+SDZ4hYrWGM8k84MCMnGnhzOanZ7RHUun+f77zeOVh+4fLm/NM16YPXd69iZD5Qstu6tV3IxUiK1vlYDg=="
+        "resolved": "2.0.0-preview1",
+        "contentHash": "gMK3K1DMaqHDWSPekidm1g/ndAYgKK4gILACW8A8kbyj5nnPq1a7ghmK8FtDyT1YyImmfSzjXBb8e1kHwtDBEg=="
       },
       "Imageflow.NativeRuntime.ubuntu-x86_64": {
         "type": "Transitive",
-        "resolved": "1.7.3-rc67",
-        "contentHash": "eCeCX4PS27PNql9Tj7XVvhMjR4nfYJphff/8CU3IuELoyXl+1iqE2mLtN2M0KyOtPnOfRjKn1BqXbbP0p3xlAg=="
+        "resolved": "2.0.0-preview1",
+        "contentHash": "lGNZGqR03pYRHX6dvXAW9VeZZz/1e06W+Hn1RRtwYIz3PyAnJSHtIFQfn88Sh41/nsZFh78LJNpSect2oOMerQ=="
       },
       "Imageflow.NativeRuntime.win-x86": {
         "type": "Transitive",
-        "resolved": "1.7.3-rc67",
-        "contentHash": "mhhTqkSaSaMHMJIqiVU9aGpDEFqE5qZNxI8wY22a8lKPJMdQTl3n4e61JlFKrPHPxv/H2UJ9sAagfTmqV1/zSw=="
+        "resolved": "2.0.0-preview1",
+        "contentHash": "pto7e/mqMW4BoJnQ62OJgIMVXvh+ER3Zc6Anpc7F577NJ8kiJ6aKZ9GoWkzhb+KqKjvDSBA2ByavqP8Y6FxywA=="
       },
       "Imageflow.NativeRuntime.win-x86_64": {
         "type": "Transitive",
-        "resolved": "1.7.3-rc67",
-        "contentHash": "70f1jodgmbiWHxd3KxR8fo+8CK55oMD/f/5OYYSnBCSdTxzec8ks4bhXASzmx7bgCujipCa4E1s0uQt3PCf8+w=="
+        "resolved": "2.0.0-preview1",
+        "contentHash": "/pDTpaTq1lVxVt8oekwIHjOeyCq8100oyE0whuRun3BSMv83iawdENC8eGYeInRguDLGaLtdgO1UCSHmdsLpjw=="
       },
       "Imageflow.Net": {
         "type": "Transitive",
-        "resolved": "0.8.3",
-        "contentHash": "f84gzbUGrMRxU1Nes/Pk/q1zs1tweoqEyMDSSA7bg8Nn975rbXba3xFQaGdFjyFQI1/G+OqKzCX6N76rQlBDBQ==",
+        "resolved": "0.9.0",
+        "contentHash": "IOZ49Bt9I3i6CQ9u/ZmVxVDC0CBY8gKjidDf2vzkIHuLokym39XPJo8AbBGftlLbQ5r7kfZ3ezaD+v6PjzE6CA==",
         "dependencies": {
           "Microsoft.CSharp": "4.7.0",
           "Microsoft.IO.RecyclableMemoryStream": "[1.2.2, 3.0.0)",
@@ -2892,7 +2892,7 @@
       "imageflow.server": {
         "type": "Project",
         "dependencies": {
-          "Imageflow.AllPlatforms": "0.8.3",
+          "Imageflow.AllPlatforms": "0.9.0",
           "Imazen.Common": "0.1.0--notset"
         }
       },
@@ -2919,7 +2919,7 @@
       "imageflow.server.storage.s3": {
         "type": "Project",
         "dependencies": {
-          "AWSSDK.S3": "3.7.9.36",
+          "AWSSDK.S3": "3.7.9.62",
           "Imazen.Common": "0.1.0--notset"
         }
       },

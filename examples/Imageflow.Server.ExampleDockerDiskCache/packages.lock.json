@@ -4,61 +4,61 @@
     "net6.0": {
       "Imageflow.Server": {
         "type": "Direct",
-        "requested": "[0.6.6, )",
-        "resolved": "0.6.6",
-        "contentHash": "6rPAGTC52Hn4q2lDqRScd4GZNEbBGUuVqaUWmes9zBzRSeXGaclIYof2xF9knZYimRqMUgHe829wDzr4GkrO1w==",
+        "requested": "[0.7.7, )",
+        "resolved": "0.7.7",
+        "contentHash": "cDEBGQBQF1SmXQy3P1ZC6bVf/rxITqyeKEdPdO7x4ywJD5kJ6yjoNs6CY9QZAtReDSOCWwtjqgsqEYt1CCVfUw==",
         "dependencies": {
-          "Imageflow.AllPlatforms": "0.8.2",
-          "Imazen.Common": "0.6.6"
+          "Imageflow.AllPlatforms": "0.8.3",
+          "Imazen.Common": "0.7.7"
         }
       },
       "Imageflow.Server.HybridCache": {
         "type": "Direct",
-        "requested": "[0.6.6, )",
-        "resolved": "0.6.6",
-        "contentHash": "qW02seK1NDF4Zt9ec8MsV1nvYveqlLSvfvUSQt+vGNJJ1fHG8hg1vYzkkqZ8P1jkThWQrz+aa2O3zjCxKXi8zA==",
+        "requested": "[0.7.7, )",
+        "resolved": "0.7.7",
+        "contentHash": "lM7qCjXJ9M7D6RKdk67netIaB8LJe3IDyxxiYt6L3N3Ixs6NA1BkU7nCUma9eWV+s/gfmp8ucZipMT+bsrFGug==",
         "dependencies": {
-          "Imazen.Common": "0.6.6",
-          "Imazen.HybridCache": "0.6.6",
+          "Imazen.Common": "0.7.7",
+          "Imazen.HybridCache": "0.7.7",
           "Microsoft.Extensions.Hosting.Abstractions": "2.2.0"
         }
       },
       "Imageflow.AllPlatforms": {
         "type": "Transitive",
-        "resolved": "0.8.2",
-        "contentHash": "Wwfvf1+JIqT9gOLqT2S2o+qSJARDeat7H0Sx/b1z/+8grS4nJVYu31nMtHf73H3y5ptm/6h6cCjSWnEOvNPYoQ==",
+        "resolved": "0.8.3",
+        "contentHash": "bqht/u6KHdfqWG4XvhF+xdGlMN2J/qvIbT+JepMn95o1JHN85aNpPgKIrvgpVQfUAGOAcqz0bPSq24tHh5w2rw==",
         "dependencies": {
-          "Imageflow.NativeRuntime.osx-x86_64": "1.7.1-rc65",
-          "Imageflow.NativeRuntime.ubuntu-x86_64": "1.7.1-rc65",
-          "Imageflow.NativeRuntime.win-x86": "1.7.1-rc65",
-          "Imageflow.NativeRuntime.win-x86_64": "1.7.1-rc65",
-          "Imageflow.Net": "0.8.2"
+          "Imageflow.NativeRuntime.osx-x86_64": "1.7.3-rc67",
+          "Imageflow.NativeRuntime.ubuntu-x86_64": "1.7.3-rc67",
+          "Imageflow.NativeRuntime.win-x86": "1.7.3-rc67",
+          "Imageflow.NativeRuntime.win-x86_64": "1.7.3-rc67",
+          "Imageflow.Net": "0.8.3"
         }
       },
       "Imageflow.NativeRuntime.osx-x86_64": {
         "type": "Transitive",
-        "resolved": "1.7.1-rc65",
-        "contentHash": "DH+2t9NDPuTZ6LPT7kUFdWZxRvv8ih9SMvXhlHnJBlSBPby8qE4/LRswk4KzX3GIw8sGMIXl96aaX/gOFAJkHQ=="
+        "resolved": "1.7.3-rc67",
+        "contentHash": "rypwm+SDZ4hYrWGM8k84MCMnGnhzOanZ7RHUun+f77zeOVh+4fLm/NM16YPXd69iZD5Qstu6tV3IxUiK1vlYDg=="
       },
       "Imageflow.NativeRuntime.ubuntu-x86_64": {
         "type": "Transitive",
-        "resolved": "1.7.1-rc65",
-        "contentHash": "sNF+MubQ+nKM+/HGlHkVcipLq8KCEtupK8XeEvGS6+0lWNMRO6lLY7MeYdqrC6mSOyxfAMjz/91Ab9eN9p11gg=="
+        "resolved": "1.7.3-rc67",
+        "contentHash": "eCeCX4PS27PNql9Tj7XVvhMjR4nfYJphff/8CU3IuELoyXl+1iqE2mLtN2M0KyOtPnOfRjKn1BqXbbP0p3xlAg=="
       },
       "Imageflow.NativeRuntime.win-x86": {
         "type": "Transitive",
-        "resolved": "1.7.1-rc65",
-        "contentHash": "Gagkqyzit68RwHRLEBEtNCIScL8nEbCdLaahXWXxJNqqXUIZOxz9q2s5ZQSJpus7OSQyklyeeSwtCyuBe1hFqA=="
+        "resolved": "1.7.3-rc67",
+        "contentHash": "mhhTqkSaSaMHMJIqiVU9aGpDEFqE5qZNxI8wY22a8lKPJMdQTl3n4e61JlFKrPHPxv/H2UJ9sAagfTmqV1/zSw=="
       },
       "Imageflow.NativeRuntime.win-x86_64": {
         "type": "Transitive",
-        "resolved": "1.7.1-rc65",
-        "contentHash": "Bptf0Smcj9LpZNJFV5Qor1WtxveMHiWT65x7ldSK62fdUXgfYRifSzWXECt2NMkYZTyop3eU8qktsC9YIiy4Fw=="
+        "resolved": "1.7.3-rc67",
+        "contentHash": "70f1jodgmbiWHxd3KxR8fo+8CK55oMD/f/5OYYSnBCSdTxzec8ks4bhXASzmx7bgCujipCa4E1s0uQt3PCf8+w=="
       },
       "Imageflow.Net": {
         "type": "Transitive",
-        "resolved": "0.8.2",
-        "contentHash": "S0Nx3fhUUqVPpLBfr2dqpqZGrUuWiY5Qk9U6W5ET7Gnap3qsaeGgYdD3A4SOhh8xtt9ATifM5CzQKvhBuMLk0Q==",
+        "resolved": "0.8.3",
+        "contentHash": "f84gzbUGrMRxU1Nes/Pk/q1zs1tweoqEyMDSSA7bg8Nn975rbXba3xFQaGdFjyFQI1/G+OqKzCX6N76rQlBDBQ==",
         "dependencies": {
           "Microsoft.CSharp": "4.7.0",
           "Microsoft.IO.RecyclableMemoryStream": "[1.2.2, 3.0.0)",
@@ -67,18 +67,18 @@
       },
       "Imazen.Common": {
         "type": "Transitive",
-        "resolved": "0.6.6",
-        "contentHash": "M0gfjSKEtylZyhX1FOxMc3HvdBxEfz/GTJQPxhLrIDO7wH/1Byw5aXajIC/3zwlafDM4vVpzsLTN+5Ig05QGDQ==",
+        "resolved": "0.7.7",
+        "contentHash": "Wuk4GU3BiOxWxeTPXEGdBmuCBuY9QgYTNsuaZ5HJIyTO7jqVW31KjcyaKOuHiPX2DXMnYDLCrV6aCuSQcqCRkw==",
         "dependencies": {
           "Microsoft.Extensions.Hosting.Abstractions": "2.2.0"
         }
       },
       "Imazen.HybridCache": {
         "type": "Transitive",
-        "resolved": "0.6.6",
-        "contentHash": "53X5y54P3a9aodriRii5pDDS6x/22InqVBXXDmIyfpUjIf98bNZtyRTh96rvDDO8I4U3BM4xm4MnwarVx2RVpw==",
+        "resolved": "0.7.7",
+        "contentHash": "GcmFmvqqhX/YCjjUY64ZFIjU4SPdyChKxX7YFDgbQmZaaBWKCcstB2HZwJ/JAE1sM4ETM94obI27We7UHkYogw==",
         "dependencies": {
-          "Imazen.Common": "0.6.6"
+          "Imazen.Common": "0.7.7"
         }
       },
       "Microsoft.CSharp": {
