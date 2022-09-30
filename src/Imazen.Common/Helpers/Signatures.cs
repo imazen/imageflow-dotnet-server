@@ -1,4 +1,5 @@
 using System;
+using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using System.Web;
@@ -29,7 +30,7 @@ namespace Imazen.Common.Helpers
 
             var path = parts[0];
             //URL encode path
-            var newPathAndQuery = HttpUtility.UrlDecode(path);
+            var newPathAndQuery = WebUtility.UrlDecode(path);
             if (parts.Length > 1)
             {
                 var query = parts[1];
@@ -42,10 +43,10 @@ namespace Imazen.Common.Helpers
                     if (!pair.StartsWith("signature=", StringComparison.Ordinal))
                     {
                         var pairParts = pair.Split('=');
-                        newQuery += "&" + HttpUtility.UrlDecode(pairParts[0]);
+                        newQuery += "&" + WebUtility.UrlDecode(pairParts[0]);
                         for (var i = 1; i < pairParts.Length; i++)
                         {
-                            newQuery += "=" + HttpUtility.UrlDecode(pairParts[i]); 
+                            newQuery += "=" + WebUtility.UrlDecode(pairParts[i]); 
                         }
                         
                     }
