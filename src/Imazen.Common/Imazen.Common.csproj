@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Title>Imageflow.Common - Interfaces and utilites shared by Imageflow and ImageResizer.</Title>
     <IsPackable>true</IsPackable>
-    <TargetFrameworks>net461;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>net472;netstandard2.0</TargetFrameworks>
   </PropertyGroup>
 
   <Import Project="..\NugetPackages.targets" />
@@ -15,7 +15,7 @@
 
   
   <ItemGroup>
-    <Reference Include="System.Web" Condition="'$(TargetFramework)' == 'net461'" />
+    <Reference Include="System.Net.Http" Condition="'$(TargetFramework)' == 'net472'" />
   </ItemGroup>
 
 </Project>

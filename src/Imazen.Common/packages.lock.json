@@ -1,7 +1,7 @@
 {
   "version": 1,
   "dependencies": {
-    ".NETFramework,Version=v4.6.1": {
+    ".NETFramework,Version=v4.7.2": {
       "Microsoft.Extensions.Hosting.Abstractions": {
         "type": "Direct",
         "requested": "[2.2.0, )",
