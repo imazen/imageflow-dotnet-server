@@ -75,7 +75,7 @@ jobs:
       if: steps.cache.outputs.cache-hit != 'true' || github.event_name == 'release'
       
     - name: Restore packages
-      run: dotnet restore
+      run: dotnet restore --force-evaluate
       
     - name: Build
       run: dotnet build --maxcpucount:1 -c Release
