@@ -1,6 +1,6 @@
-[![.NET 3.1/6](https://github.com/imazen/imageflow-dotnet-server/workflows/.NET%20Core/badge.svg)](https://github.com/imazen/imageflow-dotnet-server/actions?query=workflow%3A%22.NET+Core%22)
+[![.NET 6/7](https://github.com/imazen/imageflow-dotnet-server/workflows/.NET%20Core/badge.svg)](https://github.com/imazen/imageflow-dotnet-server/actions?query=workflow%3A%22.NET+Core%22)
 
-#### Imageflow.NET Server is image processing and optimizing middleware for .NET 5/6 and ASP.NET Core 3.1. 
+#### Imageflow.NET Server is image processing and optimizing middleware for ASP.NET 6 & 7. 
 
 If you don't need an HTTP server, [try Imageflow.NET](https://github.com/imazen/imageflow-dotnet). If you don't want to use .NET, try [Imageflow](https://imageflow.io), which has a server, command-line tool, and library with language bindings for Go, C, Rust, Node, Ruby and more. Imageflow is specifically designed for web servers and focuses on security, quality, and performance. 
 
