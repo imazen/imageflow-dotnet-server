@@ -11,7 +11,7 @@
 
     <ItemGroup>
       <PackageReference Include="MELT" Version="0.8.0" />
-      <PackageReference Include="Microsoft.IO.RecyclableMemoryStream" Version="2.2.0" />
+      <PackageReference Include="Microsoft.IO.RecyclableMemoryStream" Version="2.2.1" />
     </ItemGroup>
 
 </Project>

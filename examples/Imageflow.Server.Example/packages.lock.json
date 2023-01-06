@@ -27,15 +27,15 @@
       },
       "AWSSDK.Core": {
         "type": "Transitive",
-        "resolved": "3.7.13.13",
-        "contentHash": "q/d45lJuJywgOgIsKuQnDMDUnxH0HkydI8jVSGgYBthFzRubYa2tKa3qbV+yl2xTvebCzA9Qyv2/jWXGWejMOA=="
+        "resolved": "3.7.103.11",
+        "contentHash": "twTMAAOA4ztiVtfrq2ZiRUmSnt2CW3DZwGvlbcftM6Dbsc2VGWE/hWv1Rl6GfKpEbrJxkW+FmG2o27XRTg8lqA=="
       },
       "AWSSDK.S3": {
         "type": "Transitive",
-        "resolved": "3.7.9.62",
-        "contentHash": "6WCeK8/U0VzpW3pxdjqejvPozKPZ+lEd2gVLaAkgLbP9uRHTDuoCrWTgYFvkDeSJJL4F0DTgYRyjwNaGFXoW3w==",
+        "resolved": "3.7.101.49",
+        "contentHash": "GN0pFLWqDe53UDbMEtZ4RkU64+mtJS4OsADemJ0TTaUlLhH5xJCkj5nhTa7eFG3tiIKbtdeMDUPhX47F3+UimQ==",
         "dependencies": {
-          "AWSSDK.Core": "[3.7.13.13, 4.0.0)"
+          "AWSSDK.Core": "[3.7.103.11, 4.0.0)"
         }
       },
       "Azure.Core": {
@@ -54,17 +54,17 @@
       },
       "Azure.Storage.Blobs": {
         "type": "Transitive",
-        "resolved": "12.13.0",
-        "contentHash": "h5ZxRwmS/U1NOFwd+MuHJe4To1hEPu/yeBIKS1cbAHTDc+7RBZEjPf1VFeUZsIIuHvU/AzXtcRaph9BHuPRNMQ==",
+        "resolved": "12.14.1",
+        "contentHash": "DvRBWUDMB2LjdRbsBNtz/LiVIYk56hqzSooxx4uq4rCdLj2M+7Vvoa1r+W35Dz6ZXL6p+SNcgEae3oZ+CkPfow==",
         "dependencies": {
-          "Azure.Storage.Common": "12.12.0",
+          "Azure.Storage.Common": "12.13.0",
           "System.Text.Json": "4.7.2"
         }
       },
       "Azure.Storage.Common": {
         "type": "Transitive",
-        "resolved": "12.12.0",
-        "contentHash": "Ms0XsZ/D9Pcudfbqj+rWeCkhx/ITEq8isY0jkor9JFmDAEHsItFa2XrWkzP3vmJU6EsXQrk4snH63HkW/Jksvg==",
+        "resolved": "12.13.0",
+        "contentHash": "jDv8xJWeZY2Er9zA6QO25BiGolxg87rItt9CwAp7L/V9EPJeaz8oJydaNL9Wj0+3ncceoMgdiyEv66OF8YUwWQ==",
         "dependencies": {
           "Azure.Core": "1.25.0",
           "System.IO.Hashing": "6.0.0"
@@ -1275,7 +1275,7 @@
       "imageflow.server.storage.azureblob": {
         "type": "Project",
         "dependencies": {
-          "Azure.Storage.Blobs": "[12.13.0, )",
+          "Azure.Storage.Blobs": "[12.14.1, )",
           "Imazen.Common": "[0.1.0--notset, )"
         }
       },
@@ -1289,7 +1289,7 @@
       "imageflow.server.storage.s3": {
         "type": "Project",
         "dependencies": {
-          "AWSSDK.S3": "[3.7.9.62, )",
+          "AWSSDK.S3": "[3.7.101.49, )",
           "Imazen.Common": "[0.1.0--notset, )"
         }
       },
@@ -1332,15 +1332,15 @@
       },
       "AWSSDK.Core": {
         "type": "Transitive",
-        "resolved": "3.7.13.13",
-        "contentHash": "q/d45lJuJywgOgIsKuQnDMDUnxH0HkydI8jVSGgYBthFzRubYa2tKa3qbV+yl2xTvebCzA9Qyv2/jWXGWejMOA=="
+        "resolved": "3.7.103.11",
+        "contentHash": "twTMAAOA4ztiVtfrq2ZiRUmSnt2CW3DZwGvlbcftM6Dbsc2VGWE/hWv1Rl6GfKpEbrJxkW+FmG2o27XRTg8lqA=="
       },
       "AWSSDK.S3": {
         "type": "Transitive",
-        "resolved": "3.7.9.62",
-        "contentHash": "6WCeK8/U0VzpW3pxdjqejvPozKPZ+lEd2gVLaAkgLbP9uRHTDuoCrWTgYFvkDeSJJL4F0DTgYRyjwNaGFXoW3w==",
+        "resolved": "3.7.101.49",
+        "contentHash": "GN0pFLWqDe53UDbMEtZ4RkU64+mtJS4OsADemJ0TTaUlLhH5xJCkj5nhTa7eFG3tiIKbtdeMDUPhX47F3+UimQ==",
         "dependencies": {
-          "AWSSDK.Core": "[3.7.13.13, 4.0.0)"
+          "AWSSDK.Core": "[3.7.103.11, 4.0.0)"
         }
       },
       "Azure.Core": {
@@ -1359,17 +1359,17 @@
       },
       "Azure.Storage.Blobs": {
         "type": "Transitive",
-        "resolved": "12.13.0",
-        "contentHash": "h5ZxRwmS/U1NOFwd+MuHJe4To1hEPu/yeBIKS1cbAHTDc+7RBZEjPf1VFeUZsIIuHvU/AzXtcRaph9BHuPRNMQ==",
+        "resolved": "12.14.1",
+        "contentHash": "DvRBWUDMB2LjdRbsBNtz/LiVIYk56hqzSooxx4uq4rCdLj2M+7Vvoa1r+W35Dz6ZXL6p+SNcgEae3oZ+CkPfow==",
         "dependencies": {
-          "Azure.Storage.Common": "12.12.0",
+          "Azure.Storage.Common": "12.13.0",
           "System.Text.Json": "4.7.2"
         }
       },
       "Azure.Storage.Common": {
         "type": "Transitive",
-        "resolved": "12.12.0",
-        "contentHash": "Ms0XsZ/D9Pcudfbqj+rWeCkhx/ITEq8isY0jkor9JFmDAEHsItFa2XrWkzP3vmJU6EsXQrk4snH63HkW/Jksvg==",
+        "resolved": "12.13.0",
+        "contentHash": "jDv8xJWeZY2Er9zA6QO25BiGolxg87rItt9CwAp7L/V9EPJeaz8oJydaNL9Wj0+3ncceoMgdiyEv66OF8YUwWQ==",
         "dependencies": {
           "Azure.Core": "1.25.0",
           "System.IO.Hashing": "6.0.0"
@@ -2577,7 +2577,7 @@
       "imageflow.server.storage.azureblob": {
         "type": "Project",
         "dependencies": {
-          "Azure.Storage.Blobs": "[12.13.0, )",
+          "Azure.Storage.Blobs": "[12.14.1, )",
           "Imazen.Common": "[0.1.0--notset, )"
         }
       },
@@ -2591,7 +2591,7 @@
       "imageflow.server.storage.s3": {
         "type": "Project",
         "dependencies": {
-          "AWSSDK.S3": "[3.7.9.62, )",
+          "AWSSDK.S3": "[3.7.101.49, )",
           "Imazen.Common": "[0.1.0--notset, )"
         }
       },
@@ -2634,15 +2634,15 @@
       },
       "AWSSDK.Core": {
         "type": "Transitive",
-        "resolved": "3.7.13.13",
-        "contentHash": "q/d45lJuJywgOgIsKuQnDMDUnxH0HkydI8jVSGgYBthFzRubYa2tKa3qbV+yl2xTvebCzA9Qyv2/jWXGWejMOA=="
+        "resolved": "3.7.103.11",
+        "contentHash": "twTMAAOA4ztiVtfrq2ZiRUmSnt2CW3DZwGvlbcftM6Dbsc2VGWE/hWv1Rl6GfKpEbrJxkW+FmG2o27XRTg8lqA=="
       },
       "AWSSDK.S3": {
         "type": "Transitive",
-        "resolved": "3.7.9.62",
-        "contentHash": "6WCeK8/U0VzpW3pxdjqejvPozKPZ+lEd2gVLaAkgLbP9uRHTDuoCrWTgYFvkDeSJJL4F0DTgYRyjwNaGFXoW3w==",
+        "resolved": "3.7.101.49",
+        "contentHash": "GN0pFLWqDe53UDbMEtZ4RkU64+mtJS4OsADemJ0TTaUlLhH5xJCkj5nhTa7eFG3tiIKbtdeMDUPhX47F3+UimQ==",
         "dependencies": {
-          "AWSSDK.Core": "[3.7.13.13, 4.0.0)"
+          "AWSSDK.Core": "[3.7.103.11, 4.0.0)"
         }
       },
       "Azure.Core": {
@@ -2661,17 +2661,17 @@
       },
       "Azure.Storage.Blobs": {
         "type": "Transitive",
-        "resolved": "12.13.0",
-        "contentHash": "h5ZxRwmS/U1NOFwd+MuHJe4To1hEPu/yeBIKS1cbAHTDc+7RBZEjPf1VFeUZsIIuHvU/AzXtcRaph9BHuPRNMQ==",
+        "resolved": "12.14.1",
+        "contentHash": "DvRBWUDMB2LjdRbsBNtz/LiVIYk56hqzSooxx4uq4rCdLj2M+7Vvoa1r+W35Dz6ZXL6p+SNcgEae3oZ+CkPfow==",
         "dependencies": {
-          "Azure.Storage.Common": "12.12.0",
+          "Azure.Storage.Common": "12.13.0",
           "System.Text.Json": "4.7.2"
         }
       },
       "Azure.Storage.Common": {
         "type": "Transitive",
-        "resolved": "12.12.0",
-        "contentHash": "Ms0XsZ/D9Pcudfbqj+rWeCkhx/ITEq8isY0jkor9JFmDAEHsItFa2XrWkzP3vmJU6EsXQrk4snH63HkW/Jksvg==",
+        "resolved": "12.13.0",
+        "contentHash": "jDv8xJWeZY2Er9zA6QO25BiGolxg87rItt9CwAp7L/V9EPJeaz8oJydaNL9Wj0+3ncceoMgdiyEv66OF8YUwWQ==",
         "dependencies": {
           "Azure.Core": "1.25.0",
           "System.IO.Hashing": "6.0.0"
@@ -3879,7 +3879,7 @@
       "imageflow.server.storage.azureblob": {
         "type": "Project",
         "dependencies": {
-          "Azure.Storage.Blobs": "[12.13.0, )",
+          "Azure.Storage.Blobs": "[12.14.1, )",
           "Imazen.Common": "[0.1.0--notset, )"
         }
       },
@@ -3893,7 +3893,7 @@
       "imageflow.server.storage.s3": {
         "type": "Project",
         "dependencies": {
-          "AWSSDK.S3": "[3.7.9.62, )",
+          "AWSSDK.S3": "[3.7.101.49, )",
           "Imazen.Common": "[0.1.0--notset, )"
         }
       },

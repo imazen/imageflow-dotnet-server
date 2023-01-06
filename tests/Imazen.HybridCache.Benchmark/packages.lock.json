@@ -14,9 +14,9 @@
       },
       "Microsoft.IO.RecyclableMemoryStream": {
         "type": "Direct",
-        "requested": "[2.2.0, )",
-        "resolved": "2.2.0",
-        "contentHash": "uyjY/cqomw1irT4L7lDeg4sJ36MsjHg3wKqpGrBAdzvZaxo85yMF+sAA9RIzTV92fDxuUzjqksMqA0+SNMkMgA=="
+        "requested": "[2.2.1, )",
+        "resolved": "2.2.1",
+        "contentHash": "T5ahjOqWFMTSb9wFHKFNAcGXm35BxbUbwARtAPLSSPPFehcLz5mwDsKO1RR9R2aZ2Lk1BNQC7Ja63onOBE6rpA=="
       },
       "Microsoft.Extensions.Configuration": {
         "type": "Transitive",
@@ -121,13 +121,13 @@
       "imazen.common": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.Extensions.Hosting.Abstractions": "2.2.0"
+          "Microsoft.Extensions.Hosting.Abstractions": "[2.2.0, )"
         }
       },
       "imazen.hybridcache": {
         "type": "Project",
         "dependencies": {
-          "Imazen.Common": "0.1.0--notset"
+          "Imazen.Common": "[0.1.0--notset, )"
         }
       }
     },
@@ -144,9 +144,9 @@
       },
       "Microsoft.IO.RecyclableMemoryStream": {
         "type": "Direct",
-        "requested": "[2.2.0, )",
-        "resolved": "2.2.0",
-        "contentHash": "uyjY/cqomw1irT4L7lDeg4sJ36MsjHg3wKqpGrBAdzvZaxo85yMF+sAA9RIzTV92fDxuUzjqksMqA0+SNMkMgA=="
+        "requested": "[2.2.1, )",
+        "resolved": "2.2.1",
+        "contentHash": "T5ahjOqWFMTSb9wFHKFNAcGXm35BxbUbwARtAPLSSPPFehcLz5mwDsKO1RR9R2aZ2Lk1BNQC7Ja63onOBE6rpA=="
       },
       "Microsoft.Extensions.Configuration": {
         "type": "Transitive",
@@ -251,13 +251,13 @@
       "imazen.common": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.Extensions.Hosting.Abstractions": "2.2.0"
+          "Microsoft.Extensions.Hosting.Abstractions": "[2.2.0, )"
         }
       },
       "imazen.hybridcache": {
         "type": "Project",
         "dependencies": {
-          "Imazen.Common": "0.1.0--notset"
+          "Imazen.Common": "[0.1.0--notset, )"
         }
       }
     }
