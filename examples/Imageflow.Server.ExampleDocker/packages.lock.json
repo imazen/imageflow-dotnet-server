@@ -4,50 +4,50 @@
     "net7.0": {
       "Imageflow.Server": {
         "type": "Direct",
-        "requested": "[0.7.7, )",
-        "resolved": "0.7.7",
-        "contentHash": "cDEBGQBQF1SmXQy3P1ZC6bVf/rxITqyeKEdPdO7x4ywJD5kJ6yjoNs6CY9QZAtReDSOCWwtjqgsqEYt1CCVfUw==",
+        "requested": "[0.7.8, )",
+        "resolved": "0.7.8",
+        "contentHash": "FTteei4rxIUw+MKJp437RrjSN4vPqPXRaPyH5kFOqUo7g3zTRd7hV1u9y0TUUQpzQtdGLnEzqR2BXGsYuoHgSw==",
         "dependencies": {
-          "Imageflow.AllPlatforms": "0.8.3",
-          "Imazen.Common": "0.7.7"
+          "Imageflow.AllPlatforms": "0.9.1",
+          "Imazen.Common": "0.7.8"
         }
       },
       "Imageflow.AllPlatforms": {
         "type": "Transitive",
-        "resolved": "0.8.3",
-        "contentHash": "bqht/u6KHdfqWG4XvhF+xdGlMN2J/qvIbT+JepMn95o1JHN85aNpPgKIrvgpVQfUAGOAcqz0bPSq24tHh5w2rw==",
+        "resolved": "0.9.1",
+        "contentHash": "SYcAd4Ga3RwTrKZ9pLyAXQ1/O6lltYV60yK8+IMyiGgBRNg1u65RPJ988BHQQe9o9upDDMN6ureBDK2wo0ACVw==",
         "dependencies": {
-          "Imageflow.NativeRuntime.osx-x86_64": "1.7.3-rc67",
-          "Imageflow.NativeRuntime.ubuntu-x86_64": "1.7.3-rc67",
-          "Imageflow.NativeRuntime.win-x86": "1.7.3-rc67",
-          "Imageflow.NativeRuntime.win-x86_64": "1.7.3-rc67",
-          "Imageflow.Net": "0.8.3"
+          "Imageflow.NativeRuntime.osx-x86_64": "2.0.0-preview4",
+          "Imageflow.NativeRuntime.ubuntu-x86_64": "2.0.0-preview4",
+          "Imageflow.NativeRuntime.win-x86": "2.0.0-preview4",
+          "Imageflow.NativeRuntime.win-x86_64": "2.0.0-preview4",
+          "Imageflow.Net": "0.9.1"
         }
       },
       "Imageflow.NativeRuntime.osx-x86_64": {
         "type": "Transitive",
-        "resolved": "1.7.3-rc67",
-        "contentHash": "rypwm+SDZ4hYrWGM8k84MCMnGnhzOanZ7RHUun+f77zeOVh+4fLm/NM16YPXd69iZD5Qstu6tV3IxUiK1vlYDg=="
+        "resolved": "2.0.0-preview4",
+        "contentHash": "NalhBe1mD7rsBuDo60Q1Xtqo18TBxIMm/WINJJXc0Jdss+bXzOESXP8YuUgA9yFJH8s9Rs+jlMVICjNjedYtog=="
       },
       "Imageflow.NativeRuntime.ubuntu-x86_64": {
         "type": "Transitive",
-        "resolved": "1.7.3-rc67",
-        "contentHash": "eCeCX4PS27PNql9Tj7XVvhMjR4nfYJphff/8CU3IuELoyXl+1iqE2mLtN2M0KyOtPnOfRjKn1BqXbbP0p3xlAg=="
+        "resolved": "2.0.0-preview4",
+        "contentHash": "6duY3ONPusAdaisVan4ztE9JemCyciXLgCE8Qy4fczf3QsgJYNa4pTJJfvcPEsOb7oLT2n8zAwaXKJXyR3dWGg=="
       },
       "Imageflow.NativeRuntime.win-x86": {
         "type": "Transitive",
-        "resolved": "1.7.3-rc67",
-        "contentHash": "mhhTqkSaSaMHMJIqiVU9aGpDEFqE5qZNxI8wY22a8lKPJMdQTl3n4e61JlFKrPHPxv/H2UJ9sAagfTmqV1/zSw=="
+        "resolved": "2.0.0-preview4",
+        "contentHash": "XQ2ksgNZg48DNztK45q/PlzrnYlvn8ba8xA1Oy884+9ID/c8DK18zPH3u7ysqx8AJ3m5HCMIRpoOBK/9GFquhw=="
       },
       "Imageflow.NativeRuntime.win-x86_64": {
         "type": "Transitive",
-        "resolved": "1.7.3-rc67",
-        "contentHash": "70f1jodgmbiWHxd3KxR8fo+8CK55oMD/f/5OYYSnBCSdTxzec8ks4bhXASzmx7bgCujipCa4E1s0uQt3PCf8+w=="
+        "resolved": "2.0.0-preview4",
+        "contentHash": "azYoMcE6/fNCxw5+7krHTy1zx8Xb9VLGtkGh8JbHeMM8jRT4vNKG4uOapSJzm/kXlrTp6ziijo6y1aZwoZXZjA=="
       },
       "Imageflow.Net": {
         "type": "Transitive",
-        "resolved": "0.8.3",
-        "contentHash": "f84gzbUGrMRxU1Nes/Pk/q1zs1tweoqEyMDSSA7bg8Nn975rbXba3xFQaGdFjyFQI1/G+OqKzCX6N76rQlBDBQ==",
+        "resolved": "0.9.1",
+        "contentHash": "cPJeFgPUH8aFbKLrqJP9j8ncy5a6IV4la5KAJC5udGE9CJDbsStFL/goEk2wo7gi8oKaG0mZofAYwCe+n5dspA==",
         "dependencies": {
           "Microsoft.CSharp": "4.7.0",
           "Microsoft.IO.RecyclableMemoryStream": "[1.2.2, 3.0.0)",
@@ -56,8 +56,8 @@
       },
       "Imazen.Common": {
         "type": "Transitive",
-        "resolved": "0.7.7",
-        "contentHash": "Wuk4GU3BiOxWxeTPXEGdBmuCBuY9QgYTNsuaZ5HJIyTO7jqVW31KjcyaKOuHiPX2DXMnYDLCrV6aCuSQcqCRkw==",
+        "resolved": "0.7.8",
+        "contentHash": "jwJ4aBsbOjyARKUBDJQhL1X/tgjoO1mOKb3QOEEraaxQQV4SKPNPh1sgE9mR8ELyC+ZcktLXC7ZKj9WSQaabtg==",
         "dependencies": {
           "Microsoft.Extensions.Hosting.Abstractions": "2.2.0"
         }
