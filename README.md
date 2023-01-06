@@ -1,4 +1,4 @@
-[![.NET 6/7](https://github.com/imazen/imageflow-dotnet-server/workflows/.NET%20Core/badge.svg)](https://github.com/imazen/imageflow-dotnet-server/actions?query=workflow%3A%22.NET+Core%22)
+[![.NET 6/7](https://github.com/imazen/imageflow-dotnet-server/workflows/Build/badge.svg)](https://github.com/imazen/imageflow-dotnet-server/actions/workflows/dotnet-core.yml)
 
 #### Imageflow.NET Server is image processing and optimizing middleware for ASP.NET 6 & 7. 
 
