@@ -50,19 +50,5 @@
         <NoWarn>NU1603</NoWarn>
         <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
     </PropertyGroup>
-    <PropertyGroup>
-        <IntermediateOutputPath>$(SolutionDir)\obj\$(Configuration)</IntermediateOutputPath>
-        <OutputPath>$(SolutionDir)\bin\$(Configuration)</OutputPath>
-    </PropertyGroup>
-
-    <PropertyGroup Condition="!$(MSBuildProjectName.EndsWith('Tests'))">
-        <UseCommonOutputDirectory>true</UseCommonOutputDirectory>
-    </PropertyGroup>
-
-    <PropertyGroup>
-        <!-- https://github.com/dotnet/sdk/issues/22201 -->
-        <_EnableMacOSCodeSign>false</_EnableMacOSCodeSign>
-    </PropertyGroup>
-
 
 </Project>
