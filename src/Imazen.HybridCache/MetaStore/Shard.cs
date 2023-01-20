@@ -98,8 +98,13 @@ namespace Imazen.HybridCache.MetaStore
         }
         public async Task<string> GetContentType(string relativePath)
         {
+            return (await GetRecord(relativePath))?.ContentType;
+        }
+
+        public async Task<ICacheDatabaseRecord> GetRecord(string relativePath)
+        {
             return (await GetLoadedDict()).TryGetValue(relativePath, out var record) ? 
-                record.ContentType : 
+                record: 
                 null;
         }
 

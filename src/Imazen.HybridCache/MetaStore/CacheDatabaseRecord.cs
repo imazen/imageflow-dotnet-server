@@ -11,4 +11,5 @@ namespace Imazen.HybridCache.MetaStore
         public string RelativePath { get; set; }
         public string ContentType { get; set; }
     }
+
 }

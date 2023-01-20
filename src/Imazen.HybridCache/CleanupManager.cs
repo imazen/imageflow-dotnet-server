@@ -42,6 +42,11 @@ namespace Imazen.HybridCache
             return Database.GetContentType(Database.GetShardForKey(cacheEntry.RelativePath), cacheEntry.RelativePath);
         }
 
+        public async Task<ICacheDatabaseRecord> GetRecordReference(CacheEntry cacheEntry, CancellationToken cancellationToken)
+        {
+            return await Database.GetRecord(Database.GetShardForKey(cacheEntry.RelativePath), cacheEntry.RelativePath);
+        }
+
         public static long DirectoryEntrySize()
         {
             return 4096;
@@ -221,7 +226,6 @@ namespace Imazen.HybridCache
             
             return bytesDeleted;
         }
-
 
     }
 }

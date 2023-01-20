@@ -11,9 +11,12 @@ namespace Imazen.HybridCache
         DateTime CreatedAt { get; }
         DateTime LastDeletionAttempt { get;  }
         long DiskSize { get; }
+        /// May not exist on disk
         string RelativePath { get; }
         string ContentType { get; }
     }
+
+
     public interface ICacheDatabase: IHostedService
     {
         Task UpdateLastDeletionAttempt(int shard, string relativePath, DateTime when);
@@ -32,7 +35,8 @@ namespace Imazen.HybridCache
         /// <summary>
         /// Return the oldest (by created date) records, sorted from oldest to newest, where
         /// the last deletion attempt is older than maxLastDeletionAttemptTime and the
-        /// created date is older than maxCreatedDate
+        /// created date is older than maxCreatedDate. 
+        /// Possible issues if records are modified
         /// </summary>
         /// <param name="shard"></param>
         /// <param name="maxLastDeletionAttemptTime"></param>
@@ -55,6 +59,13 @@ namespace Imazen.HybridCache
         /// <returns></returns>
         Task<string> GetContentType(int shard, string relativePath);
         
+        /// <summary>
+        /// Looks up the record info by key
+        /// </summary>
+        /// <param name="shard"></param>
+        /// <param name="relativePath"></param>
+        Task<ICacheDatabaseRecord> GetRecord(int shard, string relativePath);
+
         /// <summary>
         /// Estimate disk usage for a record with the given key length
         /// </summary>

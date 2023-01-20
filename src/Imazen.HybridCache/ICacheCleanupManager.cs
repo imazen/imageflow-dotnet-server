@@ -14,6 +14,7 @@ namespace Imazen.HybridCache
     {
         void NotifyUsed(CacheEntry cacheEntry);
         Task<string> GetContentType(CacheEntry cacheEntry, CancellationToken cancellationToken);
+        Task<ICacheDatabaseRecord> GetRecordReference(CacheEntry cacheEntry, CancellationToken cancellationToken);
         Task<ReserveSpaceResult> TryReserveSpace(CacheEntry cacheEntry, string contentType, int byteCount, bool allowEviction, AsyncLockProvider writeLocks, CancellationToken cancellationToken);
 
         Task MarkFileCreated(CacheEntry cacheEntry, string contentType, long recordDiskSpace, DateTime createdDate);

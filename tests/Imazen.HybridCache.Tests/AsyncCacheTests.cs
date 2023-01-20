@@ -22,7 +22,11 @@ namespace Imazen.HybridCache.Tests
             {
                 return Task.FromResult(true);
             }
-            
+
+            public Task<ICacheDatabaseRecord> GetRecordReference(CacheEntry cacheEntry, CancellationToken cancellationToken)
+            {
+                return null;
+            }
         }
 
         [Fact]
