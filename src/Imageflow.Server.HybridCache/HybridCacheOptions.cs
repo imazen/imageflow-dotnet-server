@@ -24,7 +24,50 @@ namespace Imageflow.Server.HybridCache
         /// The minimum number of bytes to free when running a cleanup task. Defaults to 1MiB;
         /// </summary>
         public long MinCleanupBytes { get; set; } = 1 * 1024 * 1024;
-        
+
+        /// <summary>
+        ///     How many MiB of ram to use when writing asynchronously to disk before we switch to writing synchronously.
+        ///     Defaults to 100MiB.
+        /// </summary>
+        public long WriteQueueMemoryMb
+        {
+            get
+            {
+                return QueueSizeLimitInBytes / 1024 / 1024;
+            }
+            set
+            {
+                QueueSizeLimitInBytes = value * 1024 * 1024;
+            }
+        }
+
+        /// <summary>
+        ///     Defaults to 1 GiB. Don't set below 9MB or no files will be cached, since 9MB is reserved just for empty directory
+        ///     entries.
+        /// </summary>
+        public long CacheSizeMb { get
+            {
+                return CacheSizeLimitInBytes / 1024 / 1024;
+            }
+            set
+            {
+                CacheSizeLimitInBytes = value * 1024 * 1024;
+            }
+        }
+
+        /// <summary>
+        ///     The minimum number of mibibytes (1024*1024) to free when running a cleanup task. Defaults to 1MiB;
+        /// </summary>
+        public long EvictionSweepSizeMb { get
+            {
+                return MinCleanupBytes / 1024 / 1024;
+            }
+            set
+            {
+                MinCleanupBytes = value * 1024 * 1024;
+            }
+        }
+
         /// <summary>
         /// The minimum age of files to delete. Defaults to 10 seconds.
         /// </summary>
