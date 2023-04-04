@@ -19,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Imageflow.AllPlatforms" Version="0.9.1" />
+    <PackageReference Include="Imageflow.AllPlatforms" Version="0.10.0" />
   </ItemGroup>
 
 </Project>
