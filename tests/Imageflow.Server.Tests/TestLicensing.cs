@@ -285,8 +285,11 @@ namespace Imageflow.Server.Tests
             }
         }
         
-        [Fact]
-        public async void TestRevocations()
+        [Theory]
+        [InlineData("CancelledImageflow")]
+        [InlineData("SoftRevocationImageflow")]
+        [InlineData("HardRevocationImageflow")]
+        public async void TestRevocations(string licenseSetName)
         {
             // Skip this on CI
             var isCi = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("CI"));
@@ -296,84 +299,84 @@ namespace Imageflow.Server.Tests
                 .AddResource("images/fire.jpg", "TestFiles.fire-umbrella-small.jpg"))
             {
                 
-                foreach (var set in LicenseStrings.GetSets("CancelledImageflow", "SoftRevocationImageflow",
-                    "HardRevocationImageflow"))
+                var set = LicenseStrings.GetSets(licenseSetName).First();
+            
+
+                output.WriteLine($"Testing revocation for {set.Name}");
+                
+                // set clock to present, and build date to far future
+                var clock = new FakeClock("2017-04-25", "2022-01-01");
+
+                var mgr = new LicenseManagerSingleton(ImazenPublicKeys.Test, clock, new StringCacheMem());
+                var mock = MockHttpHelpers.MockRemoteLicense(mgr, HttpStatusCode.OK, set.Remote, null);
+
+                var url = new RequestUrlProvider();
+                var licensing = new Licensing(mgr, url.Get);
+
+                
+                using var host = await StartAsyncWithOptions(new ImageflowMiddlewareOptions()
+                    {
+                        Licensing = licensing,
+                        MyOpenSourceProjectUrl = null
+                    }
+                    .SetLicenseKey(EnforceLicenseWith.Http402Error,
+                        set.Placeholder)
+                    .MapPath("/", Path.Combine(contentRoot.PhysicalPath, "images")));
+
+                // Create an HttpClient to send requests to the TestServer
+                using var client = host.GetTestClient();
+                
+                //Trigger license heartbeat.
+                using var isReady = await client.GetAsync("/imageflow.ready");
+                isReady.EnsureSuccessStatusCode();
+                
+                await mgr.AwaitTasks();
+
+                mock.Verify();
+                
+                url.Url = new Uri("https://domain.com");
+                using var notLicensedResponse = await client.GetAsync("/fire.jpg?w=1");
+                Assert.Equal(HttpStatusCode.PaymentRequired,notLicensedResponse.StatusCode); //TODO: Sometimes this comes back as OK
+
+                url.Url = null;
+                using var notLicensedResponse2 = await client.GetAsync("/fire.jpg?w=1");
+                Assert.Equal(HttpStatusCode.PaymentRequired,notLicensedResponse2.StatusCode);
+
+                
+                Assert.NotEmpty(mgr.GetIssues());
+                
+                var page = licensing.Result.ProvidePublicLicensesPage();
+                Assert.Contains("License Validation ON", page);
+                Assert.Contains("You are using EnforceLicenseWith.Http402Error", page);
+                Assert.Contains("No valid license keys found.", page);
+
+                Assert.Contains(
+                    "Your license is invalid. Please renew your license via the management portal or purchase a new one at",
+                    page);
+                Assert.DoesNotContain("Your license needs to be upgraded.", page);
+
+                if (set.Name == "CancelledImageflow")
                 {
-
-                    output.WriteLine($"Testing revocation for {set.Name}");
-                    
-                    // set clock to present, and build date to far future
-                    var clock = new FakeClock("2017-04-25", "2022-01-01");
-
-                    var mgr = new LicenseManagerSingleton(ImazenPublicKeys.Test, clock, new StringCacheMem());
-                    MockHttpHelpers.MockRemoteLicense(mgr, HttpStatusCode.OK, set.Remote, null);
-
-                    var url = new RequestUrlProvider();
-                    var licensing = new Licensing(mgr, url.Get);
-
-                    
-                    using var host = await StartAsyncWithOptions(new ImageflowMiddlewareOptions()
-                        {
-                            Licensing = licensing,
-                            MyOpenSourceProjectUrl = null
-                        }
-                        .SetLicenseKey(EnforceLicenseWith.Http402Error,
-                            set.Placeholder)
-                        .MapPath("/", Path.Combine(contentRoot.PhysicalPath, "images")));
-
-                    // Create an HttpClient to send requests to the TestServer
-                    using var client = host.GetTestClient();
-                    
-                    //Trigger license heartbeat.
-                    using var isReady = await client.GetAsync("/imageflow.ready");
-                    isReady.EnsureSuccessStatusCode();
-                    
-                    await mgr.AwaitTasks();
-
-                    
-                    url.Url = new Uri("https://domain.com");
-                    using var notLicensedResponse = await client.GetAsync("/fire.jpg?w=1");
-                    Assert.Equal(HttpStatusCode.PaymentRequired,notLicensedResponse.StatusCode); //TODO: Sometimes this comes back as OK
-
-                    url.Url = null;
-                    using var notLicensedResponse2 = await client.GetAsync("/fire.jpg?w=1");
-                    Assert.Equal(HttpStatusCode.PaymentRequired,notLicensedResponse2.StatusCode);
-
-                    
-                    Assert.NotEmpty(mgr.GetIssues());
-                    
-                    var page = licensing.Result.ProvidePublicLicensesPage();
-                    Assert.Contains("License Validation ON", page);
-                    Assert.Contains("You are using EnforceLicenseWith.Http402Error", page);
-                    Assert.Contains("No valid license keys found.", page);
-
-                    Assert.Contains(
-                        "Your license is invalid. Please renew your license via the management portal or purchase a new one at",
-                        page);
-                    Assert.DoesNotContain("Your license needs to be upgraded.", page);
-
-                    if (set.Name == "CancelledImageflow")
-                    {
-                        Assert.Contains("Your subscription has lapsed; please renew to continue using product.", page);
-                    }
-
-                    if (set.Name == "SoftRevocationImageflow")
-                    {
-                        Assert.Contains(
-                            "This license has been compromised; please contact Vendor Gamma for an updated license",
-                            page);
-                    }
-                    if (set.Name == "HardRevocationImageflow")
-                    {
-                        Assert.Contains(
-                            "Please contact support; the license was shared with an unauthorized party and has been revoked.",
-                            page);
-                    }
-
-                    
-
-                    await host.StopAsync(CancellationToken.None);
+                    Assert.Contains("Your subscription has lapsed; please renew to continue using product.", page);
                 }
+
+                if (set.Name == "SoftRevocationImageflow")
+                {
+                    Assert.Contains(
+                        "This license has been compromised; please contact Vendor Gamma for an updated license",
+                        page);
+                }
+                if (set.Name == "HardRevocationImageflow")
+                {
+                    Assert.Contains(
+                        "Please contact support; the license was shared with an unauthorized party and has been revoked.",
+                        page);
+                }
+
+                
+
+                await host.StopAsync(CancellationToken.None);
+            
             }
         }
 
