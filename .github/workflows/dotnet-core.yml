@@ -60,12 +60,11 @@ jobs:
         dotnet --list-sdks >> $GITHUB_ENV
         echo "EOF" >> $GITHUB_ENV
       
-    - name: Setup .NET Core 3.1.x, 6.0.x, and 7.0.x
+    - name: Setup .NET 6.0.x and 7.0.x
       uses: actions/setup-dotnet@v2
-      if: contains(env.DOTNET_VERSION_LIST, '6.0') == 'false' || contains(env.DOTNET_VERSION_LIST, '3.1.') == 'false' || contains(env.DOTNET_VERSION_LIST, '7.0.') == 'false'
+      if: contains(env.DOTNET_VERSION_LIST, '6.0') == 'false' || contains(env.DOTNET_VERSION_LIST, '7.0.') == 'false'
       with:
         dotnet-version: |
-          3.1.x
           6
           7
 

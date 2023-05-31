@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>netcoreapp3.1</TargetFramework>
+        <TargetFramework>net6.0</TargetFramework>
         <Title>Imageflow.Server.DiskCache - Plugin for caching processed images to disk.</Title>
         <Description>Imageflow.Server plugin for caching processed images to disk.</Description>
         <IsPackable>true</IsPackable>
