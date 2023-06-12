@@ -47,6 +47,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imazen.HybridCache.Benchmar
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imageflow.Server.HybridCache", "src\Imageflow.Server.HybridCache\Imageflow.Server.HybridCache.csproj", "{D1ACF35D-469B-4AC9-804D-8A3FD87ECD5C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imageflow.Server.Configuration", "src\Imageflow.Server.Configuration\Imageflow.Server.Configuration.csproj", "{AC9863CA-16F9-49DA-A539-07B2AA290D0D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -121,6 +123,10 @@ Global
 		{D1ACF35D-469B-4AC9-804D-8A3FD87ECD5C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D1ACF35D-469B-4AC9-804D-8A3FD87ECD5C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D1ACF35D-469B-4AC9-804D-8A3FD87ECD5C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AC9863CA-16F9-49DA-A539-07B2AA290D0D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AC9863CA-16F9-49DA-A539-07B2AA290D0D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AC9863CA-16F9-49DA-A539-07B2AA290D0D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AC9863CA-16F9-49DA-A539-07B2AA290D0D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
