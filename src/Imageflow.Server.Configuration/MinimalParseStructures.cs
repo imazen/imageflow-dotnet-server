@@ -142,7 +142,8 @@ internal class HybridCacheSection
     public string? Folder { get; set; }
     public int? CacheSizeMb { get; set; }
     public int? WriteQueueRamMb { get; set; }
-    // public int? SecondsUntilEvictable { get; set; } // Not available in public plugin options yet
+    
+    public int? SecondsUntilEvictable { get; set; } // Not available in public plugin options yet
     public int? EvictionSweepSizeMb { get; set; }
 
     public int? DatabaseShards { get; set; }
@@ -178,8 +179,9 @@ internal class Diagnostics : ITomlMetadataProvider, IValidationCapable
         if (AllowWithPassword != null){
             c.ValidateRecursive(this, AllowWithPassword, AllowWithPassword.Length > 12, "[diagnostics].allow_with_password must be at least 12 characters long if set");
         }
-        c.Require(this, AllowLocalhost);
-        c.Require(this, AllowAnyhost);
+        // confusing with development., etc. We're safe with false defaults.
+        // c.Require(this, AllowLocalhost);
+        // c.Require(this, AllowAnyhost);
     }
 
 }
@@ -192,6 +194,7 @@ internal class AspNetServer :  ITomlMetadataProvider, IValidationCapable {
     public string? UseExceptionHandler { get; set; } 
     public bool? UseHsts { get; set; } = true;
     public bool? UseHttpsRedirection { get; set; } = true;
+    public bool? RestartWhenThisFileChanges { get; set; } = true;
     public AspNetRewriteRuleSection? ApacheModRewrite { get; set; } 
     //public AspNetRewriteRuleSection? IisUrlRewrite { get; set; } 
     public void Validate(ValidationContext c) {

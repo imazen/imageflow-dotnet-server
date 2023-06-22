@@ -28,7 +28,7 @@ using Imageflow.Server.Configuration.Execution;
 
 
 public interface IAppConfigurator{
-    bool WatchConfigFile { get; }
+    bool RestartWhenThisFileChanges { get; }
 
     void ConfigureApp(IApplicationBuilder app, IWebHostEnvironment env);
     void ConfigureServices(IServiceCollection services);

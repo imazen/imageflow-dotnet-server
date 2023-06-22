@@ -23,6 +23,9 @@ internal class Executor : IAppConfigurator{
     }
 
     public ExecutorContext Context { get; }
+
+    public bool RestartWhenThisFileChanges => config.AspnetServer?.RestartWhenThisFileChanges ?? false;
+
     private readonly ImageflowConfig config;
     private readonly string sourcePath;
 
@@ -239,10 +242,10 @@ internal class Executor : IAppConfigurator{
             options.EvictionSweepSizeMb = EvictionSweepSizeMb;
         }
 
-        // var SecondsUntilEvictable = config.DiskCache.SecondsUntilEvictable ?? 0;
-        // if (SecondsUntilEvictable > 0){
-        //     options.
-        // }   
+        var SecondsUntilEvictable = config.DiskCache.SecondsUntilEvictable ?? 0;
+        if (SecondsUntilEvictable > 0){
+            options.MinAgeToDelete = TimeSpan.FromSeconds(SecondsUntilEvictable);
+        }   
 
         return options;
     }
@@ -313,6 +316,7 @@ internal class Executor : IAppConfigurator{
             Utilities.Utilities.AddToDictionaryRecursive(GetHybridCacheOptions(), d, "HybridCacheOptions");
         }
         Utilities.Utilities.AddToDictionaryRecursive(GetServerConfigurationOptions(), d, "ServerConfigurationOptions");
+        Utilities.Utilities.AddToDictionaryRecursive(RestartWhenThisFileChanges, d, "RestartWhenThisFileChanges");
         if (redactSecrets){
             foreach(var kvp in d){
                 d[kvp.Key] = Context.Redactor.Redact(kvp.Value);

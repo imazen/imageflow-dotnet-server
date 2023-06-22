@@ -22,7 +22,7 @@ public partial class Startup
         configurator = config.GetAppConfigurator();
 
         // Watch for changes to the configuration file with a FileSystemWatcher
-        if (configurator.WatchConfigFile)
+        if (configurator.RestartWhenThisFileChanges)
         {
             webConfigToucher = new WebConfigToucher(Path.Combine(Env.ContentRootPath, "Web.config"), null);
             configurationFileWatcher = new FileSystemWatcher(Env.ContentRootPath, "imageflow.toml");
