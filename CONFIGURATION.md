@@ -6,6 +6,8 @@ That said, having a repository with your configuration and some automated deploy
 
 **NOTE: This is a work-in-progress, bugs may exist, and error messages when you mess the config file up may be confusing. Please report any issues.**
 
+If you get `HTTP Error 500.30 - ASP.NET Core app failed to start`, open Event Viewer and check the Application log - you probably have an invalid .toml configuration, or one of the directories you referenced from imageflow.toml doesn't exist. Make sure they all exist!
+
 #### Known issues
 
 * Doesn't auto-restart when you edit imageflow.toml
