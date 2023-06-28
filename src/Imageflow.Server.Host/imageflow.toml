@@ -75,6 +75,21 @@ content_type = "text/html" # required
 content = '<p>An error has occurred while processing the request.</p>' # required
 # file = "/var/www/error.html"
 
+[[static_response]]
+for = "/" # required
+status_code = 200 # required
+cache_control = "no-cache"
+content_type = "text/html" # required
+content = """
+
+<h3>If you see an angry, AI-generated robot below, Imageflow Server is running</h3>
+<p><img src="/images/robotcrush.png?w=300&f.sharpen=30&format=webp&webp.lossless=true"</p>
+<p><a href="/imageflow.debug">Visit /imageflow.debug for diagnostics</a></p>
+<p><strong>Edit imageflow.toml to delete or modify this default page, then restart the site.</p>
+
+"""
+
+
 [security.max_decode_resolution]
 width = 12000
 height = 12000
