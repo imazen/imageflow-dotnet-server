@@ -62,6 +62,12 @@ jobs:
       shell: bash
       if: steps.version.outputs.is_valid == 'false' || github.event_name != 'release'
 
+    - name: Set the Imageflow.Server.Host zip file name
+      run: |
+        echo "HOST_ZIP_FILE=Imageflow.Server.Host-${{matrix.os}}-${{ env.ARTIFACT_VERSION }}.zip" >> $GITHUB_ENV
+        echo Set HOST_ZIP_FILE to ${{ env.HOST_ZIP_FILE }}
+      shell: bash
+
     - name: Check .NET versions available to see if we can skip install
       shell: bash
       run: |
@@ -101,12 +107,31 @@ jobs:
     - name: Publish Host App
       run: dotnet publish -c Release -o host/publish/ src/Imageflow.Server.Host/Imageflow.Server.Host.csproj
 
+    # Zip the contents of folder host/publish/ into host/Imageflow.Server.Host-${{matrix.os}}-${{ env.ARTIFACT_VERSION }}.zip
+    - name: Zip Server.Host
+      run: |
+        cd host/publish/
+        zip -r ../${{env.HOST_ZIP_FILE}} .
+        cd ../..
+
     # Upload the publish folder for src/Imageflow.Server.Host to the release artifacts
-    - uses: actions/upload-artifact@v3
+    - name: Upload Server.Host to artifacts
+      uses: actions/upload-artifact@v3
       if: success()
       with:
-        name: DeployReady-${{matrix.os}}-${{ env.ARTIFACT_VERSION }}
-        path: host/publish
+        name: ${{env.HOST_ZIP_FILE}}}}
+        path: host/publish/${{env.HOST_ZIP_FILE}}
+
+    # If this is a release, upload it to the github release page using the git
+    - name: Upload ${{env.HOST_ZIP_FILE}} to release
+      uses: Shopify/upload-to-release@v1
+      if: steps.version.outputs.is_valid == 'true' && github.event_name == 'release'
+      with:
+        name: ${{env.HOST_ZIP_FILE}}
+        path: host/${{env.HOST_ZIP_FILE}}
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        content-type: application/zip
+      
       
     - name: Pack
       run: dotnet pack -c Release --include-source
