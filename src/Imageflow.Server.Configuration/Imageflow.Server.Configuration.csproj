@@ -5,12 +5,17 @@
         <LangVersion>11</LangVersion>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <IsPackable>true</IsPackable>
     </PropertyGroup>
+
+    <Import Project="..\NugetPackages.targets" />
+
+
     <ItemGroup>
         <PackageReference Include="Tomlyn" Version="0.16.2" />
     </ItemGroup>
     <ItemGroup>
-    <ProjectReference Include="..\Imazen.Common\Imazen.Common.csproj" />
+        <ProjectReference Include="..\Imazen.Common\Imazen.Common.csproj" />
       <ProjectReference Include="..\Imageflow.Server\Imageflow.Server.csproj" />
       <ProjectReference Include="..\Imageflow.Server.HybridCache\Imageflow.Server.HybridCache.csproj" />
 
