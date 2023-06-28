@@ -2,6 +2,8 @@
 
 #### Imageflow.NET Server is image processing and optimizing middleware for ASP.NET 6 & 7. 
 
+** Try [the new configuration system](https://github.com/imazen/imageflow-dotnet-server/blob/main/CONFIGURATION.md) to avoid a build step & C#! **
+
 If you don't need an HTTP server, [try Imageflow.NET](https://github.com/imazen/imageflow-dotnet). If you don't want to use .NET, try [Imageflow](https://imageflow.io), which has a server, command-line tool, and library with language bindings for Go, C, Rust, Node, Ruby and more. Imageflow is specifically designed for web servers and focuses on security, quality, and performance. 
 
 **Serving optimized and correctly sized images is the fastest way to a quicker, more profitable site or app. 60% of website bytes are from images<sup>[1]</sup>.**
@@ -303,6 +305,7 @@ namespace Imageflow.Server.Example
 ## Migrating from ImageResizer
 
 ### General Notes
+* Imageflow.Server does not support the ".jpg.ashx" syntax used circa ~2009, but you can implement it with URL rewriting yourself.
 * Imageflow does not let shadows overwhelm image highlights 
   (it resizes images in linear RGB instead of averaging compressed sRGB 
   values). This is correct behavior, but can lower the visual impact of 
