@@ -109,10 +109,11 @@ jobs:
 
     # Zip the contents of folder host/publish/ into host/Imageflow.Server.Host-${{matrix.os}}-${{ env.ARTIFACT_VERSION }}.zip
     - name: Zip Server.Host
-      run: |
-        cd host/publish/
-        zip -r ../${{env.HOST_ZIP_FILE}} .
-        cd ../..
+      uses: thedoctor0/zip-release@0.7.1
+      with:
+        type: 'zip'
+        filename: 'host/${{env.HOST_ZIP_FILE}}'
+        path: 'host/publish/'
 
     # Upload the publish folder for src/Imageflow.Server.Host to the release artifacts
     - name: Upload Server.Host to artifacts
@@ -120,7 +121,7 @@ jobs:
       if: success()
       with:
         name: ${{env.HOST_ZIP_FILE}}}}
-        path: host/publish/${{env.HOST_ZIP_FILE}}
+        path: host/${{env.HOST_ZIP_FILE}}
 
     # If this is a release, upload it to the github release page using the git
     - name: Upload ${{env.HOST_ZIP_FILE}} to release
