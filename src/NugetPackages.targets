@@ -20,8 +20,8 @@
 
 
     <PropertyGroup>
-        <IntermediateOutputPath>$(SolutionDir)\obj\$(Configuration)</IntermediateOutputPath>
-        <OutputPath>$(SolutionDir)\bin\$(Configuration)</OutputPath>
+        <IntermediateOutputPath>$(MSBuildThisFileDirectory)..\obj\$(Configuration)</IntermediateOutputPath>
+        <OutputPath>$(MSBuildThisFileDirectory)..\bin\$(Configuration)</OutputPath>
     </PropertyGroup>
 
     <PropertyGroup Condition="!$(MSBuildProjectName.EndsWith('Tests'))">
