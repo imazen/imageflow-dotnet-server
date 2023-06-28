@@ -49,9 +49,18 @@ jobs:
     - name: Set the release version (if applicable)
       run: |
         echo "TAGGED_VERSION=${{ steps.version.outputs.full_without_prefix }}" >> $GITHUB_ENV
+        echo "ARTIFACT_VERSION=${{ steps.version.outputs.full_without_prefix }}" >> $GITHUB_ENV
         echo Set version to ${{ steps.version.outputs.full_without_prefix }}
       shell: bash
       if: steps.version.outputs.is_valid == 'true' && github.event_name == 'release'
+
+      # If ARTIFACT_VERSION is empty, then we're not on a release, so we'll use the commit hash
+    - name: Set the artifact version if not a release
+      run: |
+        echo "ARTIFACT_VERSION=commit-${{ github.sha }}" >> $GITHUB_ENV
+        echo Set ARTIFACT_VERSION to commit-${{ github.sha }}
+      shell: bash
+      if: steps.version.outputs.is_valid == 'false' || github.event_name != 'release'
 
     - name: Check .NET versions available to see if we can skip install
       shell: bash
@@ -86,8 +95,18 @@ jobs:
     - uses: actions/upload-artifact@v3
       if: failure()
       with:
-        name: TestResults-${{matrix.os}}
+        name: TestResults-${{matrix.os}}-${{ env.ARTIFACT_VERSION }}
         path: TestResults/
+
+    - name: Publish Host App
+      run: dotnet publish -c Release -o host/publish/ src/Imageflow.Server.Host/Imageflow.Server.Host.csproj
+
+    # Upload the publish folder for src/Imageflow.Server.Host to the release artifacts
+    - uses: actions/upload-artifact@v3
+      if: success()
+      with:
+        name: DeployReady-${{matrix.os}}-${{ env.ARTIFACT_VERSION }}
+        path: host/publish
       
     - name: Pack
       run: dotnet pack -c Release --include-source
