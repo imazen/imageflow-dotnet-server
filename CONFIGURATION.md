@@ -39,14 +39,14 @@ apply_default_commands = "quality=76&webp.quality=70&f.sharpen=23&down.filter=mi
 
 [[routes]]
 prefix = '/images/'
-map_to_physical_folder='${app.wwwroot}\images\'
+map_to_physical_folder='${app.approot}\images\'
 
 # ======  Caching to disk ======
 [disk_cache] # HybridCache
 enabled = true #required
 # Don't put this on high-latency network storage, it will be slow
 # Also cannot be inside an IIS website (unlike ImageResizer)
-folder = '${env.HOME}\ImageflowCache' # required
+folder = '${env.TEMP}\ImageflowCache' # required
 cache_size_mb = 30_000           # Disk space usage limit in MB
 #write_queue_ram_mb = 200          # How much RAM to permit for async writes
 

@@ -128,16 +128,17 @@ internal class DefaultVarLookup : IVarLookup{
                 string? envVar = GetEnvironmentVariable(varName);
                 if (envVar == null)
                 {
+                    //TODO: this isn't working
                     // Because $HOME is not set on Windows (sometimes), we need to construct it
                     if (string.Equals("home", varName, StringComparison.OrdinalIgnoreCase)){
-                        if (Environment.OSVersion.Platform == PlatformID.Win32NT){
-                            var homeDrive = GetEnvironmentVariable("HOMEDRIVE");
-                            var homePath = GetEnvironmentVariable("HOMEPATH");
-                            if (string.IsNullOrWhiteSpace(homeDrive) || string.IsNullOrWhiteSpace(homePath)){
-                                return null;
-                            }
-                            return homeDrive + homePath;
+                        // Let's not check the platform (buggy?), and just assume that if $HOME is not set,
+                        // then it's safe to use $HOMEDRIVE and $HOMEPATH if they're both set
+                        var homeDrive = GetEnvironmentVariable("HOMEDRIVE");
+                        var homePath = GetEnvironmentVariable("HOMEPATH");
+                        if (string.IsNullOrWhiteSpace(homeDrive) || string.IsNullOrWhiteSpace(homePath)){
+                            return null;
                         }
+                        return homeDrive + homePath;
                     }
                 }
                 return envVar;

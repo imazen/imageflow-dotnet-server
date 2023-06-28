@@ -40,7 +40,8 @@ public class MinimalTomlTest
             {
                 return key.ToLowerInvariant() switch
                 {
-                    "home" => "D:\\inetpub\\site",
+                    "homedrive" => "D:",
+                    "homepath" => "\\inetpub\\site",
                     _ => null,
                 };
             },

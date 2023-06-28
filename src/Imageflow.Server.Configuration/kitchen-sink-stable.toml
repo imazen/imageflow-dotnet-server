@@ -1,5 +1,5 @@
 [imageflow_server] # must be valid TOML https://toml.io/en/ 
-config_schema = 1 # Breaking changes in new versions may require this to be incremented
+config_schema = "1" # Breaking changes in new versions may require this to be incremented
 
 [license]
 enforcement = "watermark" # or http_402_error/http_422_error, for fast failures
