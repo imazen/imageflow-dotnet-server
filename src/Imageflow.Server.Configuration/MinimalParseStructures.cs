@@ -192,9 +192,9 @@ internal class AspNetServer :  ITomlMetadataProvider, IValidationCapable {
     public TomlPropertiesMetadata? PropertiesMetadata { get; set; }
     public bool? UseDeveloperExceptionPage { get; set; }
     public string? UseExceptionHandler { get; set; } 
-    public bool? UseHsts { get; set; } = true;
-    public bool? UseHttpsRedirection { get; set; } = true;
-    public bool? RestartWhenThisFileChanges { get; set; } = true;
+    public bool? UseHsts { get; set; }
+    public bool? UseHttpsRedirection { get; set; } 
+    public bool? RestartWhenThisFileChanges { get; set; }
     public AspNetRewriteRuleSection? ApacheModRewrite { get; set; } 
     //public AspNetRewriteRuleSection? IisUrlRewrite { get; set; } 
     public void Validate(ValidationContext c) {

@@ -171,12 +171,12 @@ internal class Executor : IAppConfigurator{
 
     internal class ServerConfigurationOptions{
     
-        public bool UseDeveloperExceptionPage { get; set; } = false;
+        public bool UseDeveloperExceptionPage { get; set; }
         public string? UseExceptionHandler { get; set; } = null;
-        public bool UseHsts { get; set; } = true;
-        public bool UseHttpsRedirection { get; set; } = false;
-        public bool UseRewriter { get; set; } = true;
-        public bool UseRouting { get; set; } = true;
+        public bool UseHsts { get; set; }
+        public bool UseHttpsRedirection { get; set; }
+        public bool UseRewriter { get; set; }
+        public bool UseRouting { get; set; }
         internal List<StaticResponse>? Endpoints { get; set; }
 
         // From ImageflowConfig
