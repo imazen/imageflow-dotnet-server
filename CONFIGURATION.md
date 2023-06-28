@@ -1,10 +1,17 @@
 # TOML Configuration for Imageflow.Server.Host
 
-Hooray! You no longer need a build step to deploy Imageflow Server. We're publishing a precompiled project that uses Imageflow.Server.Configuration, and auto-restarts when you edit imageflow.toml (we hope).
+Hooray! You no longer need a build step to deploy Imageflow Server. We're publishing a precompiled project that uses Imageflow.Server.Configuration. 
 
 That said, having a repository with your configuration and some automated deploy/CI is still a GREAT idea, so you may copy/paste Imageflow.Server.Host into your own project, or use it as a reference for your own deployment. 
 
 **NOTE: This is a work-in-progress, bugs may exist, and error messages when you mess the config file up may be confusing. Please report any issues.**
+
+#### Known issues
+
+* Doesn't auto-restart when you edit imageflow.toml
+* env.HOME doesn't work on windows. Use env.TEMP instead for a good default image cache folder
+* app.wwwroot shouldn't be used, wwwroot isn't reliably defined and is just a bad idea with ASP.NET 7. Use '${app.approot}/public' instead.
+* No support for configuring S3 or Azure or remote HTTP sources yet. It's tricky to get just right and in an extensible way; I've supported &lt;resizer> in Web.config for 15 years, so I want to avoid breakage.
 
 ## General ASP.NET deployment help.
 
