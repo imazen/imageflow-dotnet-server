@@ -6,9 +6,12 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
-  <!-- Include when publishing: imageflow.toml -->
+  <!-- Include when publishing: imageflow.toml, images/robotcrush.png -->
   <ItemGroup>
     <Content Include="imageflow.toml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="images\robotcrush.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
@@ -24,5 +27,9 @@
     <ProjectReference Include="..\..\src\Imageflow.Server.Storage.RemoteReader\Imageflow.Server.Storage.RemoteReader.csproj" />
     <ProjectReference Include="..\..\src\Imageflow.Server.Storage.S3\Imageflow.Server.Storage.S3.csproj" />
     <ProjectReference Include="..\..\src\Imageflow.Server\Imageflow.Server.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="images/" />
   </ItemGroup>
 </Project>
