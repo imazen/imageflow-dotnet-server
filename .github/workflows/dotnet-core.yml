@@ -124,7 +124,7 @@ jobs:
 
     # If this is a release, upload it to the github release page using the git
     - name: Upload ${{env.HOST_ZIP_FILE}} to release
-      uses: Shopify/upload-to-release@v1
+      uses: Shopify/upload-to-release@v1.0.1
       if: steps.version.outputs.is_valid == 'true' && github.event_name == 'release'
       with:
         name: ${{env.HOST_ZIP_FILE}}
