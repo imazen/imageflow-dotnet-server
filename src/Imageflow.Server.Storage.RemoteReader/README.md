@@ -47,7 +47,8 @@ You can configure the [HttpClientHandler](https://docs.microsoft.com/en-us/dotne
 NOTE: This is a lambda that generates a new instance each time (note the `() => new ...`)
 
 NOTE: The `RemoteReaderServiceOptions.RedirectLimit` has been removed in favour of configuring the `HttpClientHandler` directly. 
-```
+
+```C#
 services.AddHttpClient(nameof(RemoteReaderService))
 .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
     {
@@ -68,7 +69,8 @@ services.AddImageflowRemoteReaderService(remoteReaderServiceOptions);
 
 ## Add a Retry Policy for Transient Errors 
 Adding the `Microsoft.Extensions.Http.Polly` nuget package to your project will make available the Polly ClientBuilderExtensions.
-```
+
+```C#
 services.AddHttpClient(nameof(RemoteReaderService))
     .AddTransientHttpErrorPolicy(builder => builder.RetryAsync());
 
@@ -84,7 +86,8 @@ services.AddImageflowRemoteReaderService(remoteReaderServiceOptions);
 
 ## Host-Specific Configuration
 The `HttpClientSelector` accepts a uri and is expected to retun the name of a configured http client. This simple example shows how you could add an `authorization` header for a specific remote host.
-```
+
+```C#
 services.AddHttpClient("TrickyHttpClient", config =>
 {
     config.DefaultRequestHeaders.Add("user-agent", "Tricky Client");

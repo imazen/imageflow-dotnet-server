@@ -1,0 +1,131 @@
+[imageflow_server] # must be valid TOML https://toml.io/en/ 
+config_schema = "1" # Breaking changes in new versions may require this to be incremented
+
+[license]
+enforcement = "watermark" # or http_402_error/http_422_error, for fast failures
+key = """
+[license key here]
+""" # triple-quoted strings can span multiple lines
+
+# ======  Caching to disk ======
+[disk_cache] # HybridCache
+enabled = true #required
+# Don't put this on high-latency network storage, it will be slow
+# Also cannot be inside an IIS website (unlike ImageResizer)
+folder = 'D:\hybridcache' # required
+cache_size_mb = 30_000           # Disk space usage limit in MB
+write_queue_ram_mb = 100          # How much RAM to permit for async writes
+
+# The number of shards to split the metabase into (default: 8)
+# More shards = more open write-ahead-log files, slower shutdown,
+# but less lock contention and faster cache hits
+database_shards = 8 # Manually delete the cache dir if you change this
+
+
+# ======  Diagnostics access ======
+# Prefix keys with 'production.', 'staging.', or 'development.' 
+# to merge with the appropriate section based on the current environment
+# Defaults to 'production' if DOTNET_ENVIRONMENT and ASPNETCORE_ENVIRONMENT are not set
+[diagnostics]
+# Access anywhere with /imageflow.debug?password=[[redacted]]
+allow_with_password = "[[redacted]]"
+# Allow localhost without a password
+allow_localhost = true
+
+# In development mode, allow any host without a password
+[development.diagnostics]
+allow_anyhost = true
+
+# ======  ASP.NET Server settings ======
+[aspnet_server]
+use_developer_exception_page = false # Don't leak error details to the public
+use_exception_handler = "/error"     # Use a custom error page (defined below)
+use_hsts = true                      # Allow no HTTP connections whatsoever
+use_https_redirection = true         # Redirect all HTTP requests to HTTPS, if any get through
+
+# ASP.NET supports IIS style rewrites and subset of the apache mod_rewrite syntax
+apache_mod_rewrite.text = """
+
+""" # Inline string of rewrites
+[aspnet_server.iis_url_rewrite]
+file = "${app_root}\\iis_rewrite.config" # Or specify a path
+
+
+# ===== ASP.NET Server settings in dev ======
+[development.aspnet_server]
+use_developer_exception_page = true # Error details in dev please
+use_hsts = false                    # Don't ban unencrypted HTTP in development
+use_https_redirection = false       # Or redirect to HTTPS
+
+
+# Variable interpolation is supported in 'strings ${vars.A}' and "like ${vars.B}${env.YOUR_ENV_VAR}${app.approot}" 
+# Use single-quote strings like 'this\for\paths' or "\\escape\\backslashes\\like\\this"
+[vars.vars."home2"]  # Var names are case-sensitive, and [A-Za-z0-9_-] only                       
+value = "${env.HOME}"                        # ${env.NAME} will inject the given env var. value is required.
+fallback = "${env.HOMEDRIVE}${env.HOMEPATH}" # Used if value is empty or has undefined variables
+folder_must_exist = true                     # Throw an error if the variable value isn't a folder that exists on disk
+file_must_exist = false
+secret = false                               # this defaults to false. true will ensure the value is redacted from /imageflow.debug
+
+# [vars] offers shorthand ways to define a variable with non-secret, folder-checking, file-checking, and secret-redaction enabled respectively. 
+# Use [[var]] if you need a fallback or to make a folder or file a secret
+[vars]
+vars.app_root = "${app.approot}"                  # The hosting app can provide vars too, like the app deployment root
+files.rewrites = "${app_root}\\rewrites.ini"   # Vars can reference other vars
+folders.ImageRoot = "C:\\Images"
+folders.CacheDrive = "D:\\"
+folders.ImageCache = "${folders.CacheDrive}\\ImageflowCache"
+folders.home = { "value" = "${env.HOME}", fallback = "${env.HOMEDRIVE}${env.HOMEPATH}", folder_must_exist = true, secret=false, file_must_exist = false }
+secrets.AzureBlobConnection = "DefaultEndpointsProtocol=https;AccountName=example;AccountKey=example;EndpointSuffix=core.windows.net"
+secrets.S3AccessID = "example"
+secrets.S3AccessKey = "example"
+
+# ======  Define Presets ?preset=name ======
+[presets]
+# Put quotes around presets that aren't just "[A-Za-z0-9_-]+"
+small.overrides = "width=400&height=400&mode=max"
+tiny.defaults = "width=200&height=200&mode=max"
+medium.overrides = "width=800&height=800&mode=max"
+"large!".overrides = "width=1200&height=1200&mode=max"
+
+
+[[static_response]]
+for = "/" # required
+content_type = "text/html" # required
+content = """<img src="fire-umbrella-small.jpg?width=450" />""" #required
+status_code = 200 # required
+respone_headers = [
+    { name = "Cache-Control", value = "public, max-age=2592000" },
+]
+
+[[static_response]]
+for = "/error"
+content_type = "text/html"
+cache_control = "no-cache"
+content = '<p>An error has occurred while processing the request.</p>'
+status_code = 500
+file = "/var/www/error.html"
+
+# ======  Define Routes ======
+[route_defaults]
+prefix_case_sensitive = true
+lowercase_path_remainder = false
+allow_extensionless_urls = false
+cache_control = "public, max-age=2592000"
+apply_default_commands = "quality=76&webp.quality=70&f.sharpen=23&down.filter=mitchell"
+apply_override_commands = ""
+
+[security.max_decode_resolution]
+width = 8000
+height = 8000
+megapixels = 40
+
+[security.max_encode_resolution]
+width = 8000
+height = 8000
+megapixels = 20
+
+[security.max_frame_resolution]
+width = 8000
+height = 8000
+megapixels = 40

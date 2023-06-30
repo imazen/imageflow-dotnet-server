@@ -91,6 +91,7 @@ namespace Imageflow.Server
             GlobalPerf.Singleton.SetInfoProviders(new List<IInfoProvider>(){globalInfoProvider});
         }
 
+        private string MakeWeakEtag(string cacheKey) => $"W/\"{cacheKey}\"";
         // ReSharper disable once UnusedMember.Global
         public async Task Invoke(HttpContext context)
         {
@@ -180,9 +181,11 @@ namespace Imageflow.Server
             {
                 cacheKey = await imageJobInfo.GetFastCacheKey();
                 
-                //TODO: W/"etag" should be used instead, since we might have to regenerate the result non-deterministically
+                // W/"etag" should be used instead, since we might have to regenerate the result non-deterministically while a client is downloading it with If-Range
+                // If-None-Match is supposed to be weak always
+                var etagHeader = MakeWeakEtag(cacheKey);
             
-                if (context.Request.Headers.TryGetValue(HeaderNames.IfNoneMatch, out var etag) && cacheKey == etag)
+                if (context.Request.Headers.TryGetValue(HeaderNames.IfNoneMatch, out var conditionalEtag) && etagHeader == conditionalEtag)
                 {
                     GlobalPerf.Singleton.IncrementCounter("etag_hit");
                     context.Response.StatusCode = StatusCodes.Status304NotModified;
@@ -302,7 +305,7 @@ namespace Imageflow.Server
                     {
                         throw new InvalidOperationException($"{typeName} returned cache entry with zero bytes");
                     }
-                    SetCachingHeaders(context, cacheKey);
+                    SetCachingHeaders(context, MakeWeakEtag(cacheKey));
                     await MagicBytes.ProxyToStream(cacheResult.Data, context.Response);
                 }
                 logger?.LogDebug("Serving from {CacheName} {VirtualPath}?{CommandString}", typeName, info.FinalVirtualPath, info.CommandString);
@@ -329,8 +332,7 @@ namespace Imageflow.Server
                     {
                         throw new InvalidOperationException("Image job returned zero bytes.");
                     }
-                    await stream.WriteAsync(result.ResultBytes.Array, result.ResultBytes.Offset,
-                        result.ResultBytes.Count,
+                    await stream.WriteAsync(result.ResultBytes,
                         CancellationToken.None);
                     await stream.FlushAsync();
                 }
@@ -356,39 +358,41 @@ namespace Imageflow.Server
 
             // Note that using estimated file extension instead of parsing magic bytes will lead to incorrect content-type
             // values when the source file has a mismatched extension.
-
+            var etagHeader = MakeWeakEtag(cacheKey);
             if (cacheResult.Data != null)
             {
                 if (cacheResult.Data.Length < 1)
                 {
                     throw new InvalidOperationException("DiskCache returned cache entry with zero bytes");
                 }
-                SetCachingHeaders(context, cacheKey);
+                SetCachingHeaders(context, etagHeader);
                 await MagicBytes.ProxyToStream(cacheResult.Data, context.Response);
             }
             else
             {
                 logger?.LogInformation("Serving {0}?{1} from disk cache {2}", info.FinalVirtualPath, info.CommandString, cacheResult.RelativePath);
-                await ServeFileFromDisk(context, cacheResult.PhysicalPath, cacheKey);
+                await ServeFileFromDisk(context, cacheResult.PhysicalPath, etagHeader);
             }
         }
 
-        private async Task ServeFileFromDisk(HttpContext context, string path, string etag)
+        private async Task ServeFileFromDisk(HttpContext context, string path, string etagHeader)
         {
             await using var readStream = File.OpenRead(path);
             if (readStream.Length < 1)
             {
                 throw new InvalidOperationException("DiskCache file entry has zero bytes");
             }
-            SetCachingHeaders(context, etag);
+            SetCachingHeaders(context, etagHeader);
             await MagicBytes.ProxyToStream(readStream, context.Response);
         }
         private async Task ProcessWithNoCache(HttpContext context, ImageJobInfo info)
         {
             // If we're not caching, we should always use the modified date from source blobs as part of the etag
-            
             var betterCacheKey = await info.GetExactCacheKey();
-            if (context.Request.Headers.TryGetValue(HeaderNames.IfNoneMatch, out var etag) && betterCacheKey == etag)
+            // Still use weak since recompression is non-deterministic
+            
+            var etagHeader = MakeWeakEtag(betterCacheKey);
+            if (context.Request.Headers.TryGetValue(HeaderNames.IfNoneMatch, out var conditionalEtag) && etagHeader == conditionalEtag)
             {
                 GlobalPerf.Singleton.IncrementCounter("etag_hit");
                 context.Response.StatusCode = StatusCodes.Status304NotModified;
@@ -408,29 +412,34 @@ namespace Imageflow.Server
                 // write to stream
                 context.Response.ContentType = contentType;
                 context.Response.ContentLength = imageBytes.Count;
-                SetCachingHeaders(context, betterCacheKey);
+                SetCachingHeaders(context, etagHeader);
 
                 if (imageBytes.Array == null)
                 {
                     throw new InvalidOperationException("Image job returned zero bytes.");
                 }
-                await context.Response.Body.WriteAsync(imageBytes.Array, imageBytes.Offset, imageBytes.Count);
+                await context.Response.Body.WriteAsync(imageBytes);
             }
             else
             {
                 logger?.LogInformation("Proxying image {VirtualPath} with params {CommandString}", info.FinalVirtualPath, info.CommandString);
                 GlobalPerf.Singleton.IncrementCounter("nocache_proxied");
                 await using var sourceStream = (await info.GetPrimaryBlob()).OpenRead();
-                SetCachingHeaders(context, betterCacheKey);
+                SetCachingHeaders(context, etagHeader);
                 await MagicBytes.ProxyToStream(sourceStream, context.Response);
             }
             
 
         }
 
-        private void SetCachingHeaders(HttpContext context, string etag)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="etagHeader">Should include W/</param>
+        private void SetCachingHeaders(HttpContext context, string etagHeader)
         {
-            context.Response.Headers[HeaderNames.ETag] = etag;
+            context.Response.Headers[HeaderNames.ETag] = etagHeader;
             if (options.DefaultCacheControlString != null)
                 context.Response.Headers[HeaderNames.CacheControl] = options.DefaultCacheControlString;
         }

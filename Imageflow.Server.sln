@@ -6,12 +6,12 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{A08DA97E-FCD2-4ACD-AC62-413A05BBDB0E}"
 	ProjectSection(SolutionItems) = preProject
 		.gitignore = .gitignore
-		appveyor.yml = appveyor.yml
 		.github\workflows\dotnet-core.yml = .github\workflows\dotnet-core.yml
 		LICENSE.txt = LICENSE.txt
 		README.md = README.md
 		src\NugetPackages.targets = src\NugetPackages.targets
 		Directory.Build.props = Directory.Build.props
+		CONFIGURATION.md = CONFIGURATION.md
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Imazen.Common", "src\Imazen.Common\Imazen.Common.csproj", "{49BDDBEE-3385-4B1D-B7C1-76A893F25C00}"
@@ -47,6 +47,12 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imazen.HybridCache.Benchmark", "tests\Imazen.HybridCache.Benchmark\Imazen.HybridCache.Benchmark.csproj", "{2BBE3D79-D552-498D-B29A-091932EBE8ED}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imageflow.Server.HybridCache", "src\Imageflow.Server.HybridCache\Imageflow.Server.HybridCache.csproj", "{D1ACF35D-469B-4AC9-804D-8A3FD87ECD5C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imageflow.Server.Configuration", "src\Imageflow.Server.Configuration\Imageflow.Server.Configuration.csproj", "{AC9863CA-16F9-49DA-A539-07B2AA290D0D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imageflow.Server.Host", "src\Imageflow.Server.Host\Imageflow.Server.Host.csproj", "{A690C458-B22D-4AC0-AE3E-F20A2B70A94C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imageflow.Server.Configuration.Tests", "tests\Imageflow.Server.Configuration.Tests\Imageflow.Server.Configuration.Tests.csproj", "{200CD4DA-C49B-413B-8FCF-8DA73A2803E0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -122,6 +128,18 @@ Global
 		{D1ACF35D-469B-4AC9-804D-8A3FD87ECD5C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D1ACF35D-469B-4AC9-804D-8A3FD87ECD5C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D1ACF35D-469B-4AC9-804D-8A3FD87ECD5C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AC9863CA-16F9-49DA-A539-07B2AA290D0D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AC9863CA-16F9-49DA-A539-07B2AA290D0D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AC9863CA-16F9-49DA-A539-07B2AA290D0D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AC9863CA-16F9-49DA-A539-07B2AA290D0D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A690C458-B22D-4AC0-AE3E-F20A2B70A94C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A690C458-B22D-4AC0-AE3E-F20A2B70A94C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A690C458-B22D-4AC0-AE3E-F20A2B70A94C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A690C458-B22D-4AC0-AE3E-F20A2B70A94C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{200CD4DA-C49B-413B-8FCF-8DA73A2803E0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{200CD4DA-C49B-413B-8FCF-8DA73A2803E0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{200CD4DA-C49B-413B-8FCF-8DA73A2803E0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{200CD4DA-C49B-413B-8FCF-8DA73A2803E0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

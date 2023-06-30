@@ -1,0 +1,74 @@
+[imageflow_server]
+config_schema = 1
+
+[license]
+enforcement = "watermark" # or http_402_error/http_422_error, for fast failures
+key = """ """
+
+[route_defaults]
+prefix_case_sensitive = true
+lowercase_path_remainder = false
+allow_extensionless_urls = false
+cache_control = "public, max-age=2592000"
+apply_default_commands = "quality=76&webp.quality=70&f.sharpen=23&down.filter=mitchell"
+
+[[routes]]
+prefix = '/images/'
+map_to_physical_folder='D:\images\'
+
+[disk_cache]
+enabled = true
+folder = 'D:\ImageflowCache'
+cache_size_mb = 30_000 
+write_queue_ram_mb = 100 
+database_shards = 8
+
+[diagnostics]
+allow_with_password = "[[redacted]]"
+allow_localhost = true
+
+[development.diagnostics]
+allow_anyhost = true
+
+[aspnet_server]
+use_developer_exception_page = false # Don't leak error details to the public
+use_exception_handler = "/error"     # Use a custom error page (defined below)
+use_hsts = true                      # Allow no HTTP connections whatsoever
+use_https_redirection = true         # Redirect all HTTP requests to HTTPS, if any get through
+
+[aspnet_server.apache_mod_rewrite]
+file = "${app.approot}\\rewrites.ini"
+
+[development.aspnet_server]
+use_developer_exception_page = true # Error details in dev please
+use_hsts = false                    # Don't ban unencrypted HTTP in development
+use_https_redirection = false       # Or redirect to HTTPS
+
+[[static_response]]
+for = "/error"
+status_code = 500
+cache_control = "no-cache"
+content_type = "text/html"
+content = '<p>An error has occurred while processing the request.</p>'
+
+[[static_response]]
+for = "/error2"
+cache_control = "no-cache"
+content_type = "text/html"
+status_code = 500
+file = "/var/www/error.html"
+
+[security.max_decode_resolution]
+width = 8000
+height = 8000
+megapixels = 40
+
+[security.max_encode_resolution]
+width = 8000
+height = 8000
+megapixels = 20
+
+[security.max_frame_resolution]
+width = 8000
+height = 8000
+megapixels = 40

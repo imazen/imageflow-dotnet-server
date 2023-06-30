@@ -59,7 +59,7 @@ namespace Imageflow.Server
             else
             {
                 s =
-                    "You can configure access to this page via ImageflowMiddlewareOptions.SetDiagnosticsPageAccess(allowLocalhost, password)\r\n\r\n";
+                    "You can configure access to this page via the imageflow.toml [diagnostics] section, or in C# via ImageflowMiddlewareOptions.SetDiagnosticsPageAccess(allowLocalhost, password)\r\n\r\n";
                 if (options.DiagnosticsAccess == AccessDiagnosticsFrom.LocalHost)
                 {
                     s += "You can access this page from the localhost\r\n\r\n";
@@ -75,7 +75,7 @@ namespace Imageflow.Server
                 }
                 else
                 {
-                    s += "You can set a password via SetDiagnosticsPageAccess to access this page remotely.\r\n\r\n";
+                    s += "You can set a password via imageflow.toml [diagnostics] allow_with_password='' or in C# with SetDiagnosticsPageAccess to access this page remotely.\r\n\r\n";
                 }
                 context.Response.StatusCode = 401; //Unauthorized
             }

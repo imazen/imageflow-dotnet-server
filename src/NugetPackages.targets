@@ -17,4 +17,15 @@
     <ItemGroup>
         <None Include="..\icon.png" Pack="true" PackagePath=""/>
     </ItemGroup>
+
+
+    <PropertyGroup>
+        <IntermediateOutputPath>$(MSBuildThisFileDirectory)..\obj\$(Configuration)</IntermediateOutputPath>
+        <OutputPath>$(MSBuildThisFileDirectory)..\bin\$(Configuration)</OutputPath>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="!$(MSBuildProjectName.EndsWith('Tests'))">
+        <UseCommonOutputDirectory>true</UseCommonOutputDirectory>
+    </PropertyGroup>
+
 </Project>

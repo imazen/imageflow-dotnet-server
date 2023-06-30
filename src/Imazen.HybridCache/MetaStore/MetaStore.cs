@@ -93,6 +93,11 @@ namespace Imazen.HybridCache.MetaStore
             return shards[shard].GetContentType(relativePath);
         }
 
+        public Task<ICacheDatabaseRecord> GetRecord(int shard, string relativePath)
+        {
+            return shards[shard].GetRecord(relativePath);
+        }
+
         public int EstimateRecordDiskSpace(int stringLength)
         {
             return Shard.GetLogBytesOverhead(stringLength);

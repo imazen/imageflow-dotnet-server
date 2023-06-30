@@ -49,9 +49,24 @@ jobs:
     - name: Set the release version (if applicable)
       run: |
         echo "TAGGED_VERSION=${{ steps.version.outputs.full_without_prefix }}" >> $GITHUB_ENV
+        echo "ARTIFACT_VERSION=${{ steps.version.outputs.full_without_prefix }}" >> $GITHUB_ENV
         echo Set version to ${{ steps.version.outputs.full_without_prefix }}
       shell: bash
       if: steps.version.outputs.is_valid == 'true' && github.event_name == 'release'
+
+      # If ARTIFACT_VERSION is empty, then we're not on a release, so we'll use the commit hash
+    - name: Set the artifact version if not a release
+      run: |
+        echo "ARTIFACT_VERSION=commit-${{ github.sha }}" >> $GITHUB_ENV
+        echo Set ARTIFACT_VERSION to commit-${{ github.sha }}
+      shell: bash
+      if: steps.version.outputs.is_valid == 'false' || github.event_name != 'release'
+
+    - name: Set the Imageflow.Server.Host zip file name
+      run: |
+        echo "HOST_ZIP_FILE=Imageflow.Server.Host-${{matrix.os}}-${{ env.ARTIFACT_VERSION }}.zip" >> $GITHUB_ENV
+        echo Set HOST_ZIP_FILE to ${{ env.HOST_ZIP_FILE }}
+      shell: bash
 
     - name: Check .NET versions available to see if we can skip install
       shell: bash
@@ -60,13 +75,13 @@ jobs:
         dotnet --list-sdks >> $GITHUB_ENV
         echo "EOF" >> $GITHUB_ENV
       
-    - name: Setup .NET Core 3.1.x and 6.0.x
+    - name: Setup .NET 6.0.x and 7.0.x
       uses: actions/setup-dotnet@v2
-      if: contains(env.DOTNET_VERSION_LIST, '6.0.') == 'false' || contains(env.DOTNET_VERSION_LIST, '3.1.') == 'false'
+      if: contains(env.DOTNET_VERSION_LIST, '6.0') == 'false' || contains(env.DOTNET_VERSION_LIST, '7.0.') == 'false'
       with:
         dotnet-version: |
-          3.1.x
-          6.0.x
+          6
+          7
 
     - name: Clear & clean on release or cache miss
       run: |
@@ -75,7 +90,7 @@ jobs:
       if: steps.cache.outputs.cache-hit != 'true' || github.event_name == 'release'
       
     - name: Restore packages
-      run: dotnet restore
+      run: dotnet restore --force-evaluate
       
     - name: Build
       run: dotnet build --maxcpucount:1 -c Release
@@ -86,8 +101,39 @@ jobs:
     - uses: actions/upload-artifact@v3
       if: failure()
       with:
-        name: TestResults-${{matrix.os}}
+        name: TestResults-${{matrix.os}}-${{ env.ARTIFACT_VERSION }}
         path: TestResults/
+
+    - name: Publish Host App
+      run: dotnet publish -c Release -o host/publish/ src/Imageflow.Server.Host/Imageflow.Server.Host.csproj
+
+    # Zip the contents of folder host/publish/ into host/Imageflow.Server.Host-${{matrix.os}}-${{ env.ARTIFACT_VERSION }}.zip
+    - name: Zip Server.Host
+      uses: thedoctor0/zip-release@0.7.1
+      with:
+        type: 'zip'
+        directory: 'host/publish/'
+        filename: '../${{env.HOST_ZIP_FILE}}'
+        path: '.'
+
+    # Upload the publish folder for src/Imageflow.Server.Host to the release artifacts
+    - name: Upload Imageflow.Server.Host to artifacts
+      uses: actions/upload-artifact@v3
+      if: success()
+      with:
+        name: ${{env.HOST_ZIP_FILE}}
+        path: host/${{env.HOST_ZIP_FILE}}
+
+    # If this is a release, upload it to the github release page using the git
+    - name: Upload Imageflow.Server.Host to release
+      uses: Shopify/upload-to-release@v1.0.1
+      if: steps.version.outputs.is_valid == 'true' && github.event_name == 'release'
+      with:
+        name: ${{env.HOST_ZIP_FILE}}
+        path: host/${{env.HOST_ZIP_FILE}}
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        content-type: application/zip
+      
       
     - name: Pack
       run: dotnet pack -c Release --include-source

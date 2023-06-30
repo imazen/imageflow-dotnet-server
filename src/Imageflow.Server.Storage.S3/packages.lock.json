@@ -4,11 +4,11 @@
     ".NETStandard,Version=v2.0": {
       "AWSSDK.S3": {
         "type": "Direct",
-        "requested": "[3.7.9.62, )",
-        "resolved": "3.7.9.62",
-        "contentHash": "6WCeK8/U0VzpW3pxdjqejvPozKPZ+lEd2gVLaAkgLbP9uRHTDuoCrWTgYFvkDeSJJL4F0DTgYRyjwNaGFXoW3w==",
+        "requested": "[3.7.101.49, )",
+        "resolved": "3.7.101.49",
+        "contentHash": "GN0pFLWqDe53UDbMEtZ4RkU64+mtJS4OsADemJ0TTaUlLhH5xJCkj5nhTa7eFG3tiIKbtdeMDUPhX47F3+UimQ==",
         "dependencies": {
-          "AWSSDK.Core": "[3.7.13.13, 4.0.0)"
+          "AWSSDK.Core": "[3.7.103.11, 4.0.0)"
         }
       },
       "Microsoft.SourceLink.GitHub": {
@@ -32,8 +32,8 @@
       },
       "AWSSDK.Core": {
         "type": "Transitive",
-        "resolved": "3.7.13.13",
-        "contentHash": "q/d45lJuJywgOgIsKuQnDMDUnxH0HkydI8jVSGgYBthFzRubYa2tKa3qbV+yl2xTvebCzA9Qyv2/jWXGWejMOA==",
+        "resolved": "3.7.103.11",
+        "contentHash": "twTMAAOA4ztiVtfrq2ZiRUmSnt2CW3DZwGvlbcftM6Dbsc2VGWE/hWv1Rl6GfKpEbrJxkW+FmG2o27XRTg8lqA==",
         "dependencies": {
           "Microsoft.Bcl.AsyncInterfaces": "1.1.0"
         }
@@ -143,7 +143,7 @@
       "imazen.common": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.Extensions.Hosting.Abstractions": "2.2.0"
+          "Microsoft.Extensions.Hosting.Abstractions": "[2.2.0, )"
         }
       }
     }

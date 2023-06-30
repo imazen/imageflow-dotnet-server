@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net7.0</TargetFramework>
+        <LangVersion>11</LangVersion>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <IsPackable>true</IsPackable>
+    </PropertyGroup>
+
+    <Import Project="..\NugetPackages.targets" />
+
+
+    <ItemGroup>
+        <PackageReference Include="Tomlyn" Version="0.16.2" />
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\Imazen.Common\Imazen.Common.csproj" />
+      <ProjectReference Include="..\Imageflow.Server\Imageflow.Server.csproj" />
+      <ProjectReference Include="..\Imageflow.Server.HybridCache\Imageflow.Server.HybridCache.csproj" />
+
+    </ItemGroup>
+    <ItemGroup>
+      <Folder Include="Future/" />
+    </ItemGroup>
+
+    <!-- InternalsVisibleTo tests -->
+    <ItemGroup>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+            <_Parameter1>Imageflow.Server.Configuration.Tests</_Parameter1>
+        </AssemblyAttribute>
+    </ItemGroup>
+</Project>

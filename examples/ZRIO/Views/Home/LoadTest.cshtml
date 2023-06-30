@@ -1,0 +1,8 @@
+﻿@{ ViewData["Title"] = "Home Page"; }
+
+<h1 class="display-4">Load test</h1>
+<p>Note: this page tends to crash Chrome. May we suggest Firefox instead?</p>
+<div style="line-height:3px">
+@foreach (var x in (List<string>)ViewData.Model)
+{<img width="3" height="3" src="@x" alt="" />}
+</div>

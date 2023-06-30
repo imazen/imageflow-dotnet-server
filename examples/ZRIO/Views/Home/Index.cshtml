@@ -1,0 +1,23 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+
+<h1 class="display-4">Test tiny image</h1>
+<img srcset="/images/fire-umbrella-small.jpg?width=300,
+             /images/fire-umbrella-small.jpg?width=450 1.5x,
+             /images/fire-umbrella-small.jpg 2x"
+     src="~/images/fire-umbrella-small.jpg" alt="fire umbrella" />
+
+<h2>Test webp encoding</h2>
+<img srcset="/images/fire-umbrella-small.jpg?width=300&format=webp,
+             /images/fire-umbrella-small.jpg?width=450&format=webp 1.5x,
+             /images/fire-umbrella-small.jpg?format=webp 2x"
+     src="~/images/fire-umbrella-small.jpg" alt="fire umbrella" />
+
+
+<h2> Test watermarking</h2>
+<img srcset="/images/fire-umbrella-small.jpg?width=300&watermark=imazen,
+             /images/fire-umbrella-small.jpg?width=450&watermark=imazen 1.5x,
+             /images/fire-umbrella-small.jpg?watermark=imazen 2x"
+     src="~/images/fire-umbrella-small.jpg" alt="fire umbrella" />

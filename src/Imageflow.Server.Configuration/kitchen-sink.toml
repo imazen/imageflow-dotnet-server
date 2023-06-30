@@ -1,0 +1,108 @@
+
+
+# ======  Define Image Sources ======
+[[source]]
+name = "fs" # name is required
+[sources.filesystem] # one of .filesystem, .s3, .http_client, .azure_blob, .remote_reader_signed, .are required.
+fix_slashes = true
+slash = "/"
+root = "${vars.ImageRoot}" # required for .filesystem
+
+[[source]]
+name = "s3-east"
+[sources.s3]
+region = "us-east-1" # required
+endpoint = "https://s3.amazonaws.com"
+access_key_id = "${vars.S3AccessID}" # required
+access_key_secret = "${vars.S3AccessKey}" # required
+
+
+[[source]]
+name = "client1"
+[sources.http_client]
+max_redirections = 6 # Max redirects to follow (0 to prevent redirections)
+max_connections = 16 # Max simultaneous connections to the same host - increase unless you hit problems
+max_retries = 3 # Max retries per request w/ jitter ttps://github.com/App-vNext/Polly/wiki/Retry-with-jitter
+initial_retry_ms = 100 # Initial retry delay in milliseconds
+require_https = true # Require HTTPS for all requests (TODO: implement)
+allowed_domains = ["*.example.com", "example.com"] # Allow requests to these domains (TODO: implement)
+blocked_domains = ["*.example.org", "example.org"] # Block requests to these domains (TODO: implement)
+# TODO - also implement a timeout, and a max response size, and magic byte verification
+# TODO - also allow allowlisting domains
+request_headers = [
+    # { name = "Accept-Encoding", value = "gzip, deflate, br" },
+    { name = "User-Agent", value = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36" },
+    #{ name = "Accept", value = "image/webp,image/apng,*/*;q=0.8"}
+    { name = "Authorization", value = "image/webp,image/apng,*/*;q=0.8" },
+]
+
+[[source]]
+name="remote-signed"
+[sources.remote_reader_signed]
+http_client="client1"
+# Signing keys are case-sensitive - and different from full URL signing
+# Using a secret key, you can ensure that only specific URLs can be requested
+signing_keys = [
+    "${signing_key_1}",
+    "signing_key_2",
+] 
+
+[[source]]
+name = "azure"
+[sources.azure_blob]
+connection_string = "${AzureBlobConnection}"
+
+# ======  Define Routes ======
+[route_defaults]
+
+# Require a signature for all requests to this route
+require_signature = "never"
+
+# /images/ goes to the filesystem
+[[route]]
+source.name = "fs" # required for all routes
+source.path = "products"
+
+[[route]]
+source.name = "s3-east"
+source.container = "test-images"
+source.path = "images"
+require_signature = "always"
+
+[[route]]
+source.name = "http"
+
+
+[[watermark]]
+name = "logo" #required
+virtual_path = "/images/logo.png" #required
+opacity = 1.0
+align_x_percent = 100.0
+align_y_percent = 100.0
+# Don't show watermarks on images < this size
+min_canvas_width = 0                                                                    
+min_canvas_height = 0
+# fit, within (downscale only), fit_crop, within_crop, distort
+fit_mode = "fit"                                                                        
+fit_box_percent = { relative_to = "image", x1 = 0.0, y1 = 0.0, x2 = 100.0, y2 = 100.0 }
+sharpen_percent = 12
+up_filter = "lanczos3"
+down_filter = "mitchell"
+
+[[watermark]]
+name = "promo"
+virtual_path = "/images/promo.png"
+opacity = 1.0
+align_x_percent = 0.0
+align_y_percent = 0.0
+min_canvas_width = 0                                                                  
+min_canvas_height = 0
+fit_mode = "within"                                                       
+sharpen_percent = 22
+up_filter = "lanczos3"
+down_filter = "mitchell"
+fit_box_margins = { relative_to = "canvas", left = 0, top = 0, right = 0, bottom = 0 }
+
+
+[security]
+only_permit_presets = false # true = Don't allow use of arbitrary commands, only ?preset=name

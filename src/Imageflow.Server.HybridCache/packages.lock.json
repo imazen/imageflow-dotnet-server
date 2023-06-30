@@ -1,7 +1,7 @@
 {
   "version": 1,
   "dependencies": {
-    ".NETCoreApp,Version=v3.1": {
+    "net6.0": {
       "Microsoft.Extensions.Hosting.Abstractions": {
         "type": "Direct",
         "requested": "[2.2.0, )",
@@ -82,13 +82,13 @@
       "imazen.common": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.Extensions.Hosting.Abstractions": "2.2.0"
+          "Microsoft.Extensions.Hosting.Abstractions": "[2.2.0, )"
         }
       },
       "imazen.hybridcache": {
         "type": "Project",
         "dependencies": {
-          "Imazen.Common": "0.1.0--notset"
+          "Imazen.Common": "[0.1.0--notset, )"
         }
       }
     }

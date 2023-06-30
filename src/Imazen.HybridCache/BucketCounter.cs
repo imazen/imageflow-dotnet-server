@@ -104,7 +104,10 @@ namespace Imazen.HybridCache
 
         public int GetHash(byte[] bytes)
         {
-            using (var sha1 = new SHA1Managed())
+            // Since this class is about approximation
+            // We should probably use something even faster
+            // This is not cryptographic or security-relevant
+            using (var sha1 = SHA1.Create())
             {
                 var hash = sha1.ComputeHash(bytes);
                 var index = BitConverter.ToUInt32(hash, 16);

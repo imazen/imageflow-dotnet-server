@@ -31,6 +31,9 @@ namespace Imazen.HybridCache
         {
             public Stream Data { get; set; }
             public string ContentType { get; set; }
+
+            public DateTime? CreatedAt { get; set; }
+
             public string Status => Detail.ToString();
             
             public AsyncCacheDetailResult Detail { get; set; }
@@ -134,7 +137,7 @@ namespace Imazen.HybridCache
             return null;
         }
 
-        private async Task<AsyncCacheResult> TryWaitForLockedFile(CacheEntry entry, string contentType, CancellationToken cancellationToken)
+        private async Task<AsyncCacheResult> TryWaitForLockedFile(CacheEntry entry, ICacheDatabaseRecord record, CancellationToken cancellationToken)
         {
             FileStream openedStream = null;
             var waitTime = Stopwatch.StartNew();
@@ -153,7 +156,8 @@ namespace Imazen.HybridCache
                 return new AsyncCacheResult
                 {
                     Detail = AsyncCacheDetailResult.ContendedDiskHit,
-                    ContentType = contentType,
+                    ContentType = record?.ContentType,
+                    CreatedAt = record?.CreatedAt,
                     Data = openedStream
                 };
             }
@@ -161,15 +165,15 @@ namespace Imazen.HybridCache
             return null;
         }
 
-        private async Task<AsyncCacheResult> TryGetFileBasedResult(CacheEntry entry, bool waitForFile, bool retrieveContentType, CancellationToken cancellationToken)
+        private async Task<AsyncCacheResult> TryGetFileBasedResult(CacheEntry entry, bool waitForFile, bool retrieveAttributes, CancellationToken cancellationToken)
         {
             if (!File.Exists(entry.PhysicalPath)) return null;
             
             if (cancellationToken.IsCancellationRequested)
                 throw new OperationCanceledException(cancellationToken);
 
-            var contentType = retrieveContentType
-                ? await CleanupManager.GetContentType(entry, cancellationToken)
+            var record = retrieveAttributes
+                ? await CleanupManager.GetRecordReference(entry, cancellationToken)
                 : null;
 
             if (cancellationToken.IsCancellationRequested)
@@ -180,7 +184,8 @@ namespace Imazen.HybridCache
                 return new AsyncCacheResult
                 {
                     Detail = AsyncCacheDetailResult.DiskHit,
-                    ContentType = contentType,
+                    ContentType = record?.ContentType,
+                    CreatedAt = record?.CreatedAt,
                     Data = new FileStream(entry.PhysicalPath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096,
                         FileOptions.Asynchronous | FileOptions.SequentialScan)
                 };
@@ -193,7 +198,7 @@ namespace Imazen.HybridCache
             {
                 if (!waitForFile) return null;
 
-                return await TryWaitForLockedFile(entry, contentType, cancellationToken);
+                return await TryWaitForLockedFile(entry, record, cancellationToken);
             }
 
             catch (IOException ioException)
@@ -202,7 +207,7 @@ namespace Imazen.HybridCache
                 
                 if (IsFileLocked(ioException))
                 {
-                    return await TryWaitForLockedFile(entry, contentType, cancellationToken);
+                    return await TryWaitForLockedFile(entry, record, cancellationToken);
                 }
                 else
                 {
@@ -278,6 +283,7 @@ namespace Imazen.HybridCache
                     if (existingQueuedWrite != null)
                     {
                         cacheResult.Data = existingQueuedWrite.GetReadonlyStream();
+                        cacheResult.CreatedAt = null; // Hasn't been written yet
                         cacheResult.ContentType = existingQueuedWrite.ContentType;
                         cacheResult.Detail = AsyncCacheDetailResult.MemoryHit;
                         return;
@@ -308,6 +314,7 @@ namespace Imazen.HybridCache
 
                     cacheResult.Detail = AsyncCacheDetailResult.Miss;
                     cacheResult.ContentType = w.ContentType;
+                    cacheResult.CreatedAt = null; // Hasn't been written yet.
                     cacheResult.Data = w.GetReadonlyStream();
 
                     // Create a lambda which we can call either in a spawned Task (if enqueued successfully), or
@@ -451,6 +458,8 @@ namespace Imazen.HybridCache
                     
                     cacheResult.Detail = AsyncCacheDetailResult.QueueLockTimeoutAndCreated;
                     cacheResult.ContentType = cacheInputEntry.ContentType;
+                    cacheResult.CreatedAt = null; //Hasn't been written yet
+                    
                     cacheResult.Data = new MemoryStream(cacheInputEntry.Bytes.Array ?? throw new NullReferenceException(), 
                         cacheInputEntry.Bytes.Offset, cacheInputEntry.Bytes.Count, false, true);
                 }
