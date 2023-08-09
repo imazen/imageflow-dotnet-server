@@ -101,6 +101,7 @@ internal class RouteBase : ITomlMetadataProvider, IValidationCapable
    // public RouteSource? Source { get; set; }
     public string? CacheControl { get; set; }
     public string? ApplyDefaultCommands { get; set; }
+    public bool? ApplyDefaultCommandsToQuerylessUrls { get; set; }
     // public string? ApplyOverrideCommands { get; set; }
     // public string? RequireSignature { get; set; }
 

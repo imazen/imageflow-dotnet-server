@@ -55,7 +55,8 @@ namespace Imageflow.Server
 
 
         internal readonly Dictionary<string, string> CommandDefaults = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        
+        public bool ApplyDefaultCommandsToQuerylessUrls { get; set; } = false;
+
         internal readonly Dictionary<string, PresetOptions> Presets = new Dictionary<string, PresetOptions>(StringComparer.OrdinalIgnoreCase);
         
         internal readonly List<ExtensionlessPath> ExtensionlessPaths = new List<ExtensionlessPath>();
@@ -240,6 +241,17 @@ namespace Imageflow.Server
         public ImageflowMiddlewareOptions SetDefaultCacheControlString(string cacheControlString)
         {
             DefaultCacheControlString = cacheControlString;
+            return this;
+        }
+
+        /// <summary>
+        /// Set to true have the command defaults to all urls, not just ones containing a valid query command.
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public ImageflowMiddlewareOptions SetApplyDefaultCommandsToQuerylessUrls(bool value)
+        {
+            this.ApplyDefaultCommandsToQuerylessUrls = value;
             return this;
         }
     }
