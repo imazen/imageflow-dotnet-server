@@ -87,6 +87,7 @@ public class MinimalTomlTest
      {"ImageflowMiddlewareOptions.MapWebRoot", "False"},
      {"ImageflowMiddlewareOptions.UsePresetsExclusively", "False"},
      {"ImageflowMiddlewareOptions.DefaultCacheControlString", "public, max-age=20"},
+     {"ImageflowMiddlewareOptions.ApplyDefaultCommandsToQuerylessUrls", "True"},
      {"ImageflowMiddlewareOptions.RequestSignatureOptions", "null"},
      {"ImageflowMiddlewareOptions.JobSecurityOptions.MaxDecodeSize.MaxWidth", "12000"},
      {"ImageflowMiddlewareOptions.JobSecurityOptions.MaxDecodeSize.MaxHeight", "12000"},
@@ -135,6 +136,7 @@ public class MinimalTomlTest
      {"ImageflowMiddlewareOptions.MapWebRoot", "False"},
      {"ImageflowMiddlewareOptions.UsePresetsExclusively", "False"},
      {"ImageflowMiddlewareOptions.DefaultCacheControlString", "public, max-age=20"},
+     {"ImageflowMiddlewareOptions.ApplyDefaultCommandsToQuerylessUrls", "True"},
      {"ImageflowMiddlewareOptions.RequestSignatureOptions", "null"},
      {"ImageflowMiddlewareOptions.JobSecurityOptions.MaxDecodeSize.MaxWidth", "12000"},
      {"ImageflowMiddlewareOptions.JobSecurityOptions.MaxDecodeSize.MaxHeight", "12000"},
@@ -183,6 +185,7 @@ public class MinimalTomlTest
      {"ImageflowMiddlewareOptions.MapWebRoot", "False"},
      {"ImageflowMiddlewareOptions.UsePresetsExclusively", "False"},
      {"ImageflowMiddlewareOptions.DefaultCacheControlString", "public, max-age=20"},
+     {"ImageflowMiddlewareOptions.ApplyDefaultCommandsToQuerylessUrls", "True"},
      {"ImageflowMiddlewareOptions.RequestSignatureOptions", "null"},
      {"ImageflowMiddlewareOptions.JobSecurityOptions.MaxDecodeSize.MaxWidth", "12000"},
      {"ImageflowMiddlewareOptions.JobSecurityOptions.MaxDecodeSize.MaxHeight", "12000"},
@@ -232,6 +235,7 @@ prefix_case_sensitive = false
 lowercase_path_remainder = true
 cache_control = "public, max-age=20"
 apply_default_commands = "quality=76"
+apply_default_commands_to_queryless_urls = true
 
 [[routes]]
 prefix = '/images/'
