@@ -11,6 +11,7 @@ lowercase_path_remainder = false
 allow_extensionless_urls = false
 cache_control = "public, max-age=2592000"
 apply_default_commands = "quality=76&webp.quality=70&f.sharpen=23&down.filter=mitchell"
+apply_default_commands_to_queryless_urls = false
 
 [[routes]]
 prefix = '/images/'

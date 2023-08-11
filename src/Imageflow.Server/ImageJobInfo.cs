@@ -219,7 +219,7 @@ namespace Imageflow.Server
             }
 
             // Set defaults if keys are missing, but at least 1 supported key is present
-            if (PathHelpers.SupportedQuerystringKeys.Any(args.Query.ContainsKey))
+            if (middlewareOptions.ApplyDefaultCommandsToQuerylessUrls || PathHelpers.SupportedQuerystringKeys.Any(args.Query.ContainsKey))
             {
                 foreach (var pair in middlewareOptions.CommandDefaults)
                 {
