@@ -14,7 +14,7 @@
   </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Imageflow.Server" Version="0.8.1" />
+      <PackageReference Include="Imageflow.Server" Version="0.8.2" />
       <PackageReference Include="Imageflow.Server.HybridCache" Version="0.8.1" />
       <PackageReference Include="Imageflow.Server.Storage.RemoteReader" Version="0.8.1" />
       <PackageReference Include="Imageflow.Server.Storage.AzureBlob" Version="0.8.1" />
