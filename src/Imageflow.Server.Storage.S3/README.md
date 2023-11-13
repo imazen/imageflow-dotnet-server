@@ -57,3 +57,8 @@ services.AddImageflowS3Service(new S3ServiceOptions()
 
 ## Reference
 https://docs.aws.amazon.com/sdk-for-net/v3/developer-guide/net-dg-config-netcore.html
+
+
+## Caching
+
+When using the cache-to-bucket feature, changing the credentials to a different user/owner can break access to the cache if you do not configure the cache bucket(s) to allow the new credentials access.

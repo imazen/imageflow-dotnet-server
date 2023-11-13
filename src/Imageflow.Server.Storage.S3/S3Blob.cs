@@ -2,10 +2,11 @@
 using System.IO;
 using Amazon.S3.Model;
 using Imazen.Common.Storage;
+using Imazen.Common.Storage.Caching;
 
 namespace Imageflow.Server.Storage.S3
 {
-    internal class S3Blob :IBlobData, IDisposable
+    internal class S3Blob : IBlobData, IDisposable, ICacheBlobData, ICacheBlobDataExpiry
     {
         private readonly GetObjectResponse response;
 
@@ -16,6 +17,10 @@ namespace Imageflow.Server.Storage.S3
 
         public bool? Exists => true;
         public DateTime? LastModifiedDateUtc => response.LastModified.ToUniversalTime();
+
+        public DateTimeOffset? EstimatedExpiry => response.Expiration?.ExpiryDateUtc;
+
+
         public Stream OpenRead()
         {
             return response.ResponseStream;
