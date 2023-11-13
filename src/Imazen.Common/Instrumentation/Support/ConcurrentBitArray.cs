@@ -14,7 +14,7 @@ namespace Imazen.Common.Instrumentation.Support
 
         public int BitCount => _bitCount;
 
-        public int ByteCount => _data.Length / 8;
+        public int ByteCount => BitCount / 8;
         public ConcurrentBitArray(int bitCount)
         {
             // must be a multiple of 8
@@ -51,13 +51,17 @@ namespace Imazen.Common.Instrumentation.Support
             {
                 throw new ArgumentException($"Invalid input span size - must match the number of bytes in the ConcurrentBitArray {bytes.Length} != {ByteCount}");
             }
-            MemoryMarshal.Cast<byte, long>(bytes).CopyTo(_data);
+            // We want to overwrite the long array with bytes in the same order as the bytes in the span.
+            // little-endian
+
         }
 
 
         public byte[] ToBytes()
         {
-            byte[] bytes = new byte[_data.Length * 8];
+            byte[] bytes = new byte[ByteCount];
+            // Convert the long array to bytes in little endian, without using BlockCopy
+            if (ByteCount > Buffer.ByteLength(_data)) throw new Exception($"Buffer is too small, {ByteCount} > {Buffer.ByteLength(_data)}");
             Buffer.BlockCopy(_data, 0, bytes, 0, bytes.Length);
             return bytes;
         }
@@ -95,8 +99,10 @@ namespace Imazen.Common.Instrumentation.Support
                 throw new ArgumentOutOfRangeException(nameof(index), $"Index must be between 0 and {_bitCount - 1}");
             }
             int arrayIndex = index / 64;
+            int byteSubIndex = (index % 64) / 8;
+            int bitSubIndex = index % 8;
             // Reverse for little endian so the raw bytes make sense.
-            long bitMask = 1L << (63 - (index % 64));
+            long bitMask = 1L << (56 - (byteSubIndex * 8) + bitSubIndex);
             return (_data[arrayIndex] & bitMask) != 0;
         }
 
@@ -108,7 +114,10 @@ namespace Imazen.Common.Instrumentation.Support
                 throw new ArgumentOutOfRangeException(nameof(index), $"Index must be between 0 and {_bitCount - 1}");
             }
             int arrayIndex = index / 64;
-            long bitMask = 1L << (63 - (index % 64));
+            int byteSubIndex = (index % 64) / 8;
+            int bitSubIndex = index % 8;
+            // Reverse for little endian so the raw bytes make sense.
+            long bitMask = 1L << (56 - (byteSubIndex * 8) + bitSubIndex);
             long oldValue, newValue;
             do
             {
