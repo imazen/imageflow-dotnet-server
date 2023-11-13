@@ -4,6 +4,8 @@
     <Title>Imageflow.Common - Interfaces and utilites shared by Imageflow and ImageResizer.</Title>
     <IsPackable>true</IsPackable>
     <TargetFrameworks>net472;netstandard2.0</TargetFrameworks>
+    <LangVersion>8.0</LangVersion>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <Import Project="..\NugetPackages.targets" />
