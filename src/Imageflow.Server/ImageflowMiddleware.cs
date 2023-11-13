@@ -135,7 +135,7 @@ namespace Imageflow.Server
             
 
             // We only handle requests with an image extension or if we configured a path prefix for which to handle
-            // extensionless requests
+            // extension-less requests
             
             if (!ImageJobInfo.ShouldHandleRequest(context, options))
             {
@@ -153,7 +153,7 @@ namespace Imageflow.Server
                 return;
             }
 
-            if (imageJobInfo.LicenseError)
+            if (imageJobInfo.LicenseError) 
             {
                 if (options.EnforcementMethod == EnforceLicenseWith.Http422Error)
                 {
