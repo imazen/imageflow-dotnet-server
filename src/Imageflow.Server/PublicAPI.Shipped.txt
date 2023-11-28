@@ -1,1 +1,102 @@
 #nullable enable
+Imageflow.Server.AccessDiagnosticsFrom
+Imageflow.Server.AccessDiagnosticsFrom.AnyHost = 2 -> Imageflow.Server.AccessDiagnosticsFrom
+Imageflow.Server.AccessDiagnosticsFrom.LocalHost = 1 -> Imageflow.Server.AccessDiagnosticsFrom
+Imageflow.Server.AccessDiagnosticsFrom.None = 0 -> Imageflow.Server.AccessDiagnosticsFrom
+Imageflow.Server.EnforceLicenseWith
+Imageflow.Server.EnforceLicenseWith.Http402Error = 2 -> Imageflow.Server.EnforceLicenseWith
+Imageflow.Server.EnforceLicenseWith.Http422Error = 1 -> Imageflow.Server.EnforceLicenseWith
+Imageflow.Server.EnforceLicenseWith.RedDotWatermark = 0 -> Imageflow.Server.EnforceLicenseWith
+Imageflow.Server.ImageflowMiddleware
+Imageflow.Server.ImageflowMiddlewareExtensions
+Imageflow.Server.ImageflowMiddlewareOptions
+Imageflow.Server.ImageflowMiddlewareOptions.AllowCaching.get -> bool
+Imageflow.Server.ImageflowMiddlewareOptions.AllowCaching.set -> void
+Imageflow.Server.ImageflowMiddlewareOptions.AllowDiskCaching.get -> bool
+Imageflow.Server.ImageflowMiddlewareOptions.AllowDiskCaching.set -> void
+Imageflow.Server.ImageflowMiddlewareOptions.ApplyDefaultCommandsToQuerylessUrls.get -> bool
+Imageflow.Server.ImageflowMiddlewareOptions.ApplyDefaultCommandsToQuerylessUrls.set -> void
+Imageflow.Server.ImageflowMiddlewareOptions.ImageflowMiddlewareOptions() -> void
+Imageflow.Server.ImageflowMiddlewareOptions.MapWebRoot.get -> bool
+Imageflow.Server.ImageflowMiddlewareOptions.MapWebRoot.set -> void
+Imageflow.Server.ImageflowMiddlewareOptions.UsePresetsExclusively.get -> bool
+Imageflow.Server.ImageflowMiddlewareOptions.UsePresetsExclusively.set -> void
+Imageflow.Server.NamedWatermark
+Imageflow.Server.PathHelpers
+Imageflow.Server.PathMapping
+Imageflow.Server.PathMapping.IgnorePrefixCase.get -> bool
+Imageflow.Server.PathMapping.PathMapping() -> void
+Imageflow.Server.PresetOptions
+Imageflow.Server.PresetOptions.Priority.get -> Imageflow.Server.PresetPriority
+Imageflow.Server.PresetPriority
+Imageflow.Server.PresetPriority.DefaultValues = 0 -> Imageflow.Server.PresetPriority
+Imageflow.Server.PresetPriority.OverrideQuery = 1 -> Imageflow.Server.PresetPriority
+Imageflow.Server.RequestSignatureOptions
+Imageflow.Server.SignatureRequired
+Imageflow.Server.SignatureRequired.ForAllRequests = 0 -> Imageflow.Server.SignatureRequired
+Imageflow.Server.SignatureRequired.ForQuerystringRequests = 1 -> Imageflow.Server.SignatureRequired
+Imageflow.Server.SignatureRequired.Never = 2 -> Imageflow.Server.SignatureRequired
+Imageflow.Server.UrlEventArgs
+Imageflow.Server.WatermarkingEventArgs
+~Imageflow.Server.ImageflowMiddleware.ImageflowMiddleware(Microsoft.AspNetCore.Http.RequestDelegate next, Microsoft.AspNetCore.Hosting.IWebHostEnvironment env, System.Collections.Generic.IEnumerable<Microsoft.Extensions.Logging.ILogger<Imageflow.Server.ImageflowMiddleware>> logger, System.Collections.Generic.IEnumerable<Imazen.Common.Extensibility.ClassicDiskCache.IClassicDiskCache> diskCaches, System.Collections.Generic.IEnumerable<Imazen.Common.Extensibility.StreamCache.IStreamCache> streamCaches, System.Collections.Generic.IEnumerable<Imazen.Common.Storage.IBlobProvider> blobProviders, Imageflow.Server.ImageflowMiddlewareOptions options) -> void
+~Imageflow.Server.ImageflowMiddleware.Invoke(Microsoft.AspNetCore.Http.HttpContext context) -> System.Threading.Tasks.Task
+~Imageflow.Server.ImageflowMiddlewareOptions.AddCommandDefault(string key, string value) -> Imageflow.Server.ImageflowMiddlewareOptions
+~Imageflow.Server.ImageflowMiddlewareOptions.AddPostRewriteAuthorizationHandler(string pathPrefix, System.Func<Imageflow.Server.UrlEventArgs, bool> handler) -> Imageflow.Server.ImageflowMiddlewareOptions
+~Imageflow.Server.ImageflowMiddlewareOptions.AddPreRewriteAuthorizationHandler(string pathPrefix, System.Func<Imageflow.Server.UrlEventArgs, bool> handler) -> Imageflow.Server.ImageflowMiddlewareOptions
+~Imageflow.Server.ImageflowMiddlewareOptions.AddPreset(Imageflow.Server.PresetOptions preset) -> Imageflow.Server.ImageflowMiddlewareOptions
+~Imageflow.Server.ImageflowMiddlewareOptions.AddRewriteHandler(string pathPrefix, System.Action<Imageflow.Server.UrlEventArgs> handler) -> Imageflow.Server.ImageflowMiddlewareOptions
+~Imageflow.Server.ImageflowMiddlewareOptions.AddWatermark(Imageflow.Server.NamedWatermark watermark) -> Imageflow.Server.ImageflowMiddlewareOptions
+~Imageflow.Server.ImageflowMiddlewareOptions.AddWatermarkingHandler(string pathPrefix, System.Action<Imageflow.Server.WatermarkingEventArgs> handler) -> Imageflow.Server.ImageflowMiddlewareOptions
+~Imageflow.Server.ImageflowMiddlewareOptions.DefaultCacheControlString.get -> string
+~Imageflow.Server.ImageflowMiddlewareOptions.DefaultCacheControlString.set -> void
+~Imageflow.Server.ImageflowMiddlewareOptions.HandleExtensionlessRequestsUnder(string prefix, System.StringComparison prefixComparison = System.StringComparison.Ordinal) -> Imageflow.Server.ImageflowMiddlewareOptions
+~Imageflow.Server.ImageflowMiddlewareOptions.JobSecurityOptions.get -> Imageflow.Fluent.SecurityOptions
+~Imageflow.Server.ImageflowMiddlewareOptions.JobSecurityOptions.set -> void
+~Imageflow.Server.ImageflowMiddlewareOptions.MapPath(string virtualPath, string physicalPath) -> Imageflow.Server.ImageflowMiddlewareOptions
+~Imageflow.Server.ImageflowMiddlewareOptions.MapPath(string virtualPath, string physicalPath, bool ignorePrefixCase) -> Imageflow.Server.ImageflowMiddlewareOptions
+~Imageflow.Server.ImageflowMiddlewareOptions.MappedPaths.get -> System.Collections.Generic.IReadOnlyCollection<Imageflow.Server.PathMapping>
+~Imageflow.Server.ImageflowMiddlewareOptions.MyOpenSourceProjectUrl.get -> string
+~Imageflow.Server.ImageflowMiddlewareOptions.MyOpenSourceProjectUrl.set -> void
+~Imageflow.Server.ImageflowMiddlewareOptions.NamedWatermarks.get -> System.Collections.Generic.IReadOnlyCollection<Imageflow.Server.NamedWatermark>
+~Imageflow.Server.ImageflowMiddlewareOptions.RequestSignatureOptions.get -> Imageflow.Server.RequestSignatureOptions
+~Imageflow.Server.ImageflowMiddlewareOptions.RequestSignatureOptions.set -> void
+~Imageflow.Server.ImageflowMiddlewareOptions.SetAllowCaching(bool value) -> Imageflow.Server.ImageflowMiddlewareOptions
+~Imageflow.Server.ImageflowMiddlewareOptions.SetAllowDiskCaching(bool value) -> Imageflow.Server.ImageflowMiddlewareOptions
+~Imageflow.Server.ImageflowMiddlewareOptions.SetApplyDefaultCommandsToQuerylessUrls(bool value) -> Imageflow.Server.ImageflowMiddlewareOptions
+~Imageflow.Server.ImageflowMiddlewareOptions.SetDefaultCacheControlString(string cacheControlString) -> Imageflow.Server.ImageflowMiddlewareOptions
+~Imageflow.Server.ImageflowMiddlewareOptions.SetDiagnosticsPageAccess(Imageflow.Server.AccessDiagnosticsFrom accessDiagnosticsFrom) -> Imageflow.Server.ImageflowMiddlewareOptions
+~Imageflow.Server.ImageflowMiddlewareOptions.SetDiagnosticsPagePassword(string password) -> Imageflow.Server.ImageflowMiddlewareOptions
+~Imageflow.Server.ImageflowMiddlewareOptions.SetJobSecurityOptions(Imageflow.Fluent.SecurityOptions securityOptions) -> Imageflow.Server.ImageflowMiddlewareOptions
+~Imageflow.Server.ImageflowMiddlewareOptions.SetLicenseKey(Imageflow.Server.EnforceLicenseWith enforcementMethod, string licenseKey) -> Imageflow.Server.ImageflowMiddlewareOptions
+~Imageflow.Server.ImageflowMiddlewareOptions.SetMapWebRoot(bool value) -> Imageflow.Server.ImageflowMiddlewareOptions
+~Imageflow.Server.ImageflowMiddlewareOptions.SetMyOpenSourceProjectUrl(string myOpenSourceProjectUrl) -> Imageflow.Server.ImageflowMiddlewareOptions
+~Imageflow.Server.ImageflowMiddlewareOptions.SetRequestSignatureOptions(Imageflow.Server.RequestSignatureOptions options) -> Imageflow.Server.ImageflowMiddlewareOptions
+~Imageflow.Server.ImageflowMiddlewareOptions.SetUsePresetsExclusively(bool value) -> Imageflow.Server.ImageflowMiddlewareOptions
+~Imageflow.Server.NamedWatermark.Name.get -> string
+~Imageflow.Server.NamedWatermark.NamedWatermark(string name, string virtualPath, Imageflow.Fluent.WatermarkOptions watermark) -> void
+~Imageflow.Server.NamedWatermark.VirtualPath.get -> string
+~Imageflow.Server.NamedWatermark.Watermark.get -> Imageflow.Fluent.WatermarkOptions
+~Imageflow.Server.PathMapping.PathMapping(string virtualPath, string physicalPath) -> void
+~Imageflow.Server.PathMapping.PathMapping(string virtualPath, string physicalPath, bool ignorePrefixCase) -> void
+~Imageflow.Server.PathMapping.PhysicalPath.get -> string
+~Imageflow.Server.PathMapping.VirtualPath.get -> string
+~Imageflow.Server.PresetOptions.Name.get -> string
+~Imageflow.Server.PresetOptions.PresetOptions(string name, Imageflow.Server.PresetPriority priority) -> void
+~Imageflow.Server.PresetOptions.SetCommand(string key, string value) -> Imageflow.Server.PresetOptions
+~Imageflow.Server.RequestSignatureOptions.ForPrefix(string prefix, System.StringComparison prefixComparison, Imageflow.Server.SignatureRequired requirement, System.Collections.Generic.IEnumerable<string> signingKeys) -> Imageflow.Server.RequestSignatureOptions
+~Imageflow.Server.RequestSignatureOptions.RequestSignatureOptions(Imageflow.Server.SignatureRequired defaultRequirement, System.Collections.Generic.IEnumerable<string> defaultSigningKeys) -> void
+~Imageflow.Server.UrlEventArgs.Context.get -> Microsoft.AspNetCore.Http.HttpContext
+~Imageflow.Server.UrlEventArgs.Query.get -> System.Collections.Generic.Dictionary<string, string>
+~Imageflow.Server.UrlEventArgs.Query.set -> void
+~Imageflow.Server.UrlEventArgs.VirtualPath.get -> string
+~Imageflow.Server.UrlEventArgs.VirtualPath.set -> void
+~Imageflow.Server.WatermarkingEventArgs.AppliedWatermarks.get -> System.Collections.Generic.List<Imageflow.Server.NamedWatermark>
+~Imageflow.Server.WatermarkingEventArgs.AppliedWatermarks.set -> void
+~Imageflow.Server.WatermarkingEventArgs.Context.get -> Microsoft.AspNetCore.Http.HttpContext
+~Imageflow.Server.WatermarkingEventArgs.Query.get -> System.Collections.Generic.IReadOnlyDictionary<string, string>
+~Imageflow.Server.WatermarkingEventArgs.VirtualPath.get -> string
+~static Imageflow.Server.ImageflowMiddlewareExtensions.UseImageflow(this Microsoft.AspNetCore.Builder.IApplicationBuilder builder, Imageflow.Server.ImageflowMiddlewareOptions options) -> Microsoft.AspNetCore.Builder.IApplicationBuilder
+~static Imageflow.Server.PathHelpers.AcceptedImageExtensions.get -> System.Collections.Generic.IEnumerable<string>
+~static Imageflow.Server.PathHelpers.GetImageExtensionFromContentType(string contentType) -> string
+~static Imageflow.Server.PathHelpers.SanitizeImageExtension(string extension) -> string
+~static Imageflow.Server.PathHelpers.SupportedQuerystringKeys.get -> System.Collections.Generic.IEnumerable<string>
