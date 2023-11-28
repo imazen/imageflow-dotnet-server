@@ -22,7 +22,7 @@ namespace Imageflow.Server.HybridCache
                 AsyncCacheOptions = new AsyncCacheOptions()
                 {
                     MaxQueuedBytes = Math.Max(0,options.QueueSizeLimitInBytes),
-                    WriteSynchronouslyWhenQueueFull = true,
+                    WriteSynchronouslyWhenQueueFull = false,
                     MoveFileOverwriteFunc = (from, to) => File.Move(from, to, true)
                 },
                 CleanupManagerOptions = new CleanupManagerOptions()
