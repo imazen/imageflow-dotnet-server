@@ -1,0 +1,55 @@
+Imageflow.Server.HybridCache.HybridCacheOptions
+Imageflow.Server.HybridCache.HybridCacheOptions.CacheSizeLimitInBytes.get -> long
+Imageflow.Server.HybridCache.HybridCacheOptions.CacheSizeLimitInBytes.set -> void
+Imageflow.Server.HybridCache.HybridCacheOptions.CacheSizeMb.get -> long
+Imageflow.Server.HybridCache.HybridCacheOptions.CacheSizeMb.set -> void
+Imageflow.Server.HybridCache.HybridCacheOptions.DatabaseShards.get -> int
+Imageflow.Server.HybridCache.HybridCacheOptions.DatabaseShards.set -> void
+Imageflow.Server.HybridCache.HybridCacheOptions.EvictionSweepSizeMb.get -> long
+Imageflow.Server.HybridCache.HybridCacheOptions.EvictionSweepSizeMb.set -> void
+Imageflow.Server.HybridCache.HybridCacheOptions.MinAgeToDelete.get -> System.TimeSpan
+Imageflow.Server.HybridCache.HybridCacheOptions.MinAgeToDelete.set -> void
+Imageflow.Server.HybridCache.HybridCacheOptions.MinCleanupBytes.get -> long
+Imageflow.Server.HybridCache.HybridCacheOptions.MinCleanupBytes.set -> void
+Imageflow.Server.HybridCache.HybridCacheOptions.QueueSizeLimitInBytes.get -> long
+Imageflow.Server.HybridCache.HybridCacheOptions.QueueSizeLimitInBytes.set -> void
+Imageflow.Server.HybridCache.HybridCacheOptions.WriteQueueMemoryMb.get -> long
+Imageflow.Server.HybridCache.HybridCacheOptions.WriteQueueMemoryMb.set -> void
+Imageflow.Server.HybridCache.HybridCacheService
+Imageflow.Server.HybridCache.HybridCacheServiceExtensions
+~Imageflow.Server.HybridCache.HybridCacheOptions.DiskCacheDirectory.get -> string
+~Imageflow.Server.HybridCache.HybridCacheOptions.DiskCacheDirectory.set -> void
+~Imageflow.Server.HybridCache.HybridCacheOptions.HybridCacheOptions(string cacheDir) -> void
+~Imageflow.Server.HybridCache.HybridCacheService.GetIssues() -> System.Collections.Generic.IEnumerable<Imazen.Common.Issues.IIssue>
+~Imageflow.Server.HybridCache.HybridCacheService.GetOrCreateBytes(byte[] key, Imazen.Common.Extensibility.StreamCache.AsyncBytesResult dataProviderCallback, System.Threading.CancellationToken cancellationToken, bool retrieveContentType) -> System.Threading.Tasks.Task<Imazen.Common.Extensibility.StreamCache.IStreamCacheResult>
+~Imageflow.Server.HybridCache.HybridCacheService.HybridCacheService(Imageflow.Server.HybridCache.HybridCacheOptions options, Microsoft.Extensions.Logging.ILogger<Imageflow.Server.HybridCache.HybridCacheService> logger) -> void
+~Imageflow.Server.HybridCache.HybridCacheService.StartAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task
+~Imageflow.Server.HybridCache.HybridCacheService.StopAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task
+~static Imageflow.Server.HybridCache.HybridCacheServiceExtensions.AddImageflowHybridCache(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, Imageflow.Server.HybridCache.HybridCacheOptions options) -> Microsoft.Extensions.DependencyInjection.IServiceCollectionImageflow.Server.HybridCache.HybridCacheOptions
+Imageflow.Server.HybridCache.HybridCacheOptions.CacheSizeLimitInBytes.get -> long
+Imageflow.Server.HybridCache.HybridCacheOptions.CacheSizeLimitInBytes.set -> void
+Imageflow.Server.HybridCache.HybridCacheOptions.CacheSizeMb.get -> long
+Imageflow.Server.HybridCache.HybridCacheOptions.CacheSizeMb.set -> void
+Imageflow.Server.HybridCache.HybridCacheOptions.DatabaseShards.get -> int
+Imageflow.Server.HybridCache.HybridCacheOptions.DatabaseShards.set -> void
+Imageflow.Server.HybridCache.HybridCacheOptions.EvictionSweepSizeMb.get -> long
+Imageflow.Server.HybridCache.HybridCacheOptions.EvictionSweepSizeMb.set -> void
+Imageflow.Server.HybridCache.HybridCacheOptions.MinAgeToDelete.get -> System.TimeSpan
+Imageflow.Server.HybridCache.HybridCacheOptions.MinAgeToDelete.set -> void
+Imageflow.Server.HybridCache.HybridCacheOptions.MinCleanupBytes.get -> long
+Imageflow.Server.HybridCache.HybridCacheOptions.MinCleanupBytes.set -> void
+Imageflow.Server.HybridCache.HybridCacheOptions.QueueSizeLimitInBytes.get -> long
+Imageflow.Server.HybridCache.HybridCacheOptions.QueueSizeLimitInBytes.set -> void
+Imageflow.Server.HybridCache.HybridCacheOptions.WriteQueueMemoryMb.get -> long
+Imageflow.Server.HybridCache.HybridCacheOptions.WriteQueueMemoryMb.set -> void
+Imageflow.Server.HybridCache.HybridCacheService
+Imageflow.Server.HybridCache.HybridCacheServiceExtensions
+~Imageflow.Server.HybridCache.HybridCacheOptions.DiskCacheDirectory.get -> string
+~Imageflow.Server.HybridCache.HybridCacheOptions.DiskCacheDirectory.set -> void
+~Imageflow.Server.HybridCache.HybridCacheOptions.HybridCacheOptions(string cacheDir) -> void
+~Imageflow.Server.HybridCache.HybridCacheService.GetIssues() -> System.Collections.Generic.IEnumerable<Imazen.Common.Issues.IIssue>
+~Imageflow.Server.HybridCache.HybridCacheService.GetOrCreateBytes(byte[] key, Imazen.Common.Extensibility.StreamCache.AsyncBytesResult dataProviderCallback, System.Threading.CancellationToken cancellationToken, bool retrieveContentType) -> System.Threading.Tasks.Task<Imazen.Common.Extensibility.StreamCache.IStreamCacheResult>
+~Imageflow.Server.HybridCache.HybridCacheService.HybridCacheService(Imageflow.Server.HybridCache.HybridCacheOptions options, Microsoft.Extensions.Logging.ILogger<Imageflow.Server.HybridCache.HybridCacheService> logger) -> void
+~Imageflow.Server.HybridCache.HybridCacheService.StartAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task
+~Imageflow.Server.HybridCache.HybridCacheService.StopAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task
+~static Imageflow.Server.HybridCache.HybridCacheServiceExtensions.AddImageflowHybridCache(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, Imageflow.Server.HybridCache.HybridCacheOptions options) -> Microsoft.Extensions.DependencyInjection.IServiceCollection

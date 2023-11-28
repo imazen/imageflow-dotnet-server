@@ -1,0 +1,214 @@
+Imazen.Common.Collections.ReverseEnumerable<T>
+Imazen.Common.Collections.ReverseEnumerable<T>.GetEnumerator() -> System.Collections.Generic.IEnumerator<T>!
+Imazen.Common.Collections.ReverseEnumerable<T>.ReverseEnumerable(System.Collections.ObjectModel.ReadOnlyCollection<T>! collection) -> void
+Imazen.Common.Collections.ReverseEnumerator<T>
+Imazen.Common.Collections.ReverseEnumerator<T>.Current.get -> T
+Imazen.Common.Collections.ReverseEnumerator<T>.MoveNext() -> bool
+Imazen.Common.Collections.ReverseEnumerator<T>.Reset() -> void
+Imazen.Common.Collections.ReverseEnumerator<T>.ReverseEnumerator(System.Collections.ObjectModel.ReadOnlyCollection<T>! collection) -> void
+Imazen.Common.Concurrency.AsyncLockProvider
+Imazen.Common.Concurrency.AsyncLockProvider.AsyncLockProvider() -> void
+Imazen.Common.Concurrency.AsyncLockProvider.MayBeLocked(string! key) -> bool
+Imazen.Common.Concurrency.AsyncLockProvider.TryExecuteAsync(string! key, int timeoutMs, System.Threading.CancellationToken cancellationToken, System.Func<System.Threading.Tasks.Task!>! success) -> System.Threading.Tasks.Task<bool>!
+Imazen.Common.Concurrency.AsyncLockProvider.TryExecuteSynchronous(string! key, int timeoutMs, System.Threading.CancellationToken cancellationToken, System.Action! success) -> bool
+Imazen.Common.Concurrency.BasicAsyncLock
+Imazen.Common.Concurrency.BasicAsyncLock.BasicAsyncLock() -> void
+Imazen.Common.Concurrency.BasicAsyncLock.LockAsync() -> System.Threading.Tasks.Task<System.IDisposable!>!
+Imazen.Common.Extensibility.ClassicDiskCache.AsyncWriteResult
+Imazen.Common.Extensibility.ClassicDiskCache.CacheQueryResult
+Imazen.Common.Extensibility.ClassicDiskCache.CacheQueryResult.Failed = 0 -> Imazen.Common.Extensibility.ClassicDiskCache.CacheQueryResult
+Imazen.Common.Extensibility.ClassicDiskCache.CacheQueryResult.Hit = 2 -> Imazen.Common.Extensibility.ClassicDiskCache.CacheQueryResult
+Imazen.Common.Extensibility.ClassicDiskCache.CacheQueryResult.Miss = 1 -> Imazen.Common.Extensibility.ClassicDiskCache.CacheQueryResult
+Imazen.Common.Extensibility.ClassicDiskCache.ICacheResult
+Imazen.Common.Extensibility.ClassicDiskCache.ICacheResult.Data.get -> System.IO.Stream!
+Imazen.Common.Extensibility.ClassicDiskCache.ICacheResult.Data.set -> void
+Imazen.Common.Extensibility.ClassicDiskCache.ICacheResult.PhysicalPath.get -> string!
+Imazen.Common.Extensibility.ClassicDiskCache.ICacheResult.RelativePath.get -> string!
+Imazen.Common.Extensibility.ClassicDiskCache.ICacheResult.Result.get -> Imazen.Common.Extensibility.ClassicDiskCache.CacheQueryResult
+Imazen.Common.Extensibility.ClassicDiskCache.ICacheResult.Result.set -> void
+Imazen.Common.Extensibility.ClassicDiskCache.IClassicDiskCache
+Imazen.Common.Extensibility.ClassicDiskCache.IClassicDiskCache.GetOrCreate(string! key, string! fileExtension, Imazen.Common.Extensibility.ClassicDiskCache.AsyncWriteResult! writeCallback) -> System.Threading.Tasks.Task<Imazen.Common.Extensibility.ClassicDiskCache.ICacheResult!>!
+Imazen.Common.Extensibility.StreamCache.AsyncBytesResult
+Imazen.Common.Extensibility.StreamCache.IStreamCache
+Imazen.Common.Extensibility.StreamCache.IStreamCache.GetOrCreateBytes(byte[]! key, Imazen.Common.Extensibility.StreamCache.AsyncBytesResult! dataProviderCallback, System.Threading.CancellationToken cancellationToken, bool retrieveContentType) -> System.Threading.Tasks.Task<Imazen.Common.Extensibility.StreamCache.IStreamCacheResult!>!
+Imazen.Common.Extensibility.StreamCache.IStreamCacheInput
+Imazen.Common.Extensibility.StreamCache.IStreamCacheInput.Bytes.get -> System.ArraySegment<byte>
+Imazen.Common.Extensibility.StreamCache.IStreamCacheInput.ContentType.get -> string!
+Imazen.Common.Extensibility.StreamCache.IStreamCacheResult
+Imazen.Common.Extensibility.StreamCache.IStreamCacheResult.ContentType.get -> string!
+Imazen.Common.Extensibility.StreamCache.IStreamCacheResult.Data.get -> System.IO.Stream!
+Imazen.Common.Extensibility.StreamCache.IStreamCacheResult.Status.get -> string!
+Imazen.Common.Extensibility.StreamCache.StreamCacheInput
+Imazen.Common.Extensibility.StreamCache.StreamCacheInput.Bytes.get -> System.ArraySegment<byte>
+Imazen.Common.Extensibility.StreamCache.StreamCacheInput.ContentType.get -> string!
+Imazen.Common.Extensibility.StreamCache.StreamCacheInput.StreamCacheInput(string! contentType, System.ArraySegment<byte> bytes) -> void
+Imazen.Common.Extensibility.StreamCache.StreamCacheInput.ToIStreamCacheInput() -> Imazen.Common.Extensibility.StreamCache.IStreamCacheInput!
+Imazen.Common.ExtensionMethods.DateTimeExtensions
+Imazen.Common.FileTypeDetection.FileTypeDetector
+Imazen.Common.FileTypeDetection.FileTypeDetector.FileTypeDetector() -> void
+Imazen.Common.FileTypeDetection.FileTypeDetector.GuessMimeType(byte[]! first12Bytes) -> string!
+Imazen.Common.Helpers.EncodingUtils
+Imazen.Common.Helpers.Signatures
+Imazen.Common.Instrumentation.Support.Clamping.SignificantDigitsClampingFloat
+Imazen.Common.Instrumentation.Support.Clamping.SignificantDigitsClampingFloat.Clamp(float value) -> float
+Imazen.Common.Instrumentation.Support.Clamping.SignificantDigitsClampingFloat.MaxValue.get -> float
+Imazen.Common.Instrumentation.Support.Clamping.SignificantDigitsClampingFloat.MaxValue.set -> void
+Imazen.Common.Instrumentation.Support.Clamping.SignificantDigitsClampingFloat.MinValue.get -> float
+Imazen.Common.Instrumentation.Support.Clamping.SignificantDigitsClampingFloat.MinValue.set -> void
+Imazen.Common.Instrumentation.Support.Clamping.SignificantDigitsClampingFloat.RoundPositiveValueToDigits(double n, int count) -> double
+Imazen.Common.Instrumentation.Support.Clamping.SignificantDigitsClampingFloat.SignificantDigits.get -> int
+Imazen.Common.Instrumentation.Support.Clamping.SignificantDigitsClampingFloat.SignificantDigits.set -> void
+Imazen.Common.Instrumentation.Support.Clamping.SignificantDigitsClampingFloat.SignificantDigitsClampingFloat() -> void
+Imazen.Common.Instrumentation.Support.InfoAccumulators.IInfoAccumulator
+Imazen.Common.Instrumentation.Support.InfoAccumulators.IInfoAccumulator.AddString(string! key, string! value) -> void
+Imazen.Common.Instrumentation.Support.InfoAccumulators.IInfoAccumulator.GetInfo() -> System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string!, string!>>!
+Imazen.Common.Instrumentation.Support.InfoAccumulators.IInfoAccumulator.WithPrefix(string! prefix) -> Imazen.Common.Instrumentation.Support.InfoAccumulators.IInfoAccumulator!
+Imazen.Common.Instrumentation.Support.InfoAccumulators.IInfoAccumulator.WithPrepend(bool prepend) -> Imazen.Common.Instrumentation.Support.InfoAccumulators.IInfoAccumulator!
+Imazen.Common.Instrumentation.Support.InfoAccumulators.IInfoProvider
+Imazen.Common.Instrumentation.Support.InfoAccumulators.IInfoProvider.Add(Imazen.Common.Instrumentation.Support.InfoAccumulators.IInfoAccumulator! accumulator) -> void
+Imazen.Common.Instrumentation.Support.InfoAccumulators.InfoAccumulatorExtensions
+Imazen.Common.Issues.IIssue
+Imazen.Common.Issues.IIssue.Details.get -> string!
+Imazen.Common.Issues.IIssue.Hash() -> int
+Imazen.Common.Issues.IIssue.Severity.get -> Imazen.Common.Issues.IssueSeverity
+Imazen.Common.Issues.IIssue.Source.get -> string!
+Imazen.Common.Issues.IIssue.Summary.get -> string!
+Imazen.Common.Issues.IIssueProvider
+Imazen.Common.Issues.IIssueProvider.GetIssues() -> System.Collections.Generic.IEnumerable<Imazen.Common.Issues.IIssue!>!
+Imazen.Common.Issues.IIssueReceiver
+Imazen.Common.Issues.IIssueReceiver.AcceptIssue(Imazen.Common.Issues.IIssue! i) -> void
+Imazen.Common.Issues.Issue
+Imazen.Common.Issues.Issue.Details.get -> string!
+Imazen.Common.Issues.Issue.Hash() -> int
+Imazen.Common.Issues.Issue.Issue() -> void
+Imazen.Common.Issues.Issue.Issue(string! message) -> void
+Imazen.Common.Issues.Issue.Issue(string! message, Imazen.Common.Issues.IssueSeverity severity) -> void
+Imazen.Common.Issues.Issue.Issue(string! message, string! details, Imazen.Common.Issues.IssueSeverity severity) -> void
+Imazen.Common.Issues.Issue.Issue(string! source, string! message, string! details, Imazen.Common.Issues.IssueSeverity severity) -> void
+Imazen.Common.Issues.Issue.Severity.get -> Imazen.Common.Issues.IssueSeverity
+Imazen.Common.Issues.Issue.Source.get -> string!
+Imazen.Common.Issues.Issue.Source.set -> void
+Imazen.Common.Issues.Issue.Summary.get -> string!
+Imazen.Common.Issues.IssueSeverity
+Imazen.Common.Issues.IssueSeverity.ConfigurationError = 2 -> Imazen.Common.Issues.IssueSeverity
+Imazen.Common.Issues.IssueSeverity.Critical = 0 -> Imazen.Common.Issues.IssueSeverity
+Imazen.Common.Issues.IssueSeverity.Error = 1 -> Imazen.Common.Issues.IssueSeverity
+Imazen.Common.Issues.IssueSeverity.Warning = 3 -> Imazen.Common.Issues.IssueSeverity
+Imazen.Common.Issues.IssueSink
+Imazen.Common.Issues.IssueSink.IssueSink(string! defaultSource) -> void
+Imazen.Common.Licensing.BuildDateAttribute
+Imazen.Common.Licensing.BuildDateAttribute.BuildDateAttribute() -> void
+Imazen.Common.Licensing.BuildDateAttribute.BuildDateAttribute(string! buildDateStringRoundTrip) -> void
+Imazen.Common.Licensing.BuildDateAttribute.Value.get -> string!
+Imazen.Common.Licensing.BuildDateAttribute.ValueDate.get -> System.DateTimeOffset?
+Imazen.Common.Licensing.CommitAttribute
+Imazen.Common.Licensing.CommitAttribute.CommitAttribute() -> void
+Imazen.Common.Licensing.CommitAttribute.CommitAttribute(string! commitId) -> void
+Imazen.Common.Licensing.CommitAttribute.Value.get -> string!
+Imazen.Common.Licensing.EditionAttribute
+Imazen.Common.Licensing.EditionAttribute.EditionAttribute() -> void
+Imazen.Common.Licensing.EditionAttribute.EditionAttribute(string! editionString) -> void
+Imazen.Common.Licensing.EditionAttribute.Value.get -> string!
+Imazen.Common.Licensing.ILicenseBlob
+Imazen.Common.Licensing.ILicenseBlob.Data.get -> byte[]!
+Imazen.Common.Licensing.ILicenseBlob.Fields.get -> Imazen.Common.Licensing.ILicenseDetails!
+Imazen.Common.Licensing.ILicenseBlob.Original.get -> string!
+Imazen.Common.Licensing.ILicenseBlob.Signature.get -> byte[]!
+Imazen.Common.Licensing.ILicenseChain
+Imazen.Common.Licensing.ILicenseChain.CachedLicense() -> Imazen.Common.Licensing.ILicenseBlob!
+Imazen.Common.Licensing.ILicenseChain.FetchedLicense() -> Imazen.Common.Licensing.ILicenseBlob!
+Imazen.Common.Licensing.ILicenseChain.Id.get -> string!
+Imazen.Common.Licensing.ILicenseChain.IsRemote.get -> bool
+Imazen.Common.Licensing.ILicenseChain.LastFetchUrl() -> string!
+Imazen.Common.Licensing.ILicenseChain.Licenses() -> System.Collections.Generic.IEnumerable<Imazen.Common.Licensing.ILicenseBlob!>!
+Imazen.Common.Licensing.ILicenseChain.Shared.get -> bool
+Imazen.Common.Licensing.ILicenseChain.ToPublicString() -> string!
+Imazen.Common.Licensing.ILicenseClock
+Imazen.Common.Licensing.ILicenseClock.GetAssemblyWriteDate() -> System.DateTimeOffset?
+Imazen.Common.Licensing.ILicenseClock.GetBuildDate() -> System.DateTimeOffset?
+Imazen.Common.Licensing.ILicenseClock.GetTimestampTicks() -> long
+Imazen.Common.Licensing.ILicenseClock.GetUtcNow() -> System.DateTimeOffset
+Imazen.Common.Licensing.ILicenseClock.TicksPerSecond.get -> long
+Imazen.Common.Licensing.ILicenseDetails
+Imazen.Common.Licensing.ILicenseDetails.Expires.get -> System.DateTimeOffset?
+Imazen.Common.Licensing.ILicenseDetails.Get(string! key) -> string!
+Imazen.Common.Licensing.ILicenseDetails.Id.get -> string!
+Imazen.Common.Licensing.ILicenseDetails.ImageflowExpires.get -> System.DateTimeOffset?
+Imazen.Common.Licensing.ILicenseDetails.Issued.get -> System.DateTimeOffset?
+Imazen.Common.Licensing.ILicenseDetails.Pairs.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+Imazen.Common.Licensing.ILicenseDetails.SubscriptionExpirationDate.get -> System.DateTimeOffset?
+Imazen.Common.Storage.BlobMissingException
+Imazen.Common.Storage.BlobMissingException.BlobMissingException() -> void
+Imazen.Common.Storage.BlobMissingException.BlobMissingException(string! message) -> void
+Imazen.Common.Storage.BlobMissingException.BlobMissingException(string! message, System.Exception! inner) -> void
+Imazen.Common.Storage.Caching.BlobGroup
+Imazen.Common.Storage.Caching.BlobGroup.CacheEntry = 0 -> Imazen.Common.Storage.Caching.BlobGroup
+Imazen.Common.Storage.Caching.BlobGroup.CacheMetadata = 1 -> Imazen.Common.Storage.Caching.BlobGroup
+Imazen.Common.Storage.Caching.BlobGroup.Essential = 3 -> Imazen.Common.Storage.Caching.BlobGroup
+Imazen.Common.Storage.Caching.BlobGroup.SourceMetadata = 2 -> Imazen.Common.Storage.Caching.BlobGroup
+Imazen.Common.Storage.Caching.CacheBlobFetchResult
+Imazen.Common.Storage.Caching.CacheBlobFetchResult.CacheBlobFetchResult(Imazen.Common.Storage.Caching.ICacheBlobData! data, bool dataExists, int statusCode, string! statusMessage) -> void
+Imazen.Common.Storage.Caching.CacheBlobFetchResult.Data.get -> Imazen.Common.Storage.Caching.ICacheBlobData!
+Imazen.Common.Storage.Caching.CacheBlobFetchResult.DataExists.get -> bool
+Imazen.Common.Storage.Caching.CacheBlobFetchResult.Dispose() -> void
+Imazen.Common.Storage.Caching.CacheBlobFetchResult.StatusCode.get -> int
+Imazen.Common.Storage.Caching.CacheBlobFetchResult.StatusMessage.get -> string!
+Imazen.Common.Storage.Caching.CacheBlobPutOptions
+Imazen.Common.Storage.Caching.CacheBlobPutOptions.CacheBlobPutOptions() -> void
+Imazen.Common.Storage.Caching.CacheBlobPutResult
+Imazen.Common.Storage.Caching.CacheBlobPutResult.CacheBlobPutResult(int statusCode, string! statusMessage, bool success) -> void
+Imazen.Common.Storage.Caching.CacheBlobPutResult.StatusCode.get -> int
+Imazen.Common.Storage.Caching.CacheBlobPutResult.StatusMessage.get -> string!
+Imazen.Common.Storage.Caching.CacheBlobPutResult.Success.get -> bool
+Imazen.Common.Storage.Caching.IBlobCache
+Imazen.Common.Storage.Caching.IBlobCache.MayExist(Imazen.Common.Storage.Caching.BlobGroup group, string! key, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<bool>!
+Imazen.Common.Storage.Caching.IBlobCache.Put(Imazen.Common.Storage.Caching.BlobGroup group, string! key, Imazen.Common.Storage.IBlobData! data, Imazen.Common.Storage.Caching.ICacheBlobPutOptions! options, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Imazen.Common.Storage.Caching.ICacheBlobPutResult!>!
+Imazen.Common.Storage.Caching.IBlobCache.TryFetchBlob(Imazen.Common.Storage.Caching.BlobGroup group, string! key, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Imazen.Common.Storage.Caching.ICacheBlobFetchResult!>!
+Imazen.Common.Storage.Caching.IBlobCacheProvider
+Imazen.Common.Storage.Caching.IBlobCacheProvider.GetCacheNames() -> System.Collections.Generic.IEnumerable<string!>!
+Imazen.Common.Storage.Caching.IBlobCacheProvider.TryGetCache(string! name, out Imazen.Common.Storage.Caching.IBlobCache! cache) -> bool
+Imazen.Common.Storage.Caching.IBlobCacheWithRenewals
+Imazen.Common.Storage.Caching.IBlobCacheWithRenewals.TryRenew(Imazen.Common.Storage.Caching.BlobGroup group, string! key, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Imazen.Common.Storage.Caching.ICacheBlobPutResult!>!
+Imazen.Common.Storage.Caching.ICacheBlobData
+Imazen.Common.Storage.Caching.ICacheBlobDataExpiry
+Imazen.Common.Storage.Caching.ICacheBlobDataExpiry.EstimatedExpiry.get -> System.DateTimeOffset?
+Imazen.Common.Storage.Caching.ICacheBlobFetchResult
+Imazen.Common.Storage.Caching.ICacheBlobFetchResult.Data.get -> Imazen.Common.Storage.Caching.ICacheBlobData!
+Imazen.Common.Storage.Caching.ICacheBlobFetchResult.DataExists.get -> bool
+Imazen.Common.Storage.Caching.ICacheBlobFetchResult.StatusCode.get -> int
+Imazen.Common.Storage.Caching.ICacheBlobFetchResult.StatusMessage.get -> string!
+Imazen.Common.Storage.Caching.ICacheBlobPutOptions
+Imazen.Common.Storage.Caching.ICacheBlobPutResult
+Imazen.Common.Storage.Caching.ICacheBlobPutResult.StatusCode.get -> int
+Imazen.Common.Storage.Caching.ICacheBlobPutResult.StatusMessage.get -> string!
+Imazen.Common.Storage.Caching.ICacheBlobPutResult.Success.get -> bool
+Imazen.Common.Storage.IBlobData
+Imazen.Common.Storage.IBlobData.Exists.get -> bool?
+Imazen.Common.Storage.IBlobData.LastModifiedDateUtc.get -> System.DateTime?
+Imazen.Common.Storage.IBlobData.OpenRead() -> System.IO.Stream!
+Imazen.Common.Storage.IBlobProvider
+Imazen.Common.Storage.IBlobProvider.Fetch(string! virtualPath) -> System.Threading.Tasks.Task<Imazen.Common.Storage.IBlobData!>!
+Imazen.Common.Storage.IBlobProvider.GetPrefixes() -> System.Collections.Generic.IEnumerable<string!>!
+Imazen.Common.Storage.IBlobProvider.SupportsPath(string! virtualPath) -> bool
+override Imazen.Common.Issues.Issue.ToString() -> string!
+override Imazen.Common.Licensing.BuildDateAttribute.ToString() -> string!
+override Imazen.Common.Licensing.CommitAttribute.ToString() -> string!
+override Imazen.Common.Licensing.EditionAttribute.ToString() -> string!
+static Imazen.Common.ExtensionMethods.DateTimeExtensions.ToUnixTimeUtc(this System.DateTime dateTime) -> long
+static Imazen.Common.ExtensionMethods.DateTimeExtensions.UnixTimeUtcIntoDateTime(this long unixValue) -> System.DateTime
+static Imazen.Common.Helpers.EncodingUtils.FromBase64UToBytes(string! data) -> byte[]!
+static Imazen.Common.Helpers.EncodingUtils.FromBase64UToString(string! data) -> string!
+static Imazen.Common.Helpers.EncodingUtils.ToBase64U(byte[]! data) -> string!
+static Imazen.Common.Helpers.EncodingUtils.ToBase64U(string! data) -> string!
+static Imazen.Common.Helpers.Signatures.NormalizePathAndQueryForSigning(string! pathAndQuery) -> string!
+static Imazen.Common.Helpers.Signatures.SignRequest(string! pathAndQuery, string! key) -> string!
+static Imazen.Common.Helpers.Signatures.SignString(string! data, string! key, int signatureLengthInBytes) -> string!
+static Imazen.Common.Instrumentation.Support.InfoAccumulators.InfoAccumulatorExtensions.Add(this Imazen.Common.Instrumentation.Support.InfoAccumulators.IInfoAccumulator! a, string! key, bool? value) -> void
+static Imazen.Common.Instrumentation.Support.InfoAccumulators.InfoAccumulatorExtensions.Add(this Imazen.Common.Instrumentation.Support.InfoAccumulators.IInfoAccumulator! a, string! key, long? value) -> void
+static Imazen.Common.Instrumentation.Support.InfoAccumulators.InfoAccumulatorExtensions.Add(this Imazen.Common.Instrumentation.Support.InfoAccumulators.IInfoAccumulator! a, string! key, string! value) -> void
+static Imazen.Common.Instrumentation.Support.InfoAccumulators.InfoAccumulatorExtensions.Add(this Imazen.Common.Instrumentation.Support.InfoAccumulators.IInfoAccumulator! a, string! key, System.Guid value) -> void
+static Imazen.Common.Instrumentation.Support.InfoAccumulators.InfoAccumulatorExtensions.Add(this Imazen.Common.Instrumentation.Support.InfoAccumulators.IInfoAccumulator! a, System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string!, string!>>! items) -> void
+static Imazen.Common.Instrumentation.Support.InfoAccumulators.InfoAccumulatorExtensions.ToQueryString(this Imazen.Common.Instrumentation.Support.InfoAccumulators.IInfoAccumulator! a, int characterLimit) -> string!
+static Imazen.Common.Storage.Caching.CacheBlobPutOptions.Default.get -> Imazen.Common.Storage.Caching.CacheBlobPutOptions!
+virtual Imazen.Common.Issues.IssueSink.AcceptIssue(Imazen.Common.Issues.IIssue! i) -> void
+virtual Imazen.Common.Issues.IssueSink.GetIssues() -> System.Collections.Generic.IEnumerable<Imazen.Common.Issues.IIssue!>!
