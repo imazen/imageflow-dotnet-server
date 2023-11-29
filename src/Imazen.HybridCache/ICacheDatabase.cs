@@ -1,23 +1,22 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using Imazen.Abstractions.Blobs;
+using Imazen.Abstractions.Resulting;
+using Imazen.HybridCache.MetaStore;
 using Microsoft.Extensions.Hosting;
 
 namespace Imazen.HybridCache
 {
-    public interface ICacheDatabaseRecord
+    [Flags]
+    internal enum CacheEntryFlags : byte
     {
-        int AccessCountKey { get; }
-        DateTime CreatedAt { get; }
-        DateTime LastDeletionAttempt { get;  }
-        long DiskSize { get; }
-        /// May not exist on disk
-        string RelativePath { get; }
-        string ContentType { get; }
+        Unknown = 0,
+        Proxied = 1,
+        Generated = 2,
+        Metadata = 4,
+        DoNotEvict = 128
     }
 
 
-    public interface ICacheDatabase: IHostedService
+    internal interface ICacheDatabase<T>: IHostedService where T:ICacheDatabaseRecord
     {
         Task UpdateLastDeletionAttempt(int shard, string relativePath, DateTime when);
 
@@ -30,7 +29,9 @@ namespace Imazen.HybridCache
         /// <param name="shard"></param>
         /// <param name="record"></param>
         /// <returns></returns>
-        Task DeleteRecord(int shard, ICacheDatabaseRecord record);
+        Task<DeleteRecordResult> DeleteRecord(int shard, T record);
+
+        Task<CodeResult> TestRootDirectory();
 
         /// <summary>
         /// Return the oldest (by created date) records, sorted from oldest to newest, where
@@ -44,61 +45,42 @@ namespace Imazen.HybridCache
         /// <param name="count"></param>
         /// <param name="getUsageCount"></param>
         /// <returns></returns>
-        Task<IEnumerable<ICacheDatabaseRecord>> GetDeletionCandidates(int shard, DateTime maxLastDeletionAttemptTime,
+        Task<IEnumerable<T>> GetDeletionCandidates(int shard, DateTime maxLastDeletionAttemptTime,
             DateTime maxCreatedDate, int count, Func<int, ushort> getUsageCount);
+        
+        Task<IEnumerable<T>> LinearSearchByTag(int shard, SearchableBlobTag tag);
+
         
         Task<long> GetShardSize(int shard);
 
         int GetShardCount();
 
-        /// <summary>
-        /// Looks up the content type value by key
-        /// </summary>
-        /// <param name="shard"></param>
-        /// <param name="relativePath"></param>
-        /// <returns></returns>
-        Task<string> GetContentType(int shard, string relativePath);
-        
+
         /// <summary>
         /// Looks up the record info by key
         /// </summary>
         /// <param name="shard"></param>
         /// <param name="relativePath"></param>
-        Task<ICacheDatabaseRecord> GetRecord(int shard, string relativePath);
+        Task<T?> GetRecord(int shard, string relativePath);
 
         /// <summary>
-        /// Estimate disk usage for a record with the given key length
+        /// Estimate disk usage for the given record
         /// </summary>
-        /// <param name="stringLength"></param>
         /// <returns></returns>
-        int EstimateRecordDiskSpace(int stringLength);
+        int EstimateRecordDiskSpace(CacheDatabaseRecord newRecord);
 
         /// <summary>
         /// Within a lock or transaction, checks if Sum(DiskBytes) + recordDiskSpace &lt; diskSpaceLimit, then
         /// creates a new record with the given key, content-type, record disk space, createdDate
         /// and last deletion attempt time set to the lowest possible value
         /// </summary>
-        /// <param name="shard"></param>
-        /// <param name="relativePath"></param>
-        /// <param name="contentType"></param>
-        /// <param name="recordDiskSpace"></param>
-        /// <param name="createdDate"></param>
-        /// <param name="accessCountKey"></param>
-        /// <param name="diskSpaceLimit"></param>
+        /// 
         /// <returns></returns>
-        Task<bool> CreateRecordIfSpace(int shard, string relativePath, string contentType, long recordDiskSpace, DateTime createdDate, int accessCountKey, long diskSpaceLimit);
+        Task<bool> CreateRecordIfSpace(int shard, CacheDatabaseRecord newRecord, long diskSpaceLimit);
 
-        /// <summary>
-        /// Should only delete the record if the createdDate matches
-        /// </summary>
-        /// <param name="shard"></param>
-        /// <param name="relativePath"></param>
-        /// <param name="contentType"></param>
-        /// <param name="recordDiskSpace"></param>
-        /// <param name="createdDate"></param>
-        /// <param name="accessCountKey"></param>
-        /// <returns></returns>
-        Task UpdateCreatedDateAtomic(int shard, string relativePath, string contentType, long recordDiskSpace, DateTime createdDate, int accessCountKey);
+
+        Task UpdateCreatedDateAtomic(int shard, string relativePath, DateTime createdDate,
+            Func<CacheDatabaseRecord> createIfMissing);
 
         /// <summary>
         /// May require creation of new record and deletion of old, since we are changing the primary key
@@ -109,6 +91,8 @@ namespace Imazen.HybridCache
         /// <param name="movedRelativePath"></param>
         /// <param name="lastDeletionAttempt"></param>
         /// <returns></returns>
-        Task ReplaceRelativePathAndUpdateLastDeletion(int shard, ICacheDatabaseRecord record, string movedRelativePath, DateTime lastDeletionAttempt);
+        Task ReplaceRelativePathAndUpdateLastDeletion(int shard, T record, string movedRelativePath, DateTime lastDeletionAttempt);
+
+        Task<CodeResult> TestMetaStore();
     }
 }

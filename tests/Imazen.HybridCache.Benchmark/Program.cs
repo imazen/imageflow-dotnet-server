@@ -46,7 +46,7 @@ namespace Imazen.HybridCache.Benchmark
         {
             var options = new TestParams()
             {
-                CacheOptions = new HybridCacheOptions(null)
+                CacheOptions = new HybridCacheAdvancedOptions(null)
                 {
                     Subfolders = 2048,
                     AsyncCacheOptions = new AsyncCacheOptions()
@@ -91,7 +91,7 @@ namespace Imazen.HybridCache.Benchmark
         {
             var options = new TestParams()
             {
-                CacheOptions = new HybridCacheOptions(null)
+                CacheOptions = new HybridCacheAdvancedOptions("HybridCache",null)
                 {
                     Subfolders = 1,
                     AsyncCacheOptions = new AsyncCacheOptions()
@@ -133,7 +133,7 @@ namespace Imazen.HybridCache.Benchmark
         {
             var options = new TestParams()
             {
-                CacheOptions = new HybridCacheOptions(null)
+                CacheOptions = new HybridCacheAdvancedOptions(null)
                 {
                     AsyncCacheOptions = new AsyncCacheOptions()
                     {
@@ -169,7 +169,7 @@ namespace Imazen.HybridCache.Benchmark
         {
             var options = new TestParams()
             {
-                CacheOptions = new HybridCacheOptions(null)
+                CacheOptions = new HybridCacheAdvancedOptions(null)
                 {
                     AsyncCacheOptions = new AsyncCacheOptions()
                     {
@@ -202,7 +202,7 @@ namespace Imazen.HybridCache.Benchmark
         {
             var options = new TestParams()
             {
-                CacheOptions = new HybridCacheOptions(null)
+                CacheOptions = new HybridCacheAdvancedOptions(null)
                 {
                     AsyncCacheOptions = new AsyncCacheOptions()
                     {
@@ -236,7 +236,7 @@ namespace Imazen.HybridCache.Benchmark
         {
             var options = new TestParams()
             {
-                CacheOptions = new HybridCacheOptions(null)
+                CacheOptions = new HybridCacheAdvancedOptions(null)
                 {
                     AsyncCacheOptions = new AsyncCacheOptions()
                     {
@@ -270,7 +270,7 @@ namespace Imazen.HybridCache.Benchmark
         {
             var options = new TestParams()
             {
-                CacheOptions = new HybridCacheOptions(null)
+                CacheOptions = new HybridCacheAdvancedOptions(null)
                 {
                     AsyncCacheOptions = new AsyncCacheOptions()
                     {
@@ -303,7 +303,7 @@ namespace Imazen.HybridCache.Benchmark
         {
             var options = new TestParams()
             {
-                CacheOptions = new HybridCacheOptions(null)
+                CacheOptions = new HybridCacheAdvancedOptions("HybridCache", null)
                 {
                     AsyncCacheOptions = new AsyncCacheOptions()
                     {
@@ -335,7 +335,7 @@ namespace Imazen.HybridCache.Benchmark
         {
             var options = new TestParams()
             {
-                CacheOptions = new HybridCacheOptions(null)
+                CacheOptions = new HybridCacheAdvancedOptions(null)
                 {
                     AsyncCacheOptions = new AsyncCacheOptions()
                     {
@@ -365,7 +365,7 @@ namespace Imazen.HybridCache.Benchmark
         {
             var options = new TestParams()
             {
-                CacheOptions = new HybridCacheOptions(null)
+                CacheOptions = new HybridCacheAdvancedOptions(null)
                 {
                     AsyncCacheOptions = new AsyncCacheOptions()
                     {
@@ -404,7 +404,7 @@ namespace Imazen.HybridCache.Benchmark
             internal bool RetrieveContentType { get; set; }
             
             internal bool DisplayLog { get; set; }
-            internal HybridCacheOptions CacheOptions { get; set; } = new HybridCacheOptions(null);
+            internal HybridCacheAdvancedOptions CacheOptions { get; set; } = new HybridCacheAdvancedOptions(null);
 
             internal bool UseMetaStore { get; set; }
             public int Seed { get; set; }
@@ -427,7 +427,6 @@ namespace Imazen.HybridCache.Benchmark
             try
             {
                 options.CacheOptions.PhysicalCacheDir = path;
-                options.MetaStoreOptions.DatabaseDir = path;
 
                 for (var reboot = 0; reboot < options.RebootCount; reboot++)
                 {
@@ -437,8 +436,8 @@ namespace Imazen.HybridCache.Benchmark
             
                     var logger = loggerFactory.CreateLogger<HybridCache>();
                     
-                    ICacheDatabase database = new MetaStore.MetaStore(options.MetaStoreOptions, options.CacheOptions, logger);
-                    HybridCache cache = new HybridCache(database, options.CacheOptions, logger);
+                    ICacheDatabase<ICacheDatabaseRecord> database = new MetaStore.MetaStore(options.MetaStoreOptions, options.CacheOptions, logger);
+                    HybridCache cache = new HybridCache(options.CacheOptions,database, logger);
                     try
                     {
                         Console.Write("Starting cache...");

@@ -107,19 +107,23 @@ internal class Executor : IAppConfigurator{
         if (config.RouteDefaults?.ApplyDefaultCommands != null){
             // parse as querystring using ASP.NET.
             var querystring = '?' + config.RouteDefaults.ApplyDefaultCommands.TrimStart('?');
-            var parsed = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(querystring);
-            foreach(var command in parsed){
-                var key = command.Key;
-                var value = command.Value;
-                if (string.IsNullOrWhiteSpace(key)){
-                    throw new ArgumentNullException($"route_defaults.apply_default_commands.key is missing. Defined in file '{sourcePath}'");
+            var parsed = Imazen.Routing.Helpers.PathHelpers.ParseQuery(querystring);
+            if (parsed != null)
+                foreach (var (key, value) in parsed)
+                {
+                    if (string.IsNullOrWhiteSpace(key))
+                    {
+                        throw new ArgumentNullException(
+                            $"route_defaults.apply_default_commands.key is missing. Defined in file '{sourcePath}'");
+                    }
+
+                    if (string.IsNullOrWhiteSpace(value))
+                    {
+                        throw new ArgumentNullException(
+                            $"route_defaults.apply_default_commands.value is missing. Defined in file '{sourcePath}' for key route_defaults.apply_default_commands.key '{key}'");
+                    }
+                    options.AddCommandDefault(key, value!);
                 }
-                if (string.IsNullOrWhiteSpace(value)){
-                    throw new ArgumentNullException($"route_defaults.apply_default_commands.value is missing. Defined in file '{sourcePath}' for key route_defaults.apply_default_commands.key '{key}'");
-                }
-                options.AddCommandDefault(key, value);
-            }      
-            
         }
         if (config.RouteDefaults?.ApplyDefaultCommandsToQuerylessUrls ?? false){
             options.SetApplyDefaultCommandsToQuerylessUrls(true);
@@ -238,8 +242,10 @@ internal class Executor : IAppConfigurator{
         }
         var writeQueueRamMb = config.DiskCache.WriteQueueRamMb ?? 0;
         if (writeQueueRamMb > 0){
-            options.WriteQueueMemoryMb = writeQueueRamMb;
+            //TODO:  warn ignored
+            
         }
+        
         var EvictionSweepSizeMb = config.DiskCache.EvictionSweepSizeMb ?? 0;
         if (EvictionSweepSizeMb > 0){
             options.EvictionSweepSizeMb = EvictionSweepSizeMb;

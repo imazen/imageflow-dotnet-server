@@ -6,8 +6,9 @@ using System.Threading.Tasks;
 using Azure;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
-using Imageflow.Server.Storage.AzureBlob;
-using Imazen.Common.Storage;
+using Imazen.Abstractions.Blobs;
+using Imazen.Abstractions.Blobs.LegacyProviders;
+using Imazen.Abstractions.Resulting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -19,7 +20,7 @@ namespace Imageflow.Server.Example
         public static IServiceCollection AddImageflowCustomBlobService(this IServiceCollection services,
             CustomBlobServiceOptions options)
         {
-            services.AddSingleton<IBlobProvider>((container) =>
+            services.AddSingleton<IBlobWrapperProvider>((container) =>
             {
                 var logger = container.GetRequiredService<ILogger<CustomBlobService>>();
                 return new CustomBlobService(options, logger);
@@ -31,7 +32,7 @@ namespace Imageflow.Server.Example
 
     public class CustomBlobServiceOptions
     {
-
+        public string Name { get; set; } = "CustomBlobService";
         public BlobClientOptions BlobClientOptions { get; set; } = new BlobClientOptions();
 
         /// <summary>
@@ -62,7 +63,7 @@ namespace Imageflow.Server.Example
     }
     
     
-    public class CustomBlobService : IBlobProvider
+    public class CustomBlobService : IBlobWrapperProvider
     {
         private readonly BlobServiceClient client;
 
@@ -73,6 +74,7 @@ namespace Imageflow.Server.Example
             client = new BlobServiceClient(options.ConnectionString, options.BlobClientOptions);
         }
 
+        public string UniqueName => options.Name;
         public IEnumerable<string> GetPrefixes()
         {
             return Enumerable.Repeat(options.Prefix, 1);
@@ -83,7 +85,7 @@ namespace Imageflow.Server.Example
                 options.IgnorePrefixCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
         
 
-        public async Task<IBlobData> Fetch(string virtualPath)
+        public async Task<CodeResult<IBlobWrapper>> Fetch(string virtualPath)
         {
             if (!SupportsPath(virtualPath))
             {
@@ -109,42 +111,38 @@ namespace Imageflow.Server.Example
             try
             {
                 var blobClient = client.GetBlobContainerClient(container).GetBlobClient(blobKey);
-
+                var latencyZone = new LatencyTrackingZone($"azure::blob/{container}", 100);
                 var s = await blobClient.DownloadAsync();
-                return new CustomAzureBlob(s);
+                return CodeResult<IBlobWrapper>.Ok(new BlobWrapper(latencyZone,CustomAzureBlobHelpers.CreateAzureBlob(s)));
 
             }
             catch (RequestFailedException e)
             {
                 if (e.Status == 404)
                 {
-                    throw new BlobMissingException($"Azure blob \"{blobKey}\" not found.", e);
+                    return CodeResult<IBlobWrapper>.Err(HttpStatus.NotFound.WithMessage(
+                        $"Azure blob \"{blobKey}\" not found."));
                 }
 
                 throw;
 
             }
         }
+
     }
-    internal class CustomAzureBlob :IBlobData, IDisposable
+    internal static class CustomAzureBlobHelpers
     {
-        private readonly Response<BlobDownloadInfo> response;
-
-        internal CustomAzureBlob(Response<BlobDownloadInfo> r)
+        public static IConsumableBlob CreateAzureBlob(Response<BlobDownloadInfo> response)
         {
-            response = r;
-        }
-
-        public bool? Exists => true;
-        public DateTime? LastModifiedDateUtc => response.Value.Details.LastModified.UtcDateTime;
-        public Stream OpenRead()
-        {
-            return response.Value.Content;
-        }
-
-        public void Dispose()
-        {
-            response?.Value?.Dispose();
+            var a = new BlobAttributes()
+            {
+                LastModifiedDateUtc = response.Value.Details.LastModified.UtcDateTime,
+                ContentType = response.Value.ContentType,
+                Etag = response.Value.Details.ETag.ToString(),
+                
+            };
+            var stream = response.Value.Content;
+            return new ConsumableStreamBlob(a, stream);
         }
     }
 }

@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Concurrent;
 using System.Net;
-using System.Net.Http;
-using System.Threading;
-using System.Threading.Tasks;
+using System.Text;
 using Imazen.Common.Instrumentation.Support.InfoAccumulators;
 using Imazen.Common.Issues;
 
@@ -36,7 +31,7 @@ namespace Imazen.Common.Licensing
         readonly Func<IInfoAccumulator> getInfo;
 
         readonly string id;
-        readonly Action<string, IReadOnlyCollection<FetchResult>> licenseResult;
+        readonly Action<string?, IReadOnlyCollection<FetchResult>> licenseResult;
 
         readonly ImperfectDebounce regular;
         readonly string secret;
@@ -48,7 +43,7 @@ namespace Imazen.Common.Licensing
         public string CacheKey => id + "_" + Fnv1a32.HashToInt(secret).ToString("x");
 
         public LicenseFetcher(ILicenseClock clock, Func<HttpClient> getClient,
-                              Action<string, IReadOnlyCollection<FetchResult>> licenseResult,
+                              Action<string?, IReadOnlyCollection<FetchResult>> licenseResult,
                               Func<IInfoAccumulator> getInfo, IIssueReceiver sink, string licenseId,
                               string licenseSecret, string[] baseUrls, long? licenseFetchIntervalSeconds)
         {
@@ -102,7 +97,7 @@ namespace Imazen.Common.Licensing
 
             foreach (var prefix in baseUrls) {
                 var baseUrl = prefix + LicenseFetchPath + ".txt";
-                Uri url = null;
+                Uri? url = null;
                 using (var tokenSource = new CancellationTokenSource()) {
                     var token = cancellationToken ?? tokenSource.Token;
                     try {
@@ -118,7 +113,7 @@ namespace Imazen.Common.Licensing
 
                         if (httpResponse.IsSuccessStatusCode) {
                             var bodyBytes = await httpResponse.Content.ReadAsByteArrayAsync();
-                            var bodyStr = System.Text.Encoding.UTF8.GetString(bodyBytes);
+                            var bodyStr = Encoding.UTF8.GetString(bodyBytes);
 
                             // Exit task early if canceled (process shutdown?)
                             if (token.IsCancellationRequested) {
@@ -142,7 +137,7 @@ namespace Imazen.Common.Licensing
 
                         var networkFailure = NetworkFailures.Any(s => s == status);
                         results.Add(new FetchResult {
-                            FetchError = (Exception) web ?? rex,
+                            FetchError = web as Exception ?? rex,
                             FullUrl = url,
                             ShortUrl = baseUrl,
                             FailureKind = status,
@@ -172,7 +167,7 @@ namespace Imazen.Common.Licensing
 
         public IIssue FirewallIssue(string licenseName) => FirewallIssue(licenseName, null);
 
-        public IIssue FirewallIssue(string licenseName, FetchResult r)
+        public IIssue FirewallIssue(string licenseName, FetchResult? r)
         {
             string resultMessage = r != null ? $"\n\nHTTP={r.HttpCode}. Exception status={r.FailureKind}. Exception: {r.FetchError}" : "";
             return new Issue("Check firewall; cannot reach Amazon S3 to validate license " + licenseName,
@@ -217,7 +212,7 @@ namespace Imazen.Common.Licensing
             return $"?license_id={id}";
         }
 
-        bool InvokeResultCallback(string body, IReadOnlyCollection<FetchResult> results)
+        bool InvokeResultCallback(string? body, IReadOnlyCollection<FetchResult> results)
         {
             try {
                 licenseResult(body, results);
@@ -232,10 +227,10 @@ namespace Imazen.Common.Licensing
         internal class FetchResult
         {
             public int? HttpCode { get; set; }
-            public string ShortUrl { get; set; }
-            public Uri FullUrl { get; set; }
-            public Exception FetchError { get; set; }
-            public Exception ParsingError { get; set; }
+            public string? ShortUrl { get; set; }
+            public Uri? FullUrl { get; set; }
+            public Exception? FetchError { get; set; }
+            public Exception? ParsingError { get; set; }
             public bool LikelyNetworkFailure { get; set; }
             public WebExceptionStatus? FailureKind { get; set; }
         }
@@ -247,7 +242,7 @@ namespace Imazen.Common.Licensing
             const uint FnvPrime = 16777619;
             const uint FnvOffsetBasis = 2166136261;
 
-            public static uint HashToInt(string s) => HashToInt(System.Text.Encoding.UTF8.GetBytes(s));
+            public static uint HashToInt(string s) => HashToInt(Encoding.UTF8.GetBytes(s));
 
             public static uint HashToInt(byte[] array)
             {

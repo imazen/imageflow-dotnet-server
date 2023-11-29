@@ -1,22 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace Imazen.Common.Instrumentation.Support.InfoAccumulators
+﻿namespace Imazen.Common.Instrumentation.Support.InfoAccumulators
 {
     internal class ProxyAccumulator : IInfoAccumulator
     {
-        readonly Action<string, string> add;
-        readonly Action<string, string> prepend;
+        readonly Action<string, string?> add;
+        readonly Action<string, string?> prepend;
         readonly bool usePrepend;
-        readonly Func<IEnumerable<KeyValuePair<string, string>>> fetch;
-        public ProxyAccumulator(bool usePrepend, Action<string, string> add, Action<string, string> prepend, Func<IEnumerable<KeyValuePair<string, string>>> fetch)
+        readonly Func<IEnumerable<KeyValuePair<string, string?>>> fetch;
+        public ProxyAccumulator(bool usePrepend, Action<string, string?> add, Action<string, string?> prepend, Func<IEnumerable<KeyValuePair<string, string?>>> fetch)
         {
             this.usePrepend = usePrepend;
             this.add = add;
             this.prepend = prepend;
             this.fetch = fetch;
         }
-        public void AddString(string key, string value)
+        public void AddString(string key, string? value)
         {
             if (usePrepend)
             {
@@ -28,7 +25,7 @@ namespace Imazen.Common.Instrumentation.Support.InfoAccumulators
             }
         }
 
-        public IEnumerable<KeyValuePair<string, string>> GetInfo()
+        public IEnumerable<KeyValuePair<string, string?>> GetInfo()
         {
             return fetch();
         }

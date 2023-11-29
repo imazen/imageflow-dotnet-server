@@ -1,7 +1,4 @@
-﻿
-using System;
-using System.Collections.Generic;
-using Imazen.Common.Issues;
+﻿using Imazen.Common.Issues;
 using Imazen.Common.Persistence;
 
 namespace Imazen.Common.Licensing
@@ -45,7 +42,7 @@ namespace Imazen.Common.Licensing
         /// </summary>
         /// <param name="license"></param>
         /// <param name="access"></param>
-        ILicenseChain GetOrAdd(string license, LicenseAccess access);
+        ILicenseChain? GetOrAdd(string license, LicenseAccess access);
 
         /// <summary>
         /// Returns all shared license chains (a chain is shared if any relevant license is marked shared)
@@ -103,13 +100,13 @@ namespace Imazen.Common.Licensing
         /// Returns null until a fresh license has been fetched (within process lifetime) 
         /// </summary>
         /// <returns></returns>
-        ILicenseBlob FetchedLicense();
+        ILicenseBlob? FetchedLicense();
 
         ///// <summary>
         ///// Returns the (presumably) disk cached license
         ///// </summary>
         ///// <returns></returns>
-        ILicenseBlob CachedLicense();
+        ILicenseBlob? CachedLicense();
 
 
         /// <summary>
@@ -118,7 +115,7 @@ namespace Imazen.Common.Licensing
         /// <returns></returns>
         string ToPublicString();
 
-        string LastFetchUrl();
+        string? LastFetchUrl();
     }
 
     /// <summary>
@@ -137,7 +134,7 @@ namespace Imazen.Common.Licensing
         string Id { get; }
         IReadOnlyDictionary<string, string> Pairs { get; }
 
-        string Get(string key);
+        string? Get(string key);
         DateTimeOffset? Issued { get; }
         DateTimeOffset? Expires { get; }
         DateTimeOffset? ImageflowExpires { get; }

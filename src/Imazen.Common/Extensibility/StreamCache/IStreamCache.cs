@@ -1,16 +1,12 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
 using Imazen.Common.Issues;
 using Microsoft.Extensions.Hosting;
 
 namespace Imazen.Common.Extensibility.StreamCache
 {
-    // A tuple 
+    [Obsolete("Switch to IBlobCache; a callback system is no longer used")]
     public delegate Task<IStreamCacheInput> AsyncBytesResult(CancellationToken cancellationToken);
     
+    [Obsolete("Implement IBlobCacheProvider and IBlobCache instead")]
     public interface IStreamCache : IIssueProvider, IHostedService
     {
         /// <summary>

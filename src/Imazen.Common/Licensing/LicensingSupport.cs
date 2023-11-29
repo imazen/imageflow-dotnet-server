@@ -1,7 +1,5 @@
-﻿using System;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
+﻿using System.Diagnostics;
+using Imazen.Common.Instrumentation.Support;
 
 namespace Imazen.Common.Licensing
 {
@@ -15,11 +13,15 @@ namespace Imazen.Common.Licensing
 
         public DateTimeOffset? GetBuildDate()
         {
-            try {
-                return GetType()
-                    .Assembly.GetCustomAttributes(typeof(BuildDateAttribute), false)
-                    .Select(a => ((BuildDateAttribute) a).ValueDate)
-                    .FirstOrDefault();
+            try
+            {   
+                // Fall back to the old attribute
+                var type = GetType();
+                return type.Assembly.GetFirstAttribute<Abstractions.AssemblyAttributes.BuildDateAttribute>()?.ValueDate ??
+#pragma warning disable CS0618 // Type or member is obsolete
+                       type.Assembly.GetFirstAttribute<BuildDateAttribute>()?.ValueDate;
+#pragma warning restore CS0618 // Type or member is obsolete
+                       
             } catch {
                 return null;
             }
@@ -27,9 +29,16 @@ namespace Imazen.Common.Licensing
 
         public DateTimeOffset? GetAssemblyWriteDate()
         {
-            var path = GetType().Assembly.Location;
             try {
-                return path != null && File.Exists(path)
+                // .Location can throw, or be empty string (on AOT)
+#pragma warning disable IL3000
+                var path = GetType().Assembly.Location;
+#pragma warning restore IL3000
+                if (string.IsNullOrEmpty(path))
+                {
+                    return null;
+                }
+                return File.Exists(path)
                     ? new DateTimeOffset?(File.GetLastWriteTimeUtc(path))
                     : null;
             } catch {

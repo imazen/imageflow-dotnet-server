@@ -1,11 +1,9 @@
-using System;
-
 namespace Imazen.Common.Licensing
 {
     /// <summary>
     /// Sharing of license keys.
     /// </summary>
-    [Flags()]
+    [Flags]
     internal enum LicenseAccess
     {
         /// <summary>

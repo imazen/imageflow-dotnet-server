@@ -1,15 +1,10 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http;
-using System.Threading.Tasks;
+﻿using System.Collections.Concurrent;
 using Imazen.Common.Instrumentation;
 using Imazen.Common.Instrumentation.Support.InfoAccumulators;
 using Imazen.Common.Issues;
- using Imazen.Common.Persistence;
+using Imazen.Common.Persistence;
 
- namespace Imazen.Common.Licensing
+namespace Imazen.Common.Licensing
 {
     /// <summary>
     ///     A license manager can serve as a per-process (per app-domain, at least) hub for license fetching
@@ -19,8 +14,8 @@ using Imazen.Common.Issues;
         /// <summary>
         ///     Connects all variants of each license to the relevant chain
         /// </summary>
-        readonly ConcurrentDictionary<string, LicenseChain> aliases =
-            new ConcurrentDictionary<string, LicenseChain>(StringComparer.Ordinal);
+        readonly ConcurrentDictionary<string, LicenseChain?> aliases =
+            new ConcurrentDictionary<string, LicenseChain?>(StringComparer.Ordinal);
 
         /// <summary>
         ///     By license id/domain, lowercase invariant.
@@ -89,7 +84,7 @@ using Imazen.Common.Issues;
             if (fetcherCount > 0)
             {
                 var now = DateTime.UtcNow;
-                var oldestWrite = chains.Values.Where(c => c.IsRemote).Select(c => Cache.GetWriteTimeUtc(c.CacheKey)).Min();
+                var oldestWrite = chains.Values.Where(c => c.IsRemote).Select(c => Cache.GetWriteTimeUtc(c.RemoteCacheKey)).Min();
                 if (oldestWrite.HasValue && now.Subtract(oldestWrite.Value) < TimeSpan.FromMinutes(60))
                 {
                     SkipHeartbeats = SkipHeartbeatsIfDiskCacheIsFresh;
@@ -110,15 +105,15 @@ using Imazen.Common.Issues;
         public IReadOnlyCollection<RSADecryptPublic> TrustedKeys { get; }
 
         private static readonly object SingletonLock = new object();
-        private static LicenseManagerSingleton _singleton;
+        private static LicenseManagerSingleton? _singleton;
         public static LicenseManagerSingleton GetOrCreateSingleton(string keyPrefix, string[] candidateCacheFolders)
         {
             lock (SingletonLock)
             {
-                return _singleton ?? (_singleton = new LicenseManagerSingleton(
+                return _singleton ??= new LicenseManagerSingleton(
                     ImazenPublicKeys.Production,
                     new RealClock(),
-                    new PersistentGlobalStringCache(keyPrefix, candidateCacheFolders)));
+                    new PersistentGlobalStringCache(keyPrefix, candidateCacheFolders));
             }
         }
 
@@ -127,7 +122,7 @@ using Imazen.Common.Issues;
         {
             TrustedKeys = trustedKeys;
             Clock = clock;
-            SetHttpMessageHandler(null, true);
+            HttpClient = SetHttpMessageHandler(null, true);
             Cache = cache;
         }
 
@@ -184,10 +179,11 @@ using Imazen.Common.Issues;
         /// <summary>
         ///     Registers the license and (if relevant) signs it up for periodic updates from S3. Can also make existing private
         ///     licenses shared.
+        /// Returns null if the license fails to parse
         /// </summary>
         /// <param name="license"></param>
         /// <param name="access"></param>
-        public ILicenseChain GetOrAdd(string license, LicenseAccess access)
+        public ILicenseChain? GetOrAdd(string license, LicenseAccess access)
         {
             var chain = aliases.GetOrAdd(license, GetChainFor);
             // We may want to share a previously unshared license
@@ -220,10 +216,10 @@ using Imazen.Common.Issues;
         {
             var weakTarget = new WeakReference(target, false);
             // ReSharper disable once ConvertToLocalFunction
-            LicenseManagerEvent handler = null;
-            handler = mgr =>
+            LicenseManagerEvent? handler = null;
+            handler = _ =>
             {
-                var t = (TTarget) weakTarget.Target;
+                var t = (TTarget?) weakTarget.Target;
                 if (t != null) {
                     action(t, this);
                 } else {
@@ -247,7 +243,7 @@ using Imazen.Common.Issues;
         /// <summary>
         ///     When there is a material change or addition to a license chain (whether private or shared)
         /// </summary>
-        event LicenseManagerEvent LicenseChange;
+        event LicenseManagerEvent? LicenseChange;
 
         void Pipeline_Heartbeat(object sender, ILicenseConfig c) { Heartbeat(); }
 
@@ -259,15 +255,15 @@ using Imazen.Common.Issues;
             Heartbeat();
         }
 
-        LicenseChain GetChainFor(string license)
+        LicenseChain? GetChainFor(string license)
         {
             var blob = TryDeserialize(license, "configuration", true);
             if (blob == null) {
                 return null;
             }
 
-            var chain = chains.GetOrAdd(blob.Fields.Id, k => new LicenseChain(this, k));
-            chain.Add(blob);
+            var chain = chains.GetOrAdd(blob.Fields.Id, k => new LicenseChain(this, k, blob));
+            chain.TryAdd(blob);
 
             FireLicenseChange(); //Can only be triggered for new aliases anyway; we don't really need to debounce on signature
             return chain;
@@ -281,10 +277,11 @@ using Imazen.Common.Issues;
             LicenseChange?.Invoke(this);
         }
 
-        public void SetHttpMessageHandler(HttpMessageHandler handler, bool disposeHandler)
+        public HttpClient SetHttpMessageHandler(HttpMessageHandler? handler, bool disposeHandler)
         {
             var newClient = handler == null ? new HttpClient() : new HttpClient(handler, disposeHandler);
             HttpClient = newClient;
+            return newClient;
         }
 
 
@@ -315,7 +312,7 @@ using Imazen.Common.Issues;
             return tasks.Length;
         }
 
-        public LicenseBlob TryDeserialize(string license, string licenseSource, bool locallySourced)
+        public LicenseBlob? TryDeserialize(string license, string licenseSource, bool locallySourced)
         {
             LicenseBlob blob;
             try {

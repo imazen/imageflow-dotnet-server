@@ -1,14 +1,11 @@
-using System;
-using System.IO;
-using System.Linq;
 using System.Net;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using Imazen.Common.Licensing;
 using Imazen.Common.Tests.Licensing;
+using Imazen.Routing.Layers;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Xunit;
 using Xunit.Abstractions;
@@ -17,8 +14,8 @@ namespace Imageflow.Server.Tests
 {
     class RequestUrlProvider
     {
-        public Uri Url { get; set; } = null;
-        public Uri Get() => Url;
+        public Uri? Url { get; set; }
+        public Uri? Get() => Url;
     }
     
     public class TestLicensing
@@ -48,9 +45,13 @@ namespace Imageflow.Server.Tests
             return sb.ToString();
         }
         
-        internal Task<IHost> StartAsyncWithOptions(ImageflowMiddlewareOptions options)
+        internal Task<IHost> StartAsyncWithOptions(Licensing l, ImageflowMiddlewareOptions options)
         {
             var hostBuilder = new HostBuilder()
+                .ConfigureServices(services =>
+                {
+                    services.AddSingleton(l);
+                })
                 .ConfigureWebHost(webHost =>
                 {
                     // Add TestServer
@@ -77,9 +78,8 @@ namespace Imageflow.Server.Tests
                 var licensing = new Licensing(mgr);
 
 
-                using var host = await StartAsyncWithOptions(new ImageflowMiddlewareOptions()
+                using var host = await StartAsyncWithOptions(licensing,new ImageflowMiddlewareOptions()
                     {
-                        Licensing = licensing,
                         MyOpenSourceProjectUrl = null,
                         EnforcementMethod = EnforceLicenseWith.Http402Error
                     }
@@ -126,9 +126,8 @@ namespace Imageflow.Server.Tests
                 var licensing = new Licensing(mgr);
 
 
-                using var host = await StartAsyncWithOptions(new ImageflowMiddlewareOptions()
+                using var host = await StartAsyncWithOptions(licensing,new ImageflowMiddlewareOptions()
                 {
-                    Licensing = licensing,
                     MyOpenSourceProjectUrl = "https://github.com/username/project",
                     EnforcementMethod = EnforceLicenseWith.RedDotWatermark
                 }.MapPath("/", Path.Combine(contentRoot.PhysicalPath, "images")));
@@ -168,9 +167,8 @@ namespace Imageflow.Server.Tests
                 var url = new RequestUrlProvider();
                 var licensing = new Licensing(mgr, url.Get);
                 
-                using var host = await StartAsyncWithOptions(new ImageflowMiddlewareOptions()
+                using var host = await StartAsyncWithOptions(licensing,new ImageflowMiddlewareOptions()
                     {
-                        Licensing = licensing,
                         MyOpenSourceProjectUrl = null
                     }
                     .SetLicenseKey(EnforceLicenseWith.Http402Error, 
@@ -238,9 +236,8 @@ namespace Imageflow.Server.Tests
                 var url = new RequestUrlProvider();
                 var licensing = new Licensing(mgr, url.Get);
                 
-                using var host = await StartAsyncWithOptions(new ImageflowMiddlewareOptions()
+                using var host = await StartAsyncWithOptions(licensing,new ImageflowMiddlewareOptions()
                     {
-                        Licensing = licensing,
                         MyOpenSourceProjectUrl = null
                     }
                     .SetLicenseKey(EnforceLicenseWith.Http402Error, 
@@ -314,9 +311,8 @@ namespace Imageflow.Server.Tests
                 var licensing = new Licensing(mgr, url.Get);
 
                 
-                using var host = await StartAsyncWithOptions(new ImageflowMiddlewareOptions()
+                using var host = await StartAsyncWithOptions(licensing, new ImageflowMiddlewareOptions()
                     {
-                        Licensing = licensing,
                         MyOpenSourceProjectUrl = null
                     }
                     .SetLicenseKey(EnforceLicenseWith.Http402Error,

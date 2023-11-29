@@ -1,5 +1,3 @@
-using System;
-
 namespace Imazen.Common.Licensing
 {
     [AttributeUsage(AttributeTargets.Assembly)]

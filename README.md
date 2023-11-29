@@ -1,8 +1,8 @@
 [![.NET 6/7](https://github.com/imazen/imageflow-dotnet-server/workflows/Build/badge.svg)](https://github.com/imazen/imageflow-dotnet-server/actions/workflows/dotnet-core.yml)
 
-#### Imageflow.NET Server is image processing and optimizing middleware for ASP.NET 6 & 7. 
+#### Imageflow.NET Server is image processing and optimizing middleware for ASP.NET 6, 7, & 8. 
 
-** Try [the new configuration system](https://github.com/imazen/imageflow-dotnet-server/blob/main/CONFIGURATION.md) to avoid a build step & C#! **
+** Try [the new configuration system](https://github.com/imazen/imageflow-dotnet-server/blob/main/CONFIGURATION.md) to avoid a build step & C#! ** [Check out breaking changes in 0.9](https://github.com/imazen/imageflow-dotnet-server/blob/main/CHANGES.md)
 
 If you don't need an HTTP server, [try Imageflow.NET](https://github.com/imazen/imageflow-dotnet). If you don't want to use .NET, try [Imageflow](https://imageflow.io), which has a server, command-line tool, and library with language bindings for Go, C, Rust, Node, Ruby and more. Imageflow is specifically designed for web servers and focuses on security, quality, and performance. 
 
@@ -40,6 +40,11 @@ All operations are designed to be fast enough for on-demand use.
 * Imageflow [Querystring API](https://docs.imageflow.io/querystring/introduction.html) (compatible with ImageResizer)
 * Production-ready for trusted image files. 
 
+
+### Custom cache layers
+
+* For example, you can cache source images pulled from remote HTTP servers to Amazon S3. 
+* You can also layer multiple caches on top of each other, such as a disk cache and a blob cache. So if the result image isn't found in the low-latency disk cache, you can check the blob cache before generating it.
 
 ### License
 
@@ -371,3 +376,11 @@ namespace Imageflow.Server.Example
 The following platforms / solutions have a direct integration
 
 1. **Oqtane Blazor platform** ([website](https://oqtane.org/) / [docs](https://docs.oqtane.org/) / [git](https://github.com/oqtane/oqtane.framework)): Use the **ToSic.ImageFlow.Oqtane** ([git](https://github.com/2sic/oqtane-imageflow) / [nuget](https://www.nuget.org/packages/ToSic.Imageflow.Oqtane/)) middleware. The package will automatically appear in Oqtane as an installable extension. 
+
+
+
+## Code coverage
+
+dotnet tool install -g dotnet-reportgenerator-globaltool
+
+dotnet test --collect:"XPlat Code Coverage"

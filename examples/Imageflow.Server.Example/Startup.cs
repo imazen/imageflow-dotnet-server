@@ -98,7 +98,6 @@ namespace Imageflow.Server.Example
                     // How long after a file is created before it can be deleted
                     MinAgeToDelete = TimeSpan.FromSeconds(10),
                     // How much RAM to use for the write queue before switching to synchronous writes
-                    WriteQueueMemoryMb = 100,
                     // The maximum size of the cache (1GB)
                     CacheSizeMb = 1000,
                 });

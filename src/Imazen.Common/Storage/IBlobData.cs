@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
-
-namespace Imazen.Common.Storage
+﻿namespace Imazen.Common.Storage
 {
+    [Obsolete("Use Imazen.Abstractions.Blobs.BlobWrapper instead")]
     public interface IBlobData : IDisposable
     {
         bool? Exists { get; }

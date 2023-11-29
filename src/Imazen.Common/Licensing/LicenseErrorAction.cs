@@ -1,11 +1,9 @@
-using System;
-
 namespace Imazen.Common.Licensing
 {
     /// <summary>
     /// How to notify the user that license validation has failed
     /// </summary>
-    [Flags()]
+    [Flags]
     internal enum LicenseErrorAction
     {
         /// <summary>

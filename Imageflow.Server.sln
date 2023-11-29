@@ -1,4 +1,4 @@
-﻿
+﻿ 
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29503.13
@@ -12,6 +12,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		src\NugetPackages.targets = src\NugetPackages.targets
 		Directory.Build.props = Directory.Build.props
 		CONFIGURATION.md = CONFIGURATION.md
+		src\NugetPackageDefaults.targets = src\NugetPackageDefaults.targets
+		src\ProjectDefaults.targets = src\ProjectDefaults.targets
+		CHANGES.md = CHANGES.md
+		tests\TestDefaults.targets = tests\TestDefaults.targets
+		src\design_scratch.md = src\design_scratch.md
+		.github\workflows\dockerize_host.yml = .github\workflows\dockerize_host.yml
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Imazen.Common", "src\Imazen.Common\Imazen.Common.csproj", "{49BDDBEE-3385-4B1D-B7C1-76A893F25C00}"
@@ -38,7 +44,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imageflow.Server.ExampleDoc
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imageflow.Server.ExampleDockerDiskCache", "examples\Imageflow.Server.ExampleDockerDiskCache\Imageflow.Server.ExampleDockerDiskCache.csproj", "{2AD8CC34-5302-4E17-B6D0-F5E47FA49E22}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imazen.Common.Tests", "tests\Imazen.Common.Tests\Imazen.Common.Tests.csproj", "{8ADC01E1-1965-41EF-BA97-2E5DD2302293}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ImazenShared.Tests", "tests\ImazenShared.Tests\ImazenShared.Tests.csproj", "{8ADC01E1-1965-41EF-BA97-2E5DD2302293}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imazen.HybridCache", "src\Imazen.HybridCache\Imazen.HybridCache.csproj", "{02128BFA-C4AC-4CC8-8417-D84C4B699803}"
 EndProject
@@ -53,6 +59,10 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imageflow.Server.Host", "src\Imageflow.Server.Host\Imageflow.Server.Host.csproj", "{A690C458-B22D-4AC0-AE3E-F20A2B70A94C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imageflow.Server.Configuration.Tests", "tests\Imageflow.Server.Configuration.Tests\Imageflow.Server.Configuration.Tests.csproj", "{200CD4DA-C49B-413B-8FCF-8DA73A2803E0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imazen.Routing", "src\Imazen.Routing\Imazen.Routing.csproj", "{5EF0F9EA-D6DE-4E34-9141-4C44DA08A726}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imazen.Abstractions", "src\Imazen.Abstractions\Imazen.Abstractions.csproj", "{A04B9BE0-4931-4305-B9AB-B79737130F20}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -140,6 +150,14 @@ Global
 		{200CD4DA-C49B-413B-8FCF-8DA73A2803E0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{200CD4DA-C49B-413B-8FCF-8DA73A2803E0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{200CD4DA-C49B-413B-8FCF-8DA73A2803E0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5EF0F9EA-D6DE-4E34-9141-4C44DA08A726}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5EF0F9EA-D6DE-4E34-9141-4C44DA08A726}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5EF0F9EA-D6DE-4E34-9141-4C44DA08A726}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5EF0F9EA-D6DE-4E34-9141-4C44DA08A726}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A04B9BE0-4931-4305-B9AB-B79737130F20}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A04B9BE0-4931-4305-B9AB-B79737130F20}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A04B9BE0-4931-4305-B9AB-B79737130F20}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A04B9BE0-4931-4305-B9AB-B79737130F20}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

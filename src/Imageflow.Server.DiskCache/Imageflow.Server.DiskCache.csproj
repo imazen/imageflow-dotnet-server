@@ -1,21 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net6.0</TargetFramework>
         <Title>Imageflow.Server.DiskCache - Plugin for caching processed images to disk.</Title>
         <Description>Imageflow.Server plugin for caching processed images to disk.</Description>
-        <IsPackable>true</IsPackable>
     </PropertyGroup>
 
-    <Import Project="..\NugetPackages.targets" />
+    <Import Project="..\NugetPackageDefaults.targets" />
 
-    
-    <ItemGroup>
-        <FrameworkReference Include="Microsoft.AspNetCore.App" />
-    </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\Imazen.DiskCache\Imazen.DiskCache.csproj" />
+        
     </ItemGroup>
 
     <ItemGroup>

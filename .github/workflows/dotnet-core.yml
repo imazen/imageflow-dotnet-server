@@ -2,31 +2,24 @@ name: Build
 
 on:
   push:
-    branches: [ main ]
   pull_request:
-    branches: [ main ]
   release:
     types: [ published ]
     
 jobs:
-  build:
+  test:
     strategy:
       fail-fast: false
       matrix:
+        os: [ubuntu-20.04, macos-11.0, windows-latest]
         include:
-          - name: ubuntu-20.04
-            os: ubuntu-20.04
-            uploader: true
-            cache_dependencies: true
-            
-          - name: osx_11.0-x86_64
-            os: macos-11.0
-            cache_dependencies: true
-            
-          - name: win-x86_64
-            os: windows-latest
-            cache_dependencies: false
-
+          - os: windows-latest
+            pack: true
+            docs: true
+            dotnet: all
+            coverage: true
+          - os: ubuntu-latest
+            id: ubuntu-latest
     runs-on: ${{matrix.os}}
     steps:     
     - uses: actions/checkout@v3
@@ -35,18 +28,34 @@ jobs:
       with:
         path: ~/.nuget/packages
         key: ${{ runner.os }}-nuget-breaker3-${{ hashFiles('**/packages.lock.json') }}
-      if: matrix.cache_dependencies
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+
+    - name: Check .NET versions available to see if we can skip installs
+      shell: bash
+      run: |
+        echo "DOTNET_VERSION_LIST<<EOF" >> $GITHUB_ENV
+        dotnet --list-sdks >> $GITHUB_ENV
+        echo "EOF" >> $GITHUB_ENV
+
+    - name: Setup .NET 6, 7, 8
+      uses: actions/setup-dotnet@v3
+      if: contains(env.DOTNET_VERSION_LIST, '6.0.') == 'false' || contains(env.DOTNET_VERSION_LIST, '7.0.') == 'false' || contains(env.DOTNET_VERSION_LIST, '8.0.') == 'false'
+      with:
+        dotnet-version: "6\n7\n8\n"
+        
+    - name: Setup .NET 4.8.1 if on windows
+      uses: actions/setup-dotnet@v3
+      if: matrix.os == 'windows-latest' && contains(env.DOTNET_VERSION_LIST, '4.8.1') == 'false'
+      with:
+        dotnet-version: '4.8.1'
         
     - uses: nowsprinting/check-version-format-action@v3
       id: version
       with:
         prefix: 'v'
 
-    - name: Upload planned for Nuget.org?
-      run: echo "This runner will upload to Nuget.org if tests pass"
-      if: matrix.uploader && github.event_name == 'release' &&  steps.version.outputs.is_valid == 'true'
-      
-    - name: Set the release version (if applicable)
+    - name: Set the release version (if applicable) - The source code depends on these
       run: |
         echo "TAGGED_VERSION=${{ steps.version.outputs.full_without_prefix }}" >> $GITHUB_ENV
         echo "ARTIFACT_VERSION=${{ steps.version.outputs.full_without_prefix }}" >> $GITHUB_ENV
@@ -61,28 +70,8 @@ jobs:
         echo Set ARTIFACT_VERSION to commit-${{ github.sha }}
       shell: bash
       if: steps.version.outputs.is_valid == 'false' || github.event_name != 'release'
-
-    - name: Set the Imageflow.Server.Host zip file name
-      run: |
-        echo "HOST_ZIP_FILE=Imageflow.Server.Host-${{matrix.os}}-${{ env.ARTIFACT_VERSION }}.zip" >> $GITHUB_ENV
-        echo Set HOST_ZIP_FILE to ${{ env.HOST_ZIP_FILE }}
-      shell: bash
-
-    - name: Check .NET versions available to see if we can skip install
-      shell: bash
-      run: |
-        echo "DOTNET_VERSION_LIST<<EOF" >> $GITHUB_ENV
-        dotnet --list-sdks >> $GITHUB_ENV
-        echo "EOF" >> $GITHUB_ENV
       
-    - name: Setup .NET 6.0.x and 7.0.x
-      uses: actions/setup-dotnet@v2
-      if: contains(env.DOTNET_VERSION_LIST, '6.0') == 'false' || contains(env.DOTNET_VERSION_LIST, '7.0.') == 'false'
-      with:
-        dotnet-version: |
-          6
-          7
-
+      
     - name: Clear & clean on release or cache miss
       run: |
         dotnet clean --configuration Release
@@ -92,22 +81,70 @@ jobs:
     - name: Restore packages
       run: dotnet restore --force-evaluate
       
-    - name: Build
+    - name: Build all if on windows
       run: dotnet build --maxcpucount:1 -c Release
-      
-    - name: Test
-      run: dotnet test -c Release --blame --no-build
+      if: matrix.os == 'windows-latest'
+    
+    - name: Build for .NET 8, 6
+      run: dotnet build --maxcpucount:1 -c Release --framework net6.0 net8.0
+      if: matrix.os != 'windows-latest'
+
+    - name: Test .NET 6, 8 without Coverage
+      if: matrix.os != 'windows-latest'
+      run: |
+        dotnet test -c Release --framework net6.0
+        dotnet test -c Release --framework net8.0
 
     - uses: actions/upload-artifact@v3
       if: failure()
       with:
         name: TestResults-${{matrix.os}}-${{ env.ARTIFACT_VERSION }}
         path: TestResults/
+        
+    - name: Test .NET 8, 6, and 4.8.1 with Coverage
+      if: matrix.os == 'windows-latest'
+      run: |
+        dotnet test -c Release /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput=./TestResults/coverage.net48.opencover.xml --framework net48
+        dotnet test -c Release /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput=./TestResults/coverage.net6.opencover.xml --framework net6.0
+        dotnet test -c Release /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput=./TestResults/coverage.net8.opencover.xml --framework net8.0
 
-    - name: Publish Host App
-      run: dotnet publish -c Release -o host/publish/ src/Imageflow.Server.Host/Imageflow.Server.Host.csproj
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      if: matrix.os == 'windows-latest'
+      with:
+        files: ./TestResults/coverage.**.opencover.xml
+        token: ${{ secrets.CODECOV_TOKEN }} # replace with your Codecov token
+        fail_ci_if_error: false
+        
+    - uses: actions/upload-artifact@v3
+      if: failure()
+      with:
+        name: TestResults-${{matrix.os}}-${{ env.ARTIFACT_VERSION }}
+        path: TestResults/
+        
+    - name: Pack
+      run: dotnet pack -c Release --include-source
+      if: matrix.pack
 
-    # Zip the contents of folder host/publish/ into host/Imageflow.Server.Host-${{matrix.os}}-${{ env.ARTIFACT_VERSION }}.zip
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      id: nuget-artifact-upload-step
+      if: npack
+      with:
+        name: NuGetPackages
+        path: NuGetPackages/Release/*.nupkg
+        
+    ############################ We build the host for every OS, but only upload it for release ############################
+    - name: Set the Imageflow.Server.Host zip file name
+      run: |
+        echo "HOST_ZIP_FILE=Imageflow.Server.Host-${{matrix.os}}-${{ env.ARTIFACT_VERSION }}.zip" >> $GITHUB_ENV
+        echo Set HOST_ZIP_FILE to ${{ env.HOST_ZIP_FILE }}
+      shell: bash
+      
+    - name: Create Host App Folder
+      run: dotnet publish -c Release -o host/publish/ src/Imageflow.Server.Host/Imageflow.Server.Host.csproj --framework net8.0
+      
+      # Zip the contents of folder host/publish/ into host/Imageflow.Server.Host-${{matrix.os}}-${{ env.ARTIFACT_VERSION }}.zip
     - name: Zip Server.Host
       uses: thedoctor0/zip-release@0.7.1
       with:
@@ -115,16 +152,16 @@ jobs:
         directory: 'host/publish/'
         filename: '../${{env.HOST_ZIP_FILE}}'
         path: '.'
-
-    # Upload the publish folder for src/Imageflow.Server.Host to the release artifacts
-    - name: Upload Imageflow.Server.Host to artifacts
-      uses: actions/upload-artifact@v3
+        
+    - name: Upload Imageflow.Server.Host to job
+      uses: actions/upload-artifact@v4
+      id: host-upload-step
       if: success()
       with:
         name: ${{env.HOST_ZIP_FILE}}
         path: host/${{env.HOST_ZIP_FILE}}
-
-    # If this is a release, upload it to the github release page using the git
+        
+      # If this is a release, upload it to the github release page using the git
     - name: Upload Imageflow.Server.Host to release
       uses: Shopify/upload-to-release@v1.0.1
       if: steps.version.outputs.is_valid == 'true' && github.event_name == 'release'
@@ -133,12 +170,89 @@ jobs:
         path: host/${{env.HOST_ZIP_FILE}}
         repo-token: ${{ secrets.GITHUB_TOKEN }}
         content-type: application/zip
-      
-      
-    - name: Pack
-      run: dotnet pack -c Release --include-source
 
+    - name: Install DocFX
+      run: dotnet tool install --global docfx
+      if: matrix.docs
+    - name: Generate Documentation
+      run: docfx src/DocFx/docfx.json --output docs
+      if: matrix.docs
+      
+    - name: Upload documentation to job
+      id: docs-upload-step
+      uses: actions/upload-artifact@v4
+      if: success() && matrix.docs
+      with:
+          name: Documentation
+          path: docs/
+      
+    outputs:
+      host_artifact-id: ${{ steps.host-upload-step.outputs.artifact_id }}
+      nuget_artifact-id: ${{ steps.nuget-artifact-upload-step.outputs.artifact_id }}
+      docs_artifact-id: ${{ steps.docs-upload-step.outputs.artifact_id }}
+      
+      
+  publish:
+    needs: test
+    if: github.event_name == 'release'
+  
+    runs-on: ubuntu-latest
+    steps:
+    - uses: nowsprinting/check-version-format-action@v3
+      id: version
+      with:
+        prefix: 'v'
+    
+    # Download nuget artifacts from the test job into a folder called NuGetPackages
+    - name: Download artifacts
+      uses: actions/download-artifact@v4
+      if: steps.version.outputs.is_valid == 'true' && github.event_name == 'release'
+      with:
+          name: NuGetPackages
+          path: NuGetPackages
+    
     - name: Publish NuGet packages to Nuget.org
-      if: steps.version.outputs.is_valid == 'true' && github.event_name == 'release' && matrix.uploader
+      if: steps.version.outputs.is_valid == 'true' && github.event_name == 'release'
       run: |
-        dotnet nuget push bin/Release/*.nupkg --skip-duplicate --api-key ${{ secrets.NUGET_API_KEY }} --source nuget.org
+        dotnet nuget push NuGetPackages/*.nupkg --skip-duplicate --api-key ${{ secrets.NUGET_API_KEY }} --source nuget.org
+
+    - name: Download Documentation
+      uses: actions/download-artifact@v4
+      if: steps.version.outputs.is_valid == 'true' && github.event_name == 'release'
+      with:
+        name: Documentation
+        path: docs
+    
+    - name: Deploy Documentation to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./docs
+        
+  dockerize_host:
+    needs: test
+    if: github.event_name == 'release'
+    
+    runs-on: ubuntu-latest
+    steps:
+      - uses: nowsprinting/check-version-format-action@v3
+        id: version
+        with:
+          prefix: 'v'
+      # download artifact using the host artifact id from the test job, the ubuntu-latest matrix version
+      - name: Download Imageflow.Server.Host
+        uses: actions/download-artifact@v4
+        if: steps.version.outputs.is_valid == 'true' && github.event_name == 'release'
+        with:
+          name: ${{ steps.test.outputs.host_artifact-id }}
+          path: host
+          
+      # Create a docker image for the host and push, using the host artifact id from the test job, the ubuntu-latest matrix version
+        
+    
+    
+      ## Create a docker image for the host and push, using the host artifact id from the test job, the ubuntu-latest matrix version
+      
+        
+        
+

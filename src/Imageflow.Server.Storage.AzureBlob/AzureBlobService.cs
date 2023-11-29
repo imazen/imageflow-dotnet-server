@@ -1,30 +1,66 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Azure;
+﻿using Azure;
 using Azure.Storage.Blobs;
-using Imazen.Common.Storage;
-using Microsoft.Extensions.Logging;
+using Imageflow.Server.Storage.AzureBlob.Caching;
+using Imazen.Abstractions.BlobCache;
+using Imazen.Abstractions.Blobs;
+using Imazen.Abstractions.Blobs.LegacyProviders;
+using Imazen.Abstractions.Logging;
+using Imazen.Abstractions.Resulting;
+using Microsoft.Extensions.Azure;
 
 namespace Imageflow.Server.Storage.AzureBlob
 {
-    public class AzureBlobService : IBlobProvider
+    public class AzureBlobService : IBlobWrapperProvider, IBlobCacheProvider, IBlobWrapperProviderZoned
     {
         private readonly List<PrefixMapping> mappings = new List<PrefixMapping>();
 
+        private readonly List<IBlobCache> caches = new List<IBlobCache>();
+        public IEnumerable<IBlobCache> GetBlobCaches() => caches;
+
         private readonly BlobServiceClient client;
 
-        public AzureBlobService(AzureBlobServiceOptions options, ILogger<AzureBlobService> logger)
+        private readonly IAzureClientFactory<BlobServiceClient> clientFactory;
+
+        
+        public string UniqueName { get; }
+        public IEnumerable<BlobWrapperPrefixZone> GetPrefixesAndZones()
         {
-            client = new BlobServiceClient(options.ConnectionString, options.BlobClientOptions);
+            return mappings.Select(m => new BlobWrapperPrefixZone(m.UrlPrefix, 
+                new LatencyTrackingZone($"azure::blob/{m.Container}", 100)));
+        }
+
+        public AzureBlobService(AzureBlobServiceOptions options, IReLoggerFactory loggerFactory,  BlobServiceClient defaultClient, IAzureClientFactory<BlobServiceClient> clientFactory)
+        {
+            UniqueName = options.UniqueName ?? "azure-blob";
+            var nameOrInstance = options.GetOrCreateClient();
+            if (nameOrInstance.HasValue)
+            {   
+                if (nameOrInstance.Value.Client != null)
+                    client = nameOrInstance.Value.Client;
+                else
+                    client = clientFactory.CreateClient(nameOrInstance.Value.Name);
+            }
+            else
+            {
+                client = defaultClient;
+            }
+            this.clientFactory = clientFactory;
+
             foreach (var m in options.Mappings)
             {
                 mappings.Add(m);
             }
 
             mappings.Sort((a, b) => b.UrlPrefix.Length.CompareTo(a.UrlPrefix.Length));
+
+            options.NamedCaches.ForEach(c =>
+            {
+                var cache = new AzureBlobCache(c, clientName => clientName == null ? client : clientFactory.CreateClient(clientName), loggerFactory); //TODO! get logging working
+                caches.Add(cache);
+            });
         }
+
+
 
         public IEnumerable<string> GetPrefixes()
         {
@@ -36,14 +72,15 @@ namespace Imageflow.Server.Storage.AzureBlob
             return mappings.Any(s => virtualPath.StartsWith(s.UrlPrefix, 
                 s.IgnorePrefixCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal));
         }
+        
 
-        public async Task<IBlobData> Fetch(string virtualPath)
+        public async Task<CodeResult<IBlobWrapper>> Fetch(string virtualPath)
         {
             var mapping = mappings.FirstOrDefault(s => virtualPath.StartsWith(s.UrlPrefix, 
                 s.IgnorePrefixCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal));
             if (mapping.UrlPrefix == null)
             {
-                return null;
+                return CodeResult<IBlobWrapper>.Err(HttpStatus.NotFound.WithAddFrom($"Azure blob mapping not found for \"{virtualPath}\""));
             }
 
             var partialKey = virtualPath.Substring(mapping.UrlPrefix.Length).TrimStart('/');
@@ -60,22 +97,24 @@ namespace Imageflow.Server.Storage.AzureBlob
             
             try
             {
-                var blobClient = client.GetBlobContainerClient(mapping.Container).GetBlobClient(key);
-
-                var s = await blobClient.DownloadAsync();
-                return new AzureBlob(s);
+                var containerClient = client.GetBlobContainerClient(mapping.Container);
+                var blobClient = containerClient.GetBlobClient(key);
+                var reference = new AzureBlobStorageReference(containerClient.Uri.AbsoluteUri, key);
+                var s = await blobClient.DownloadStreamingAsync();
+                var latencyZone = new LatencyTrackingZone($"azure::blob/{mapping.Container}", 100);
+                return CodeResult<IBlobWrapper>.Ok(new BlobWrapper(latencyZone,AzureBlobHelper.CreateConsumableBlob(reference, s.Value)));
 
             }
             catch (RequestFailedException e)
             {
                 if (e.Status == 404)
                 {
-                    throw new BlobMissingException($"Azure blob \"{key}\" not found.\n({e.Message})", e);
+                    return CodeResult<IBlobWrapper>.Err(HttpStatus.NotFound.WithAddFrom($"Azure blob \"{key}\" not found.\n({e.Message})"));
                 }
-
                 throw;
-
             }
         }
+
+
     }
 }

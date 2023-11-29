@@ -1,4 +1,4 @@
-﻿using System;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 
 namespace Imazen.Common.Instrumentation
@@ -23,8 +23,7 @@ namespace Imazen.Common.Instrumentation
 
                 Marshal.Copy(codeBytes, 0, codePointer, codeBytes.Length);
 
-                var cpuIdDelg =
-                    (CpuIdDelegate) Marshal.GetDelegateForFunctionPointer(codePointer, typeof(CpuIdDelegate));
+                var cpuIdDelg =Marshal.GetDelegateForFunctionPointer<CpuIdDelegate>(codePointer);
 
                 // invoke
                 var handle = default(GCHandle);

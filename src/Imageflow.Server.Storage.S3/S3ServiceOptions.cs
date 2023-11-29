@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using Amazon;
-using Amazon.Runtime;
 using Amazon.S3;
 using Imageflow.Server.Storage.S3.Caching;
 
@@ -11,6 +9,15 @@ namespace Imageflow.Server.Storage.S3
     {
         internal readonly List<PrefixMapping> Mappings = new List<PrefixMapping>();
         internal readonly List<NamedCacheConfiguration> NamedCaches = new List<NamedCacheConfiguration>();
+        internal string UniqueName { get; private set; } = "s3";
+        
+        public S3ServiceOptions SetUniqueName(string uniqueName)
+        {
+            UniqueName = uniqueName;
+            return this;
+        }
+
+        
 
         public S3ServiceOptions MapPrefix(string prefix, string bucket)
             => MapPrefix(prefix, bucket, "");
@@ -26,7 +33,6 @@ namespace Imageflow.Server.Storage.S3
         /// Maps a given prefix to a specified location within a bucket
         /// </summary>
         /// <param name="prefix">The prefix to capture image requests within</param>
-        /// <param name="s3Config">The configuration (such as region endpoint or service URL, etc) to use</param>
         /// <param name="bucket">The bucket to serve images from</param>
         /// <param name="blobPrefix">The path within the bucket to serve images from. Can be an empty string to serve
         /// from root of bucket.</param>
@@ -52,7 +58,7 @@ namespace Imageflow.Server.Storage.S3
         /// (requires that actual blobs all be lowercase).</param>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
-        public S3ServiceOptions MapPrefix(string prefix, IAmazonS3 s3Client, string bucket, string blobPrefix, bool ignorePrefixCase, bool lowercaseBlobPath)
+        public S3ServiceOptions MapPrefix(string prefix, IAmazonS3? s3Client, string bucket, string blobPrefix, bool ignorePrefixCase, bool lowercaseBlobPath)
         {
             prefix = prefix.TrimStart('/').TrimEnd('/');
             if (prefix.Length == 0)
@@ -82,7 +88,7 @@ namespace Imageflow.Server.Storage.S3
         /// </summary>
         /// <param name="namedCacheConfiguration"></param>
         /// <returns></returns>
-        public S3ServiceOptions AddNamedCacheConfiguration(NamedCacheConfiguration namedCacheConfiguration)
+        public S3ServiceOptions AddNamedCache(NamedCacheConfiguration namedCacheConfiguration)
         {
             NamedCaches.Add(namedCacheConfiguration);
             return this;

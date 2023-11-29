@@ -1,0 +1,334 @@
+﻿using System.Diagnostics;
+using Imageflow.Fluent;
+using Imageflow.Server.Caching;
+using Imazen.Abstractions.Blobs;
+using Imazen.Common.Helpers;
+using Imazen.Common.Instrumentation;
+using Imazen.Common.Storage;
+using Imazen.Routing.Compatibility.ImageflowServer;
+using Imazen.Routing.Helpers;
+
+namespace Imazen.Routing.Serving
+{
+    internal class ImageJobInfo<TRequest, TResponse, TContext> 
+        where TRequest : IHttpRequestStreamAdapter
+        where TResponse : IHttpResponseStreamAdapter
+    {
+        public static bool ShouldHandleRequest(TRequest request, ImageServerOptions options, ImageflowMiddlewareOptions<TContext> legacyOptions)
+        {
+            
+            // If the path is empty or null we don't handle it
+            // If the path is empty or null we don't handle it
+            var pathValue = request.GetPath();
+            if (pathValue == null || !pathValue.HasValue)
+                return false;
+
+            var path = pathValue.Value;
+            if (path == null)
+                return false;
+            
+            // We handle image request extensions
+            if (PathHelpers.IsImagePath(path))
+            {
+                return true;
+            }
+
+            // Don't do string parsing unless there are actually prefixes configured
+            if (legacyOptions.ExtensionlessPaths.Count == 0) return false;
+            
+            // If there's no extension, then we can see if it's one of the prefixes we should handle
+            var extension = Path.GetExtension(path);
+            // If there's a non-image extension, we shouldn't handle the request
+            if (!string.IsNullOrEmpty(extension)) return false;
+
+            // Return true if any of the prefixes match
+            return legacyOptions.ExtensionlessPaths
+                .Any(extensionlessPath => path.StartsWith(extensionlessPath.Prefix, extensionlessPath.PrefixComparison));
+        }
+        public ImageJobInfo(TRequest request, TContext context, ImageflowMiddlewareOptions<TContext> legacyOptions, CacheManager cacheManager,
+            ILicenseChecker licenseChecker)
+        {
+            this.legacyOptions = legacyOptions;
+            GlobalPerf.Singleton.PreRewriteQuery(request.GetQuery().Keys);
+
+            HasParams = PathHelpers.SupportedQuerystringKeys.Any(FinalQuery.ContainsKey);
+
+            var extension = Path.GetExtension(FinalVirtualPath);
+            if (FinalQuery.TryGetValue("format", out var newExtension))
+            {
+                extension = newExtension;
+            }
+
+            EstimatedFileExtension = PathHelpers.SanitizeImageExtension(extension) ?? "jpg";
+
+            primaryBlob = new BlobFetchCache(FinalVirtualPath, cacheManager);
+            allBlobs = new List<BlobFetchCache>(1) {primaryBlob};
+
+            appliedWatermarks = new List<NamedWatermark>();
+            
+            if (HasParams)
+            {
+                if (licenseChecker.RequestNeedsEnforcementAction(request))
+                {
+                    if (this.legacyOptions.EnforcementMethod == EnforceLicenseWith.RedDotWatermark)
+                    {
+                        FinalQuery["watermark_red_dot"] = "true";
+                    }
+                    LicenseError = true;
+                }
+                
+                CommandString = PathHelpers.SerializeCommandString(FinalQuery);
+
+                // Look up watermark names
+                if (FinalQuery.TryGetValue("watermark", out var watermarkValues))
+                {
+                    var watermarkNames = watermarkValues.Split(',').Select(s => s.Trim(' '));
+                    foreach (var name in watermarkNames)
+                    {
+                        var watermark = this.legacyOptions.NamedWatermarks.FirstOrDefault(w =>
+                            w.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+                        if (watermark == null)
+                        {
+                            throw new InvalidOperationException(
+                                $"watermark {name} was referenced from the querystring but no watermark by that name is registered with the middleware");
+                        }
+
+                        appliedWatermarks.Add(watermark);
+                    }
+                }
+            }
+
+            // After we've populated the defaults, run the event handlers for custom watermarking logic
+            var args = new WatermarkingContextEventArgs<TContext>(context, FinalVirtualPath, FinalQuery, appliedWatermarks);
+            foreach (var handler in this.legacyOptions.Watermarking)
+            {
+                var matches = string.IsNullOrEmpty(handler.PathPrefix) ||
+                              ( FinalVirtualPath != null &&
+                              FinalVirtualPath.StartsWith(handler.PathPrefix, StringComparison.OrdinalIgnoreCase));
+                if (matches) handler.Handler(args);
+            }
+            appliedWatermarks = args.AppliedWatermarks;
+            if (appliedWatermarks.Count > 0)
+            {
+                HasParams = true; 
+            }
+
+            // Add the watermark source files
+            foreach (var w in appliedWatermarks)
+            {
+                allBlobs.Add(new BlobFetchCache(w.VirtualPath, cacheManager));
+            }
+        }
+
+        public string FinalVirtualPath { get; private set; }
+
+        private Dictionary<string,string> FinalQuery { get; set; }
+        public bool HasParams { get; }
+        
+        public bool Authorized { get; }
+
+        public bool LicenseError { get; }
+        public string CommandString { get; } = "";
+        public string EstimatedFileExtension { get; }
+        public string AuthorizedMessage { get; private set; }
+        
+        private readonly List<NamedWatermark> appliedWatermarks;
+
+        private readonly List<BlobFetchCache> allBlobs;
+        private readonly BlobFetchCache primaryBlob;
+        private readonly ImageflowMiddlewareOptions<TContext> legacyOptions;
+        
+
+        public bool PrimaryBlobMayExist()
+        {
+            // Just returns a lambda for performing the actual fetch, does not actually call .Fetch() on providers
+            return primaryBlob.GetBlobResult() != null;
+        }
+
+        public bool NeedsCaching()
+        {
+            return HasParams || primaryBlob?.GetBlobResult()?.IsFile == false;
+        }
+
+        public bool ServerCachingEnabledForRequest()
+        {
+            //TODO - actually consult the configurations here!
+            return this.NeedsCaching();
+        }
+      
+        public Task<BlobWrapper> GetPrimaryBlob()
+        {
+            return primaryBlob.GetBlob();
+        }
+
+        private string HashStrings(IEnumerable<string> strings)
+        {
+            return PathHelpers.CreateBase64UrlHash(string.Join('|',strings));
+        }
+
+        internal async Task CopyPrimaryBlobToAsync(Stream stream)
+        {
+
+            await using var sourceStream = (await GetPrimaryBlob()).OpenRead();
+            var oldPosition = stream.Position;
+            await sourceStream.CopyToAsync(stream);
+            if (stream.Position - oldPosition == 0)
+            {
+                throw new InvalidOperationException("Source blob has zero bytes; will not proxy.");
+            }
+        }
+
+        internal async Task<byte[]> GetPrimaryBlobBytesAsync()
+        {
+            await using var sourceStream = (await GetPrimaryBlob()).OpenRead();
+            var ms = new MemoryStream(sourceStream.CanSeek ? (int)sourceStream.Length : 4096);
+            await sourceStream.CopyToAsync(ms);
+            var buffer = ms.ToArray();
+            if (buffer.Length == 0)
+            {
+                throw new InvalidOperationException("Source blob has length of zero bytes; will not proxy.");
+            }
+            return buffer;
+        }
+
+        private string[] serializedWatermarkConfigs;
+        private IEnumerable<string> SerializeWatermarkConfigs()
+        {
+            if (serializedWatermarkConfigs != null) return serializedWatermarkConfigs;
+            if (appliedWatermarks == null) return Enumerable.Empty<string>();
+            serializedWatermarkConfigs = appliedWatermarks.Select(w => w.Serialized()).ToArray();
+            return serializedWatermarkConfigs;
+        }
+
+        public async Task<string> GetFastCacheKey()
+        {
+            // Only get DateTime values from local files
+            var dateTimes = await Task.WhenAll(
+                allBlobs
+                    .Where(b => b.GetBlobResult()?.IsFile == true)
+                    .Select(async b =>
+                        (await b.GetBlob())?.LastModifiedDateUtc?.ToBinary().ToString()));
+            
+            return HashStrings(new [] {FinalVirtualPath, CommandString}.Concat(dateTimes).Concat(SerializeWatermarkConfigs()));
+        }
+
+        public override string ToString()
+        {
+            return CommandString;
+        }
+
+        public async Task<string> GetExactCacheKey()
+        {
+            var dateTimes = await Task.WhenAll(
+                allBlobs
+                    .Select(async b =>
+                        (await b.GetBlob())?.LastModifiedDateUtc?.ToBinary().ToString()));
+            
+            return HashStrings(new [] {FinalVirtualPath, CommandString}.Concat(dateTimes).Concat(SerializeWatermarkConfigs()));
+        }
+
+        private class BlobFetchResult: IDisposable
+        {
+            private IBlobData blob;
+            private StreamSource streamSource;
+            private ArraySegment<byte> bytes;
+
+
+            internal BytesSource GetBytesSource()
+            {
+                return new BytesSource(bytes);
+            }
+            public void Dispose()
+            {
+                streamSource?.Dispose();
+                blob?.Dispose();
+            }
+
+            public static async Task<BlobFetchResult> FromCache(BlobFetchCache blobFetchCache)
+            {
+                var sw = Stopwatch.StartNew();
+                using var blob = await blobFetchCache.GetBlob();
+                if (blob == null) return null;
+                
+                var source = new StreamSource(blob.OpenRead(), true);
+                var result = new BlobFetchResult()
+                {
+                    streamSource = source,
+                    blob = blob,
+                    bytes = await source.GetBytesAsync(CancellationToken.None)
+                };
+                sw.Stop();
+                GlobalPerf.BlobRead(sw.ElapsedTicks, result.bytes.Count);
+                return result;
+            }
+        }
+
+        public async Task<ReusableArraySegmentBlob> ProcessUncached()
+        {
+            //Fetch all blobs simultaneously
+            var blobs = await Task.WhenAll(
+                allBlobs
+                    .Select(BlobFetchResult.FromCache));
+            try
+            {
+                //Add all 
+                List<InputWatermark> watermarks = null;
+                if (appliedWatermarks != null)
+                {
+                    watermarks = new List<InputWatermark>(appliedWatermarks.Count);
+                    watermarks.AddRange(
+                        appliedWatermarks.Select((t, i) =>
+                        {
+                            if (blobs[i + 1] == null)
+                                throw new BlobMissingException(
+                                    $"Cannot locate watermark \"{t.Name}\" at virtual path \"{t.VirtualPath}\"");
+                            return new InputWatermark(
+                                blobs[i + 1].GetBytesSource(),
+                                t.Watermark);
+                        }));
+                }
+
+                using var buildJob = new ImageJob();
+                var jobResult = await buildJob.BuildCommandString(
+                        blobs[0].GetBytesSource(),
+                        new BytesDestination(), CommandString, watermarks)
+                    .Finish()
+                    .SetSecurityOptions(legacyOptions.JobSecurityOptions)
+                    .InProcessAsync();
+                
+                
+                GlobalPerf.Singleton.JobComplete(new ImageJobInstrumentation(jobResult)
+                {
+                    FinalCommandKeys = FinalQuery.Keys,
+                    ImageDomain = ImageDomain,
+                    PageDomain = PageDomain
+                });
+                
+                // TryGetBytes returns the buffer from a regular MemoryStream, not a recycled one
+                var resultBytes = jobResult.First.TryGetBytes();
+
+                if (!resultBytes.HasValue || resultBytes.Value.Count < 1 || resultBytes.Value.Array == null)
+                {
+                    throw new InvalidOperationException("Image job returned zero bytes.");
+                }
+
+                var attrs = new BlobAttributes()
+                {
+                    LastModifiedDateUtc = DateTime.UtcNow,
+                    ContentType = jobResult.First.PreferredMimeType,
+                    BlobByteCount = resultBytes.Value.Count
+                };
+                return new ReusableArraySegmentBlob(resultBytes.Value, attrs);
+            }
+            finally
+            {
+                foreach (var b in blobs)
+                {
+                    b?.Dispose();
+                }
+            }
+        }
+    }
+    
+ 
+}

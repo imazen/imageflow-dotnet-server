@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-
-namespace Imazen.Common.Instrumentation.Support.RateTracking
+﻿namespace Imazen.Common.Instrumentation.Support.RateTracking
 {
     internal class CircularTimeBuffer
     {

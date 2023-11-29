@@ -3,7 +3,7 @@
   <PropertyGroup>
     <IsPackable>true</IsPackable>
     <Title>Imageflow.DiskCache - ClassicDiskCache implementation.</Title>
-    <TargetFrameworks>net472;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>net8.0;netstandard2.0;net6.0</TargetFrameworks>
   </PropertyGroup>
   <Import Project="..\NugetPackages.targets" />
 

@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Reflection;
+﻿using System.Reflection;
 using System.Text;
-using System.Threading;
 using Imazen.Common.Helpers;
 
 // ReSharper disable LoopVariableIsNeverChangedInsideLoop
@@ -76,15 +71,13 @@ namespace Imazen.Common.Instrumentation.Support
         /// <returns></returns>
         public static string ToLowerOrdinal(this string s)
         {
-            StringBuilder b = null;
+            StringBuilder? b = null;
             for (var i = 0; i < s.Length; i++)
             {
                 var c = s[i];
-                if (c >= 'A' && c <= 'Z')
-                {
-                    if (b == null) b = new StringBuilder(s);
-                    b[i] = (char)(c + 0x20);
-                }
+                if (c is < 'A' or > 'Z') continue;
+                b ??= new StringBuilder(s);
+                b[i] = (char)(c + 0x20);
             }
             return b?.ToString() ?? s;
         }
@@ -94,7 +87,7 @@ namespace Imazen.Common.Instrumentation.Support
     {
         public static string IntoString(this IEnumerable<char> c) => string.Concat(c);
 
-        public static T GetFirstAttribute<T>(this Assembly a)
+        public static T? GetFirstAttribute<T>(this Assembly a)
         {
             try
             {
@@ -104,14 +97,18 @@ namespace Imazen.Common.Instrumentation.Support
             catch(FileNotFoundException) {
                 //Missing dependencies
             }
-            catch (Exception) { }
+            catch (Exception)
+            {
+                // ignored
+            }
+
             return default(T);
         }
 
-        public static Exception GetExceptionForReading<T>(this Assembly a)
+        public static Exception? GetExceptionForReading<T>(this Assembly a)
         {
             try {
-                var nah = a.GetCustomAttributes(typeof(T), false);
+                var _ = a.GetCustomAttributes(typeof(T), false);
             } catch (Exception e) {
                 return e;
             }
@@ -125,11 +122,11 @@ namespace Imazen.Common.Instrumentation.Support
         // public static string GetEditionCode(this Assembly a) =>
         //     GetFirstAttribute<EditionAttribute>(a)?.Value;
 
-        public static string GetInformationalVersion(this Assembly a)
+        public static string? GetInformationalVersion(this Assembly a)
         {
             return GetFirstAttribute<AssemblyInformationalVersionAttribute>(a)?.InformationalVersion;
         }
-        public static string GetFileVersion(this Assembly a)
+        public static string? GetFileVersion(this Assembly a)
         {
             return GetFirstAttribute<AssemblyFileVersionAttribute>(a)?.Version;
         }

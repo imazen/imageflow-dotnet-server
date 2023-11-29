@@ -1,8 +1,7 @@
-using System;
-
 namespace Imazen.Common.Storage
 {
-    public class BlobMissingException : Exception
+    [Obsolete("This type has moved to the Imazen.Abstractions.Blobs.LegacyProviders namespace.")]
+    public class BlobMissingException : Imazen.Abstractions.Blobs.LegacyProviders.BlobMissingException
     {
         public BlobMissingException()
         {

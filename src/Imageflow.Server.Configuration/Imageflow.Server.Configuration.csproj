@@ -1,27 +1,27 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <PropertyGroup>
-        <TargetFramework>net7.0</TargetFramework>
-        <LangVersion>11</LangVersion>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
-        <IsPackable>true</IsPackable>
-    </PropertyGroup>
-
     <Import Project="..\NugetPackages.targets" />
-
+    <!-- Override net framework version -->
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <EnableTrimAnalyzer Condition="'$(TargetFramework)' == 'net8.0'">true</EnableTrimAnalyzer>
+        <IsAotCompatible>true</IsAotCompatible>
+        <EnableTrimAnalyzer Condition="'$(TargetFramework)' == 'net8.0'">true</EnableTrimAnalyzer>
+        <EnableSingleFileAnalyzer Condition="'$(TargetFramework)' == 'net8.0'">true</EnableSingleFileAnalyzer>
+        <EnableAotAnalyzer Condition="'$(TargetFramework)' == 'net8.0'">true</EnableAotAnalyzer>
+    </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="3.3.4">
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
           <PrivateAssets>all</PrivateAssets>
         </PackageReference>
-        <PackageReference Include="Tomlyn" Version="0.16.2" />
+        <PackageReference Include="Tomlyn" Version="0.17.0" />
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\Imazen.Common\Imazen.Common.csproj" />
-      <ProjectReference Include="..\Imageflow.Server\Imageflow.Server.csproj" />
-      <ProjectReference Include="..\Imageflow.Server.HybridCache\Imageflow.Server.HybridCache.csproj" />
+          <ProjectReference Include="..\Imageflow.Server\Imageflow.Server.csproj" />
+          <ProjectReference Include="..\Imageflow.Server.HybridCache\Imageflow.Server.HybridCache.csproj" />
 
     </ItemGroup>
     <ItemGroup>

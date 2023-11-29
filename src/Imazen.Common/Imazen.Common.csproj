@@ -3,22 +3,24 @@
   <PropertyGroup>
     <Title>Imageflow.Common - Interfaces and utilites shared by Imageflow and ImageResizer.</Title>
     <IsPackable>true</IsPackable>
-    <TargetFrameworks>net472;netstandard2.0</TargetFrameworks>
-    <LangVersion>8.0</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TargetFrameworks>net8.0;netstandard2.0;net6.0</TargetFrameworks>
+    <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
+    <EnableTrimAnalyzer Condition="'$(TargetFramework)' == 'net8.0'">true</EnableTrimAnalyzer>
+    <EnableSingleFileAnalyzer Condition="'$(TargetFramework)' == 'net8.0'">true</EnableSingleFileAnalyzer>
+    <EnableAotAnalyzer Condition="'$(TargetFramework)' == 'net8.0'">true</EnableAotAnalyzer>
   </PropertyGroup>
 
   <Import Project="..\NugetPackages.targets" />
-
-  
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="3.3.4">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="2.2.0" />
+    <ProjectReference Include="..\Imazen.Abstractions\Imazen.Abstractions.csproj" />
   </ItemGroup>
-
   
   <ItemGroup>
     <Reference Include="System.Net.Http" Condition="'$(TargetFramework)' == 'net472'" />

@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Imazen.Common.Instrumentation.Support.Clamping
+﻿namespace Imazen.Common.Instrumentation.Support.Clamping
 {
 
     internal class SignificantDigitsClamping

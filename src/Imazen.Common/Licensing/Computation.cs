@@ -4,18 +4,12 @@
 // Licensed under the GNU Affero General Public License, Version 3.0.
 // Commercial licenses available at http://imageresizing.net/
 
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using Imazen.Common.ExtensionMethods;
 using Imazen.Common.Instrumentation;
-using Imazen.Common.Instrumentation.Support;
 using Imazen.Common.Instrumentation.Support.InfoAccumulators;
 using Imazen.Common.Issues;
 
@@ -52,7 +46,9 @@ namespace Imazen.Common.Licensing
         bool EnforcementEnabled { get; }
         IDictionary<string, bool> KnownDomainStatus { get; }
         public DateTimeOffset? ComputationExpires { get; }
+        // ReSharper disable once UnusedAutoPropertyAccessor.Local
         LicenseAccess Scope { get; }
+        // ReSharper disable once ArrangeTypeMemberModifiers
         LicenseErrorAction LicenseError { get; }
 
         private ILicenseConfig LicenseConfig { get; }
@@ -73,7 +69,7 @@ namespace Imazen.Common.Licensing
 
             // What features are installed on this instance?
             // For a license to be OK, it must have one of each of this nested list;
-            IEnumerable<IEnumerable<string>> pluginFeaturesUsed = c.GetFeaturesUsed();
+            IReadOnlyCollection<IReadOnlyCollection<string>> pluginFeaturesUsed = c.GetFeaturesUsed();
 
             // Create or fetch all relevant license chains; ignore the empty/invalid ones, they're logged to the manager instance
             chains = c.GetLicenses()
@@ -83,6 +79,7 @@ namespace Imazen.Common.Licensing
                           ? mgr.GetSharedLicenses()
                           : Enumerable.Empty<ILicenseChain>())
                       .Distinct()
+                      .Cast<ILicenseChain>()
                       .ToList();
 
 
@@ -147,10 +144,10 @@ namespace Imazen.Common.Licensing
             {
                 return details.ImageflowExpires != null &&
                        details.ImageflowExpires < clock.GetUtcNow();
-            } else {
-                return details.Expires != null &&
-                       details.Expires < clock.GetUtcNow();
             }
+
+            return details.Expires != null &&
+                   details.Expires < clock.GetUtcNow();
         }
 
         private bool HasLicenseBegun(ILicenseDetails details) => details.Issued != null &&
@@ -161,7 +158,7 @@ namespace Imazen.Common.Licensing
             d.GetMessage(),
             IsLicenseExpired(d) ? d.GetExpiryMessage() : null,
             d.GetRestrictions()
-        }.Where(s => !string.IsNullOrWhiteSpace(s));
+        }.Where(s => !string.IsNullOrWhiteSpace(s)).Cast<string>();
 
 
     
@@ -250,9 +247,9 @@ namespace Imazen.Common.Licensing
 
             // Success will automatically replace this instance. Warn immediately.
             Debug.Assert(mgr.FirstHeartbeat != null, "mgr.FirstHeartbeat != null");
-
+            var firstHeartbeat = mgr.FirstHeartbeat ?? clock.GetUtcNow();
             // NetworkGraceMinutes Expired?
-            var expires = mgr.FirstHeartbeat.Value.AddMinutes(graceMinutes);
+            var expires = firstHeartbeat.AddMinutes(graceMinutes);
             if (expires < clock.GetUtcNow()) {
                 permanentIssues.AcceptIssue(new Issue($"Grace period of {graceMinutes}m expired for license {chain.Id}",
                     $"License {chain.Id} was not found in the disk cache and could not be retrieved from the remote server within {graceMinutes} minutes.",
@@ -261,7 +258,7 @@ namespace Imazen.Common.Licensing
             }
 
             // Less than 30 seconds since boot time?
-            var thirtySeconds = mgr.FirstHeartbeat.Value.AddSeconds(30);
+            var thirtySeconds = firstHeartbeat.AddSeconds(30);
             if (thirtySeconds > clock.GetUtcNow()) {
                 AcceptIssue(new Issue($"Fetching license {chain.Id} (not found in disk cache).",
                     $"Network grace period expires in {graceMinutes} minutes", IssueSeverity.Warning));
@@ -297,12 +294,12 @@ namespace Imazen.Common.Licensing
 
         public bool UpgradeNeeded() =>  !AllDomainsLicensed || KnownDomainStatus.Values.Contains(false);
 
-        public string ManageSubscriptionUrl => chains
+        public string? ManageSubscriptionUrl => chains
             .SelectMany(c => c.Licenses())
             .Select(l => l.Fields.Get("ManageYourSubscription"))
             .FirstOrDefault(v => !string.IsNullOrEmpty(v));
         
-        public bool LicensedForRequestUrl(Uri url)
+        public bool LicensedForRequestUrl(Uri? url)
         {
             if (EverythingDenied) {
                 return false;
@@ -383,8 +380,8 @@ namespace Imazen.Common.Licensing
             
             var sb = new StringBuilder();
             var hr = EnforcementEnabled
-                ? $"---------------------- License Validation ON ----------------------\r\n"
-                : $"---------------------- License Validation OFF -----------------------\r\n";
+                ? "---------------------- License Validation ON ----------------------\r\n"
+                : "---------------------- License Validation OFF -----------------------\r\n";
 
             sb.Append(hr);
             if (!EnforcementEnabled)
@@ -464,7 +461,7 @@ namespace Imazen.Common.Licensing
         }
 
 
-        public string ProvideDiagnostics() => ListLicensesInternal(c => c.ToString());
+        public string ProvideDiagnostics() => ListLicensesInternal(c => c.ToString() ?? "(null)");
 
         public string ProvidePublicLicensesPage() => GetPublicLicenseHeader() + ListLicensesInternal(c => c.ToPublicString());
 

@@ -1,10 +1,8 @@
 ﻿using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Imazen.Common.Instrumentation.Support
 {
-    class DictionaryCounter<T>
+    class DictionaryCounter<T> where T : notnull
     {
         readonly ConcurrentDictionary<T, Counter> dict;
         readonly Counter count;
@@ -38,8 +36,7 @@ namespace Imazen.Common.Instrumentation.Support
 
         public bool TryRead(T key, out long v)
         {
-            Counter c;
-            if (dict.TryGetValue(key, out c))
+            if (dict.TryGetValue(key, out var c))
             {
                 v = c.Value;
                 return true;
@@ -58,9 +55,8 @@ namespace Imazen.Common.Instrumentation.Support
 
         Counter GetOrAddInternal(T key, long initialValue, bool applyLimitSwap)
         {
-            for (var retryCount = 0; retryCount < 10; retryCount++) { 
-                Counter result;
-                if (dict.TryGetValue(key, out result))
+            for (var retryCount = 0; retryCount < 10; retryCount++) {
+                if (dict.TryGetValue(key, out var result))
                 {
                     return result;
                 } else

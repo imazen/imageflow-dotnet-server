@@ -1,4 +1,4 @@
-using System;
+using Imazen.Abstractions.Blobs;
 
 namespace Imazen.HybridCache.MetaStore
 {
@@ -8,26 +8,19 @@ namespace Imazen.HybridCache.MetaStore
         Update = 1,
         Delete = 2
     }
-    internal struct LogEntry
+    internal struct LogEntry(LogEntryType entryType, ICacheDatabaseRecord record)
     {
-        internal LogEntryType EntryType;
-        internal int AccessCountKey;
-        internal DateTime CreatedAt;
-        internal DateTime LastDeletionAttempt;
-        internal long DiskSize;
-        internal string RelativePath;
-        internal string ContentType;
+        internal LogEntryType EntryType = entryType;
+        internal int AccessCountKey = record.AccessCountKey;
+        internal DateTimeOffset CreatedAt = record.CreatedAt;
+        internal DateTimeOffset LastDeletionAttempt = record.LastDeletionAttempt;
+        internal long EstBlobDiskSize = record.EstDiskSize;
+        internal string RelativePath = record.RelativePath;
+        internal string? ContentType = record.ContentType;
+        internal CacheEntryFlags Category = record.Flags;
 
-        public LogEntry(LogEntryType entryType, ICacheDatabaseRecord record)
-        {
-            EntryType = entryType;
-            AccessCountKey = record.AccessCountKey;
-            ContentType = record.ContentType;
-            RelativePath = record.RelativePath;
-            DiskSize = record.DiskSize;
-            LastDeletionAttempt = record.LastDeletionAttempt;
-            CreatedAt = record.CreatedAt;
-        }
+        internal IReadOnlyList<SearchableBlobTag>? Tags = record.Tags;
+
 
         public CacheDatabaseRecord ToRecord()
         {
@@ -36,9 +29,11 @@ namespace Imazen.HybridCache.MetaStore
                 AccessCountKey = AccessCountKey,
                 ContentType = ContentType,
                 CreatedAt = CreatedAt,
-                DiskSize = DiskSize,
+                EstDiskSize = EstBlobDiskSize,
                 LastDeletionAttempt = LastDeletionAttempt,
-                RelativePath = RelativePath
+                RelativePath = RelativePath,
+                Flags = Category,
+                Tags = Tags
             };
         }
     }

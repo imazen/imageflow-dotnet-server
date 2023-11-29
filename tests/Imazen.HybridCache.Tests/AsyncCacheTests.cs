@@ -1,9 +1,14 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Imazen.Abstractions.Blobs;
+using Imazen.Abstractions.Resulting;
 using Imazen.Common.Concurrency;
 using Imazen.Common.Extensibility.StreamCache;
+using Imazen.Common.Extensibility.Support;
+using Imazen.HybridCache.MetaStore;
 using Xunit;
 
 namespace Imazen.HybridCache.Tests
@@ -12,6 +17,11 @@ namespace Imazen.HybridCache.Tests
     {
         internal class NullCacheManager : ICacheCleanupManager
         {
+            public long EstimateFileSizeOnDisk(long byteCount)
+            {
+                return byteCount;
+            }
+
             public void NotifyUsed(CacheEntry cacheEntry){}
             public Task<string> GetContentType(CacheEntry cacheEntry, CancellationToken cancellationToken) => null;
             public Task<ReserveSpaceResult> TryReserveSpace(CacheEntry cacheEntry, string contentType, int byteCount, bool allowEviction,
@@ -25,7 +35,38 @@ namespace Imazen.HybridCache.Tests
 
             public Task<ICacheDatabaseRecord> GetRecordReference(CacheEntry cacheEntry, CancellationToken cancellationToken)
             {
-                return null;
+                return Task.FromResult<ICacheDatabaseRecord>(null);
+            }
+
+            public Task<ReserveSpaceResult> TryReserveSpace(CacheEntry cacheEntry, CacheDatabaseRecord newRecord, bool allowEviction,
+                AsyncLockProvider writeLocks, CancellationToken cancellationToken)
+            {
+                return Task.FromResult(new ReserveSpaceResult(){Success = true});
+            }
+
+            public int GetAccessCountKey(CacheEntry cacheEntry)
+            {
+                return 0;
+            }
+
+            public Task MarkFileCreated(CacheEntry cacheEntry, DateTime createdDate, Func<CacheDatabaseRecord> createIfMissing)
+            {
+                return Task.FromResult(true);
+            }
+
+            public Task<CodeResult<IList<IBlobStorageReference>>> CacheSearchByTag(string tag, CancellationToken cancellationToken = default)
+            {
+                throw new NotImplementedException();
+            }
+
+            public Task<CodeResult<IList<CodeResult<IBlobStorageReference>>>> CachePurgeByTag(string tag, AsyncLockProvider writeLocks, CancellationToken cancellationToken = default)
+            {
+                throw new NotImplementedException();
+            }
+
+            public Task<CodeResult> CacheDelete(string relativePath, AsyncLockProvider writeLocks, CancellationToken cancellationToken = default)
+            {
+                throw new NotImplementedException();
             }
         }
 

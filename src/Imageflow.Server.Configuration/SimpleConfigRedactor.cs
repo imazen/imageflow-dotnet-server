@@ -1,4 +1,5 @@
 //diagnostics.allow_with_password and //license.key 
+
 using Tomlyn.Model;
 
 namespace Imageflow.Server.Configuration.Parsing;

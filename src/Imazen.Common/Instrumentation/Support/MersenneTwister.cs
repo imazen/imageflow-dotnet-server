@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Imazen.Common.Instrumentation.Support
+﻿namespace Imazen.Common.Instrumentation.Support
 {
 /* 
    Copyright (C) 1997 - 2002, Makoto Matsumoto and Takuji Nishimura,

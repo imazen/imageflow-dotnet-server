@@ -1,0 +1,7 @@
+Many classes in this folder are derived from the .NET Core framework. 
+
+They have been backported and poly-filled to function on .NET Standard 2.0. 
+
+The original versions are licensed under the MIT license by the .NET Foundation.
+The back-ported versions are licensed under the MIT license by the authors of this project.
+

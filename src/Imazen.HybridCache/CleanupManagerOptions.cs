@@ -1,5 +1,3 @@
-using System;
-
 namespace Imazen.HybridCache
 {
     public class CleanupManagerOptions
@@ -36,8 +34,11 @@ namespace Imazen.HybridCache
         public int CleanupSelectBatchSize { get; set; } = 1000;
         
         /// <summary>
-        /// If this is used from .NET Core, set to File.Move(from, to, true)
+        /// If you're not on .NET 6/8, but you have  File.Move(from, to, true) available,
+        /// you can set this to true to use that instead of the default File.Move(from,to) for better performance
+        /// Used by deletion code even if MoveFilesIntoPlace is false
         /// </summary>
-        public Action<string,string> MoveFileOverwriteFunc { get; set; }
+        public Action<string,string>? MoveFileOverwriteFunc { get; set; }
+        
     }
 }

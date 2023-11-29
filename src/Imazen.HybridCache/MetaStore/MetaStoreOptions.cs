@@ -1,6 +1,6 @@
 namespace Imazen.HybridCache.MetaStore
 {
-    public class MetaStoreOptions
+    internal class MetaStoreOptions
     {
         public MetaStoreOptions(string databaseDir)
         {

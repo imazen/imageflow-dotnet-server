@@ -1,37 +1,44 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
+using Imazen.Abstractions.Blobs;
+using Imazen.Abstractions.Logging;
+using Imazen.Abstractions.Resulting;
+using Imazen.Common.Extensibility.Support;
 
 namespace Imazen.HybridCache.MetaStore
 {
-    public class MetaStore: ICacheDatabase
+    internal class MetaStore : ICacheDatabase<ICacheDatabaseRecord>
     {
         private readonly Shard[] shards;
 
+        private readonly string physicalCacheDir;
 
-        public MetaStore(MetaStoreOptions options, HybridCacheOptions cacheOptions, ILogger logger)
+        private static long GetDirectoryEntriesBytesTotal(HashBasedPathBuilder builder)
+        {
+            return builder.CalculatePotentialDirectoryEntriesFromSubfolderBitCount() *
+                CleanupManager.DirectoryEntrySize() + CleanupManager.DirectoryEntrySize();
+        }
+
+        public MetaStore(MetaStoreOptions options, HybridCacheAdvancedOptions cacheOptions, IReLogger logger)
         {
             if (options.Shards <= 0 || options.Shards > 2048)
             {
                 throw new ArgumentException("Shards must be between 1 and 2048");
             }
 
+            physicalCacheDir = cacheOptions.PhysicalCacheDir;
             var pathBuilder =
                 new HashBasedPathBuilder(cacheOptions.PhysicalCacheDir, cacheOptions.Subfolders, '/', ".jpg");
 
-            var directoryEntriesBytes = pathBuilder.GetDirectoryEntriesBytesTotal() + CleanupManager.DirectoryEntrySize();
+            var directoryEntriesBytes =
+                GetDirectoryEntriesBytesTotal(pathBuilder) + CleanupManager.DirectoryEntrySize();
 
             var shardCount = options.Shards;
             shards = new Shard[shardCount];
             for (var i = 0; i < shardCount; i++)
             {
-                shards[i] = new Shard(i, options, Path.Combine(options.DatabaseDir,"db", i.ToString()),directoryEntriesBytes / shardCount, logger);
+                shards[i] = new Shard(i, options, Path.Combine(options.DatabaseDir, "db", i.ToString()),
+                    directoryEntriesBytes / shardCount, logger);
             }
         }
 
@@ -53,7 +60,7 @@ namespace Imazen.HybridCache.MetaStore
         public int GetShardForKey(string key)
         {
             var stringBytes = Encoding.UTF8.GetBytes(key);
-            
+
             using (var h = SHA256.Create())
             {
                 var a = h.ComputeHash(stringBytes);
@@ -64,18 +71,41 @@ namespace Imazen.HybridCache.MetaStore
             }
         }
 
-        public Task DeleteRecord(int shard, ICacheDatabaseRecord record)
+        public Task<DeleteRecordResult> DeleteRecord(int shard, ICacheDatabaseRecord record)
         {
             if (record.CreatedAt > DateTime.UtcNow)
                 throw new InvalidOperationException();
             return shards[shard].DeleteRecord(record);
         }
 
-        public Task<IEnumerable<ICacheDatabaseRecord>> GetDeletionCandidates(int shard, DateTime maxLastDeletionAttemptTime, DateTime maxCreatedDate, int count,
+        public Task<CodeResult> TestRootDirectory()
+        {
+            try
+            {
+                // Try to create the root directory if it's missing
+                if (!Directory.Exists(physicalCacheDir))
+                    Directory.CreateDirectory(physicalCacheDir);
+                // if it exists we assume that it is readable recursively
+                return Task.FromResult(CodeResult.Ok());
+            }
+            catch (Exception ex)
+            {
+                return Task.FromResult(CodeResult.FromException(ex));
+            }
+
+        }
+
+        public Task<IEnumerable<ICacheDatabaseRecord>> GetDeletionCandidates(int shard,
+            DateTime maxLastDeletionAttemptTime, DateTime maxCreatedDate, int count,
             Func<int, ushort> getUsageCount)
         {
             return shards[shard]
                 .GetDeletionCandidates(maxLastDeletionAttemptTime, maxCreatedDate, count, getUsageCount);
+        }
+
+        public Task<IEnumerable<ICacheDatabaseRecord>> LinearSearchByTag(int shard, SearchableBlobTag tag)
+        {
+            return shards[shard].LinearSearchByTag(tag);
         }
 
         public Task<long> GetShardSize(int shard)
@@ -88,37 +118,53 @@ namespace Imazen.HybridCache.MetaStore
             return shards.Length;
         }
 
-        public Task<string> GetContentType(int shard, string relativePath)
-        {
-            return shards[shard].GetContentType(relativePath);
-        }
-
-        public Task<ICacheDatabaseRecord> GetRecord(int shard, string relativePath)
+        public Task<ICacheDatabaseRecord?> GetRecord(int shard, string relativePath)
         {
             return shards[shard].GetRecord(relativePath);
         }
 
-        public int EstimateRecordDiskSpace(int stringLength)
+        public int EstimateRecordDiskSpace(CacheDatabaseRecord newRecord)
         {
-            return Shard.GetLogBytesOverhead(stringLength);
+            return Shard.GetLogBytesOverhead(newRecord);
         }
 
-        public Task<bool> CreateRecordIfSpace(int shard, string relativePath, string contentType, long recordDiskSpace, DateTime createdDate,
-            int accessCountKey, long diskSpaceLimit)
+        public Task<bool> CreateRecordIfSpace(int shard, CacheDatabaseRecord newRecord, long diskSpaceLimit)
         {
-            return shards[shard].CreateRecordIfSpace(relativePath, contentType, recordDiskSpace, createdDate,
-                accessCountKey, diskSpaceLimit);
+            return shards[shard].CreateRecordIfSpace(newRecord, diskSpaceLimit);
         }
 
-        public Task UpdateCreatedDateAtomic(int shard, string relativePath, string contentType, long recordDiskSpace, DateTime createdDate, int accessCountKey)
+        public Task UpdateCreatedDateAtomic(int shard, string relativePath, DateTime createdDate,
+            Func<CacheDatabaseRecord> createIfMissing)
         {
-            return shards[shard].UpdateCreatedDate(relativePath, contentType, recordDiskSpace, createdDate, accessCountKey);
+            return shards[shard].UpdateCreatedDateAtomic(relativePath, createdDate, createIfMissing);
         }
 
-        public Task ReplaceRelativePathAndUpdateLastDeletion(int shard, ICacheDatabaseRecord record, string movedRelativePath,
+        public Task ReplaceRelativePathAndUpdateLastDeletion(int shard, ICacheDatabaseRecord record,
+            string movedRelativePath,
             DateTime lastDeletionAttempt)
         {
-            return shards[shard].ReplaceRelativePathAndUpdateLastDeletion(record, movedRelativePath, lastDeletionAttempt);
+            return shards[shard]
+                .ReplaceRelativePathAndUpdateLastDeletion(record, movedRelativePath, lastDeletionAttempt);
+        }
+
+        public async Task<CodeResult> TestMetaStore()
+        {
+            try
+            {
+                var lastFailed = shards.FirstOrDefault(s => s.FailedToStart);
+                if (lastFailed != null)
+                {
+                    await lastFailed.TryStart();
+                }
+
+                await Task.WhenAll(shards.Select(s => s.TryStart()));
+
+                return CodeResult.Ok();
+            }
+            catch (Exception ex)
+            {
+                return CodeResult.FromException(ex);
+            }
         }
     }
 }

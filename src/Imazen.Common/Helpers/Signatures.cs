@@ -1,8 +1,6 @@
-using System;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
-using System.Web;
 
 namespace Imazen.Common.Helpers
 {
@@ -19,6 +17,7 @@ namespace Imazen.Common.Helpers
             return EncodingUtils.ToBase64U(shorterHash);
         }
 
+        // URL decodes the path, querystring keys, and querystring values, removes the &signature= query pair, and re-concatenates without re-encoding
         public static string NormalizePathAndQueryForSigning(string pathAndQuery)
         {
             

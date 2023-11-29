@@ -4,32 +4,42 @@ using System.Linq;
 using System.Threading.Tasks;
 using Amazon.S3;
 using Imageflow.Server.Storage.S3.Caching;
-using Imazen.Common.Storage;
-using Imazen.Common.Storage.Caching;
-using Microsoft.Extensions.Logging;
+using Imazen.Abstractions.BlobCache;
+using Imazen.Abstractions.Blobs;
+using Imazen.Abstractions.Blobs.LegacyProviders;
+using Imazen.Abstractions.Logging;
+using Imazen.Abstractions.Resulting;
 
 namespace Imageflow.Server.Storage.S3
 {
-    public class S3Service : IBlobProvider, IDisposable, IBlobCacheProvider
+    public class S3Service : IBlobWrapperProvider, IDisposable, IBlobCacheProvider, IBlobWrapperProviderZoned
     {
-        private readonly List<PrefixMapping> mappings = new List<PrefixMapping>();
-        private readonly List<S3BlobCache> namedCaches = new List<S3BlobCache>();
+        private readonly List<PrefixMapping> mappings = [];
+        private readonly List<S3BlobCache> namedCaches = [];
 
-        private readonly IAmazonS3 s3client;
+        private readonly IAmazonS3 s3Client;
 
-        public S3Service(S3ServiceOptions options, IAmazonS3 s3client, ILogger<S3Service> logger)
+        public S3Service(S3ServiceOptions options, IAmazonS3 s3Client, IReLoggerFactory loggerFactory)
         {
-            this.s3client = s3client;
+            this.s3Client = s3Client;
+            UniqueName = options.UniqueName;
             foreach (var m in options.Mappings)
             {
                 mappings.Add(m);
             }
-             foreach (var m in options.NamedCaches)
+            foreach (var m in options.NamedCaches)
             {
-                namedCaches.Add(new S3BlobCache(m, s3client, logger));
+                namedCaches.Add(new S3BlobCache(m, s3Client, loggerFactory));
             }
             //TODO: verify this sorts longest first
             mappings.Sort((a,b) => b.Prefix.Length.CompareTo(a.Prefix.Length));
+        }
+
+        public string UniqueName { get; }
+        public IEnumerable<BlobWrapperPrefixZone> GetPrefixesAndZones()
+        {
+            return mappings.Select(m => new BlobWrapperPrefixZone(m.Prefix, 
+                new LatencyTrackingZone($"s3::bucket/{m.Bucket}", 100)));
         }
 
         public IEnumerable<string> GetPrefixes()
@@ -43,13 +53,14 @@ namespace Imageflow.Server.Storage.S3
                 m.IgnorePrefixCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal));
         }
 
-        public async Task<IBlobData> Fetch(string virtualPath)
+        public async Task<CodeResult<IBlobWrapper>> Fetch(string virtualPath)
         {
             var mapping =  mappings.FirstOrDefault(m => virtualPath.StartsWith(m.Prefix, 
                 m.IgnorePrefixCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal));
             if (mapping.Prefix == null)
             {
-                return null;
+                return CodeResult<IBlobWrapper>.Err((HttpStatus.NotFound, $"No S3 mapping found for virtual path \"{virtualPath}\""));
+                
             }
 
             var partialKey = virtualPath.Substring(mapping.Prefix.Length).TrimStart('/');
@@ -64,11 +75,12 @@ namespace Imageflow.Server.Storage.S3
 
             try
             {
-                var client = mapping.S3Client ?? this.s3client;
+                var client = mapping.S3Client ?? this.s3Client;
                 var req = new Amazon.S3.Model.GetObjectRequest() { BucketName = mapping.Bucket, Key = key };
 
+                var latencyZone = new LatencyTrackingZone($"s3::bucket/{mapping.Bucket}", 100);
                 var s = await client.GetObjectAsync(req);
-                return new S3Blob(s);
+                return new BlobWrapper(latencyZone,S3BlobHelpers.CreateS3Blob(s));
 
             } catch (AmazonS3Exception se) {
                 if (se.StatusCode == System.Net.HttpStatusCode.NotFound || "NoSuchKey".Equals(se.ErrorCode, StringComparison.OrdinalIgnoreCase)) 
@@ -81,24 +93,12 @@ namespace Imageflow.Server.Storage.S3
 
         public void Dispose()
         {
-            try { s3client?.Dispose(); } catch { }
+            try { s3Client?.Dispose(); } catch { }
         }
 
-        public bool TryGetCache(string name, out IBlobCache cache)
+        IEnumerable<IBlobCache> IBlobCacheProvider.GetBlobCaches()
         {
-            var c = namedCaches.FirstOrDefault(v => v.Name == name);
-            if (c != null)
-            {
-                cache = c;
-                return true;
-            }
-            cache = null;
-            return false;
-        }
-
-        public IEnumerable<string> GetCacheNames()
-        {
-            return namedCaches.Select(v => v.Name);
+            return namedCaches;
         }
 
     }

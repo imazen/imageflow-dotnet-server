@@ -1,8 +1,7 @@
-using System.IO;
-using Imazen.Common.Extensibility.ClassicDiskCache;
-
+#pragma warning disable CS0618 // Type or member is obsolete
 namespace Imazen.Common.Extensibility.StreamCache
 {
+    [Obsolete("Implement IBlobCacheResult instead")]
     public interface IStreamCacheResult
     {
         /// <summary>
@@ -13,11 +12,25 @@ namespace Imazen.Common.Extensibility.StreamCache
         /// <summary>
         /// null, or the content type if one was requested. 
         /// </summary>
-        string ContentType { get; }
+        string? ContentType { get; }
 
         /// <summary>
         /// The result of the cache check.
         /// </summary>
         string Status { get; }
+    }
+    
+    internal class StreamCacheResult : IStreamCacheResult
+    {
+        public StreamCacheResult(Stream data, string? contentType, string status)
+        {
+            Data = data;
+            ContentType = contentType;
+            Status = status;
+        }
+
+        public Stream Data { get; }
+        public string? ContentType { get; }
+        public string Status { get; }
     }
 }

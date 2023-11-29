@@ -1,27 +1,24 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>netstandard2.0</TargetFramework>
         <Title>Imageflow.Server.Storage.AzureBlob - Plugin for fetching source images from Azure Blob Storage.</Title>
         <Description>Imageflow.Server plugin for fetching source images from Azure Blob Storage.</Description>
-        <IsPackable>true</IsPackable>
     </PropertyGroup>
 
-    <Import Project="..\NugetPackages.targets" />
-
+    <Import Project="..\NugetPackageDefaults.targets" />
     <ItemGroup>
         <ProjectReference Include="..\Imazen.Common\Imazen.Common.csproj" />
     </ItemGroup>
 
     <ItemGroup>
         
-        <PackageReference Include="Azure.Storage.Blobs" Version="12.14.1" />
-        
         <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="3.3.4">
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
           <PrivateAssets>all</PrivateAssets>
         </PackageReference>
         
+        <PackageReference Include="Azure.Storage.Blobs" Version="12.19.1" />
+        <PackageReference Include="Microsoft.Extensions.Azure" Version="1.7.2" />
     </ItemGroup>
     <ItemGroup>
         <AdditionalFiles Include="PublicAPI.Shipped.txt" />

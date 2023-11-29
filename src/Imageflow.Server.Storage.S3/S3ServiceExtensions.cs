@@ -1,7 +1,7 @@
 using Amazon.S3;
-using Imazen.Common.Storage;
+using Imazen.Abstractions.Blobs.LegacyProviders;
+using Imazen.Abstractions.Logging;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 
 namespace Imageflow.Server.Storage.S3
 {
@@ -12,11 +12,12 @@ namespace Imageflow.Server.Storage.S3
         public static IServiceCollection AddImageflowS3Service(this IServiceCollection services,
             S3ServiceOptions options)
         {
-            services.AddSingleton<IBlobProvider>((container) =>
+            services.AddImageflowReLogStoreAndReLoggerFactoryIfMissing();
+            services.AddSingleton<IBlobWrapperProvider>((container) =>
             {
-                var logger = container.GetRequiredService<ILogger<S3Service>>();
+                var loggerFactory = container.GetRequiredService<IReLoggerFactory>();
                 var s3 = container.GetRequiredService<IAmazonS3>();
-                return new S3Service(options, s3, logger);
+                return new S3Service(options, s3, loggerFactory);
             });
 
             return services;

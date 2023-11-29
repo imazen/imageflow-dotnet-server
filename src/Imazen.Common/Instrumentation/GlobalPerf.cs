@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
+﻿using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Linq;
 using Imazen.Common.Instrumentation.Support;
 using Imazen.Common.Instrumentation.Support.InfoAccumulators;
 using Imazen.Common.Instrumentation.Support.PercentileSinks;
@@ -17,23 +14,24 @@ namespace Imazen.Common.Instrumentation
     // https://github.com/maiwald/lz-string-ruby
     internal class GlobalPerf
     {
-        readonly IssueSink sink = new IssueSink("GlobalPerf");
+        readonly IssueSink sink = new("GlobalPerf");
 
-        public static GlobalPerf Singleton { get; } = new GlobalPerf();
+        public static GlobalPerf Singleton { get; } = new();
 
-        Lazy<BasicProcessInfo> Process { get; } = new Lazy<BasicProcessInfo>();
+        Lazy<BasicProcessInfo> Process { get; } = new();
         Lazy<HardwareInfo> Hardware { get; }
 
-        private static ICollection<IInfoProvider> _lastInfoProviders = null;
+        private static ICollection<IInfoProvider>? _lastInfoProviders;
             
-        NamedInterval[] Intervals { get; } = {
-            new NamedInterval { Unit="second", Name="Per Second", TicksDuration =  Stopwatch.Frequency},
-            new NamedInterval { Unit="minute", Name="Per Minute", TicksDuration =  Stopwatch.Frequency * 60},
-            new NamedInterval { Unit="15_mins", Name="Per 15 Minutes", TicksDuration =  Stopwatch.Frequency * 60 * 15},
-            new NamedInterval { Unit="hour", Name="Per Hour", TicksDuration =  Stopwatch.Frequency * 60 * 60},
-        };
+        NamedInterval[] Intervals { get; } =
+        [
+            new() { Unit="second", Name="Per Second", TicksDuration =  Stopwatch.Frequency},
+            new() { Unit="minute", Name="Per Minute", TicksDuration =  Stopwatch.Frequency * 60},
+            new() { Unit="15_mins", Name="Per 15 Minutes", TicksDuration =  Stopwatch.Frequency * 60 * 15},
+            new() { Unit="hour", Name="Per Hour", TicksDuration =  Stopwatch.Frequency * 60 * 60}
+        ];
 
-        readonly ConcurrentDictionary<string, MultiIntervalStats> rates = new ConcurrentDictionary<string, MultiIntervalStats>();
+        readonly ConcurrentDictionary<string, MultiIntervalStats> rates = new();
 
         readonly MultiIntervalStats blobReadEvents;
         readonly MultiIntervalStats blobReadBytes;
@@ -41,16 +39,16 @@ namespace Imazen.Common.Instrumentation
         readonly MultiIntervalStats decodedPixels;
         readonly MultiIntervalStats encodedPixels;
 
-        readonly ConcurrentDictionary<string, IPercentileProviderSink> percentiles = new ConcurrentDictionary<string, IPercentileProviderSink>();
+        readonly ConcurrentDictionary<string, IPercentileProviderSink> percentiles = new();
 
-        readonly IPercentileProviderSink job_times;
-        readonly IPercentileProviderSink decode_times;
-        readonly IPercentileProviderSink encode_times;
-        readonly IPercentileProviderSink job_other_time;
-        readonly IPercentileProviderSink blob_read_times;
-        readonly IPercentileProviderSink collect_info_times;
+        readonly IPercentileProviderSink jobTimes;
+        readonly IPercentileProviderSink decodeTimes;
+        readonly IPercentileProviderSink encodeTimes;
+        readonly IPercentileProviderSink jobOtherTime;
+        readonly IPercentileProviderSink blobReadTimes;
+        readonly IPercentileProviderSink collectInfoTimes;
 
-        readonly DictionaryCounter<string> counters = new DictionaryCounter<string>("counter_update_failed");
+        readonly DictionaryCounter<string> counters = new("counter_update_failed");
 
         IEnumerable<int> Percentiles { get; }  = new[] { 5, 25, 50, 75, 95, 100 };
 
@@ -74,12 +72,12 @@ namespace Imazen.Common.Instrumentation
             decodedPixels = rates.GetOrAdd("decoded_pixels", new MultiIntervalStats(Intervals));
             encodedPixels = rates.GetOrAdd("encoded_pixels", new MultiIntervalStats(Intervals));
 
-            job_times = percentiles.GetOrAdd("job_times", new TimingsSink());
-            decode_times = percentiles.GetOrAdd("decode_times", new TimingsSink());
-            encode_times = percentiles.GetOrAdd("encode_times", new TimingsSink());
-            job_other_time = percentiles.GetOrAdd("job_other_time", new TimingsSink());
-            blob_read_times = percentiles.GetOrAdd("blob_read_times", new TimingsSink());
-            collect_info_times = percentiles.GetOrAdd("collect_info_times", new TimingsSink());
+            jobTimes = percentiles.GetOrAdd("job_times", new TimingsSink());
+            decodeTimes = percentiles.GetOrAdd("decode_times", new TimingsSink());
+            encodeTimes = percentiles.GetOrAdd("encode_times", new TimingsSink());
+            jobOtherTime = percentiles.GetOrAdd("job_other_time", new TimingsSink());
+            blobReadTimes = percentiles.GetOrAdd("blob_read_times", new TimingsSink());
+            collectInfoTimes = percentiles.GetOrAdd("collect_info_times", new TimingsSink());
 
             sourceMegapixels = percentiles.GetOrAdd("source_pixels", new PixelCountSink());
             outputMegapixels = percentiles.GetOrAdd("output_pixels", new PixelCountSink());
@@ -106,36 +104,36 @@ namespace Imazen.Common.Instrumentation
             IncrementCounter("image_jobs");
             
             var timestamp = Stopwatch.GetTimestamp();
-            var s_w = job.SourceWidth.GetValueOrDefault(0);
-            var s_h = job.SourceHeight.GetValueOrDefault(0);
-            var f_w = job.FinalWidth.GetValueOrDefault(0);
-            var f_h = job.FinalHeight.GetValueOrDefault(0);
+            var sW = job.SourceWidth.GetValueOrDefault(0);
+            var sH = job.SourceHeight.GetValueOrDefault(0);
+            var fW = job.FinalWidth.GetValueOrDefault(0);
+            var fH = job.FinalHeight.GetValueOrDefault(0);
 
 
-            if (job.SourceWidth.HasValue && job.SourceHeight.HasValue)
+            if (job is { SourceWidth: not null, SourceHeight: not null })
             {
                 var prefix = "source_multiple_";
-                if (s_w % 4 == 0 && s_h % 4 == 0)
+                if (sW % 4 == 0 && sH % 4 == 0)
                 {
                     counters.Increment(prefix + "4x4");
                 }
 
-                if (s_w % 8 == 0 && s_h % 8 == 0)
+                if (sW % 8 == 0 && sH % 8 == 0)
                 {
                     counters.Increment(prefix + "8x8");
                 }
 
-                if (s_w % 8 == 0)
+                if (sW % 8 == 0)
                 {
                     counters.Increment(prefix + "8x");
                 }
 
-                if (s_h % 8 == 0)
+                if (sH % 8 == 0)
                 {
                     counters.Increment(prefix + "x8");
                 }
 
-                if (s_w % 16 == 0 && s_h % 16 == 0)
+                if (sW % 16 == 0 && sH % 16 == 0)
                 {
                     counters.Increment(prefix + "16x16");
                 }
@@ -153,10 +151,10 @@ namespace Imazen.Common.Instrumentation
             {
                 sourceMegapixels.Report(readPixels);
 
-                sourceWidths.Report(s_w);
-                sourceHeights.Report(s_h);
+                sourceWidths.Report(sW);
+                sourceHeights.Report(sH);
 
-                sourceAspectRatios.Report(s_w * 100 / s_h);
+                sourceAspectRatios.Report(sW * 100 / sH);
             }
 
             if (wrotePixels > 0)
@@ -164,15 +162,15 @@ namespace Imazen.Common.Instrumentation
                 outputMegapixels.Report(wrotePixels);
 
 
-                outputWidths.Report(f_w);
-                outputHeights.Report(f_h);
-                outputAspectRatios.Report(f_w * 100 / f_h);
+                outputWidths.Report(fW);
+                outputHeights.Report(fH);
+                outputAspectRatios.Report(fW * 100 / fH);
             }
 
             if (readPixels > 0 && wrotePixels > 0)
             {
-                scalingRatios.Report(s_w * 100 / f_w);
-                scalingRatios.Report(s_h * 100 / f_h);
+                scalingRatios.Report(sW * 100 / fW);
+                scalingRatios.Report(sH * 100 / fH);
             }
 
             jobs.Record(timestamp, 1);
@@ -180,10 +178,10 @@ namespace Imazen.Common.Instrumentation
             encodedPixels.Record(timestamp, wrotePixels);
 
 
-            job_times.Report(job.TotalTicks);
-            decode_times.Report(job.DecodeTicks);
-            encode_times.Report(job.EncodeTicks);
-            job_other_time.Report(job.TotalTicks - job.DecodeTicks - job.EncodeTicks);
+            jobTimes.Report(job.TotalTicks);
+            decodeTimes.Report(job.DecodeTicks);
+            encodeTimes.Report(job.EncodeTicks);
+            jobOtherTime.Report(job.TotalTicks - job.DecodeTicks - job.EncodeTicks);
 
             if (job.SourceFileExtension != null)
             {
@@ -198,19 +196,19 @@ namespace Imazen.Common.Instrumentation
         }
 
 
-        readonly ConcurrentDictionary<string, DictionaryCounter<string>> uniques 
-            = new ConcurrentDictionary<string, DictionaryCounter<string>>(StringComparer.Ordinal);
-        private long CountLimitedUniqueValuesIgnoreCase(string category, string value, int limit, string otherBucketValue)
+        readonly ConcurrentDictionary<string, DictionaryCounter<string>> uniques = new(StringComparer.Ordinal);
+        
+        // ReSharper disable once UnusedMethodReturnValue.Local
+        private long CountLimitedUniqueValuesIgnoreCase(string category, string? value, int limit, string otherBucketValue)
         {
-            return uniques.GetOrAdd(category, (k) =>
+            return uniques.GetOrAdd(category, (_) =>
                 new DictionaryCounter<string>(limit, otherBucketValue, StringComparer.OrdinalIgnoreCase))
                 .Increment(value ?? "null");
 
         }
         private IEnumerable<string> GetPopularUniqueValues(string category, int limit)
         {
-            DictionaryCounter<string> v;
-            return uniques.TryGetValue(category, out v) ?
+            return uniques.TryGetValue(category, out DictionaryCounter<string>? v) ?
                     v.GetCounts()
                     .Where(pair => pair.Value > 0)
                     .OrderByDescending(pair => pair.Value)
@@ -218,7 +216,7 @@ namespace Imazen.Common.Instrumentation
                     Enumerable.Empty<string>();
         }
 
-        private void NoticeDomains(string imageDomain, string pageDomain)
+        private void NoticeDomains(string? imageDomain, string? pageDomain)
         {
             if (imageDomain != null) {
                 CountLimitedUniqueValuesIgnoreCase("image_domains", imageDomain, 45, "_other_");
@@ -229,8 +227,9 @@ namespace Imazen.Common.Instrumentation
             }
         }
 
-        private void PostJobQuery(IEnumerable<string> querystringKeys)
+        private void PostJobQuery(IEnumerable<string>? querystringKeys)
         {
+            if (querystringKeys == null) return;
             foreach (var key in querystringKeys)
             {
                 if (key != null)
@@ -240,8 +239,9 @@ namespace Imazen.Common.Instrumentation
             }
         }
 
-        public void PreRewriteQuery(IEnumerable<string> querystringKeys)
+        public void PreRewriteQuery(IEnumerable<string>? querystringKeys)
         {
+            if (querystringKeys == null) return;
             foreach (var key in querystringKeys)
             {
                 if (key != null)
@@ -255,7 +255,7 @@ namespace Imazen.Common.Instrumentation
         {
             Singleton.blobReadEvents.Record(Stopwatch.GetTimestamp(), 1);
             Singleton.blobReadBytes.Record(Stopwatch.GetTimestamp(), bytes);
-            Singleton.blob_read_times.Report(ticks);
+            Singleton.blobReadTimes.Report(ticks);
         }
 
         public IInfoAccumulator GetReportPairs()
@@ -285,8 +285,8 @@ namespace Imazen.Common.Instrumentation
                 q.Add(rate.Key + "_total", rate.Value.RecordedTotal);
                 foreach (var pair in rate.Value.GetStats())
                 {
-                    var basekey = rate.Key + "_per_" + pair.Interval.Unit;
-                    q.Add(basekey + "_max", pair.Max);
+                    var baseKey = rate.Key + "_per_" + pair.Interval.Unit;
+                    q.Add(baseKey + "_max", pair.Max);
                 }
             }
 
@@ -315,13 +315,13 @@ namespace Imazen.Common.Instrumentation
                 string.Join(",", GetPopularUniqueValues("job_query_keys", 40).Except(originalKeys).Take(2)));
 
             timeThis.Stop();
-            collect_info_times.Report(timeThis.ElapsedTicks);
+            collectInfoTimes.Report(timeThis.ElapsedTicks);
             return q;
         }
 
         public void TrackRate(string eventCategoryKey, long count)
         {
-            rates.GetOrAdd(eventCategoryKey, (k) => new MultiIntervalStats(Intervals)).Record(Stopwatch.GetTimestamp(), count);
+            rates.GetOrAdd(eventCategoryKey, (_) => new MultiIntervalStats(Intervals)).Record(Stopwatch.GetTimestamp(), count);
         }
 
         public void IncrementCounter(string key)

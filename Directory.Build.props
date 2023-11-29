@@ -4,7 +4,7 @@
     </ItemGroup>
 
     <PropertyGroup>
-        <Copyright>Copyright © 2023 Imazen LLC</Copyright>
+        <Copyright>Copyright © 2024 Imazen LLC</Copyright>
         <PackageProjectUrl>https://github.com/imazen/imageflow-dotnet-server</PackageProjectUrl>
         <RepositoryUrl Condition="'$(GITHUB_REPOSITORY)' != ''">$(GITHUB_SERVER_URL)/$(GITHUB_REPOSITORY)</RepositoryUrl>
         <SourceRevisionId Condition="'$(SourceRevisionId)' == ''">$(GITHUB_SHA)</SourceRevisionId>
@@ -36,13 +36,9 @@
 
     <PropertyGroup Condition="'$(CI)' == 'True'">
         <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
-        <!--        This causes pain-->
-        <!--        <RestoreLockedMode>true</RestoreLockedMode>-->
     </PropertyGroup>
     <PropertyGroup Condition="'$(CI)' == 'true'">
         <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
-        <!--        This causes pain-->        
-        <!--        <RestoreLockedMode>true</RestoreLockedMode>-->
     </PropertyGroup>
 
     <PropertyGroup>
@@ -50,5 +46,4 @@
         <NoWarn>NU1603</NoWarn>
         <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
     </PropertyGroup>
-
 </Project>

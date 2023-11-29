@@ -1,6 +1,4 @@
-﻿using System;
-using System.Reflection;
-using Imazen.Common.Instrumentation.Support;
+﻿using Imazen.Common.Instrumentation.Support;
 using Imazen.Common.Instrumentation.Support.InfoAccumulators;
 
 namespace Imazen.Common.Instrumentation

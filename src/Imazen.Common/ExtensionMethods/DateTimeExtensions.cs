@@ -1,5 +1,3 @@
-using System;
-
 namespace Imazen.Common.ExtensionMethods
 {
     public static class DateTimeExtensions

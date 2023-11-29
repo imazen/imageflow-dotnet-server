@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Amazon.S3;
-using Imazen.Common.Storage.Caching;
+using Imazen.Abstractions.BlobCache;
 
 namespace Imageflow.Server.Storage.S3.Caching
 {
@@ -36,7 +36,7 @@ namespace Imageflow.Server.Storage.S3.Caching
         /// <summary>
         /// Creates a new named cache configuration with the specified sliding expiry days
         /// </summary>
-        /// <param name="cacheName">The name of the cache, for use in the rest of the configuration</param>
+        /// <param name="cacheName">The unique name of the cache, for use in the rest of the configuration</param>
         /// <param name="defaultS3Client">If null, will use the default client.</param>
         /// <param name="cacheBucketName">The bucket to use for the cache. Must be in the same region or performance will be terrible.</param>
         /// <param name="slidingExpiryDays">If null, then no expiry will occur</param>
@@ -59,10 +59,10 @@ namespace Imageflow.Server.Storage.S3.Caching
             DefaultS3Client = defaultS3Client;
             BlobGroupConfigurations = new Dictionary<BlobGroup, BlobGroupConfiguration>
             {
-                { BlobGroup.CacheEntry, new BlobGroupConfiguration(new BlobGroupLocation(cacheBucketName, "imageflow-cache/blobs/", defaultS3Client), new BlobGroupLifecycle(slidingExpiryDays, slidingExpiryDays), createBucketIfMissing, updateLifecycleRules) },
-                { BlobGroup.SourceMetadata, new BlobGroupConfiguration(new BlobGroupLocation(cacheBucketName, "imageflow-cache/source-metadata/", defaultS3Client), new BlobGroupLifecycle(null, null), createBucketIfMissing, updateLifecycleRules) },
-                { BlobGroup.CacheMetadata, new BlobGroupConfiguration(new BlobGroupLocation(cacheBucketName, "imageflow-cache/blob-metadata/", defaultS3Client), new BlobGroupLifecycle(blobMetadataExpiry, blobMetadataExpiry), createBucketIfMissing, updateLifecycleRules) },
-                { BlobGroup.Essential, new BlobGroupConfiguration(new BlobGroupLocation(cacheBucketName, "imageflow-cache/essential/", defaultS3Client), new BlobGroupLifecycle(null, null), createBucketIfMissing, updateLifecycleRules) }
+                { BlobGroup.GeneratedCacheEntry, new BlobGroupConfiguration(new BlobGroupLocation(cacheBucketName, "imageflow-cache/blobs/files/", "imageflow-cache/blobs/by-tags/",defaultS3Client), new BlobGroupLifecycle(slidingExpiryDays, slidingExpiryDays), createBucketIfMissing, updateLifecycleRules, false) },
+                { BlobGroup.SourceMetadata, new BlobGroupConfiguration(new BlobGroupLocation(cacheBucketName, "imageflow-cache/source-metadata/files/", "imageflow-cache/source-metadata/by-tags/", defaultS3Client), new BlobGroupLifecycle(null, null), createBucketIfMissing, updateLifecycleRules, false ) },
+                { BlobGroup.CacheEntryMetadata, new BlobGroupConfiguration(new BlobGroupLocation(cacheBucketName, "imageflow-cache/blob-metadata/files/", "imageflow-cache/blob-metadata/by-tags/",defaultS3Client), new BlobGroupLifecycle(blobMetadataExpiry, blobMetadataExpiry), createBucketIfMissing, updateLifecycleRules, false) },
+                { BlobGroup.Essential, new BlobGroupConfiguration(new BlobGroupLocation(cacheBucketName, "imageflow-cache/essential/files/", "imageflow-cache/essential/by-tags/",defaultS3Client), new BlobGroupLifecycle(null, null), createBucketIfMissing, updateLifecycleRules, false) }
             };
         }
 

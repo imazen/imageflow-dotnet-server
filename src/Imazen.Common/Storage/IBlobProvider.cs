@@ -1,8 +1,6 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
-
-namespace Imazen.Common.Storage
+﻿namespace Imazen.Common.Storage
 {
+    [Obsolete("Use Imazen.Abstractions.Blobs.LegacyProviders.IBlobWrapperProvider instead")]
     public interface IBlobProvider
     {
         IEnumerable<string> GetPrefixes();

@@ -1,7 +1,4 @@
-using System;
-using System.IO;
 using System.Reflection;
-using System.Text.RegularExpressions;
 using Microsoft.Extensions.FileProviders;
 
 namespace Imageflow.Server.Tests
@@ -29,7 +26,7 @@ namespace Imageflow.Server.Tests
             using var reader = embeddedProvider.GetFileInfo(resourceName).CreateReadStream();
             var newFilePath = Path.Combine(PhysicalPath, relativePath.Replace('/', Path.DirectorySeparatorChar));
             var parentDir = Path.GetDirectoryName(newFilePath);
-            if (!Directory.Exists(parentDir))
+            if (parentDir != null && !Directory.Exists(parentDir))
                 Directory.CreateDirectory(parentDir);
             using var newFile = File.Create(newFilePath);
             reader.CopyTo(newFile);

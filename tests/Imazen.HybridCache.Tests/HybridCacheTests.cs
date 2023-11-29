@@ -16,15 +16,17 @@ namespace Imazen.HybridCache.Tests
             var cancellationToken = CancellationToken.None;
             var path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}");
             Directory.CreateDirectory(path);
-            var cacheOptions = new HybridCacheOptions(path)
+            var cacheOptions = new HybridCacheAdvancedOptions("HybridCache",path)
             {
-                AsyncCacheOptions = new AsyncCacheOptions()
+                AsyncCacheOptions = new AsyncCacheOptions
                 {
-                    MaxQueuedBytes = 0
+                    MaxQueuedBytes = 0,
+                    UniqueName = "HybridCache"
                 }
             };
             var database = new MetaStore.MetaStore(new MetaStoreOptions(path), cacheOptions, null);
-            HybridCache cache = new HybridCache(database,cacheOptions, null);
+            HybridCache hybridCache = new HybridCache(database,cacheOptions, null);
+            var cache = new LegacyStreamCacheAdapter(hybridCache);
             try
             {
                 await cache.StartAsync(cancellationToken);
@@ -46,14 +48,14 @@ namespace Imazen.HybridCache.Tests
                 Assert.Equal(contentType, result2.ContentType);
                 Assert.NotNull(result2.Data);
                 
-                Assert.NotNull(((AsyncCache.AsyncCacheResult)result2).CreatedAt);
+                Assert.NotNull(((AsyncCache.AsyncCacheResultOld)result2).CreatedAt);
                 await result2.Data.DisposeAsync();
                 await cache.AsyncCache.AwaitEnqueuedTasks();
                 
                 var result3 = await cache.GetOrCreateBytes(key, DataProvider, cancellationToken, true);
                 Assert.Equal("DiskHit", result3.Status);
                 Assert.Equal(contentType, result3.ContentType);
-                Assert.NotNull(((AsyncCache.AsyncCacheResult)result3).CreatedAt);
+                Assert.NotNull(((AsyncCache.AsyncCacheResultOld)result3).CreatedAt);
                 Assert.NotNull(result3.Data);
                 await result3.Data.DisposeAsync();
                 var key2 = new byte[] {2, 1, 2, 3};

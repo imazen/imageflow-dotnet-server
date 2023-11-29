@@ -1,5 +1,3 @@
-using System;
-
 namespace Imazen.Common.FileTypeDetection{
 
     public class FileTypeDetector
@@ -16,7 +14,12 @@ namespace Imazen.Common.FileTypeDetection{
         /// </summary>
         /// <param name="first12Bytes"></param>
         /// <returns></returns>
-        public string GuessMimeType(byte[] first12Bytes)
+        public static string? GuessMimeType(byte[] first12Bytes)
+        {
+            return MagicBytes.GetImageContentType(first12Bytes);
+        }
+        
+        public static string? GuessMimeType(Span<byte> first12Bytes)
         {
             return MagicBytes.GetImageContentType(first12Bytes);
         }
@@ -77,7 +80,7 @@ namespace Imazen.Common.FileTypeDetection{
         /// <param name="first12Bytes">First 12 or more bytes of the file</param>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
-        private static ImageFormat? GetImageFormat(byte[] first12Bytes)
+        private static ImageFormat? GetImageFormat(Span<byte> first12Bytes)
         {
             
             // Useful resources: https://chromium.googlesource.com/chromium/src/+/HEAD/net/base/mime_sniffer.cc
@@ -393,8 +396,7 @@ namespace Imazen.Common.FileTypeDetection{
             
             return null;
         }
-
-        internal static string GetImageContentType(byte[] first12Bytes)
+        internal static string? GetImageContentType(Span<byte> first12Bytes)
         {
             switch (GetImageFormat(first12Bytes))
             {

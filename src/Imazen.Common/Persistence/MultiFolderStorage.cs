@@ -1,10 +1,6 @@
 ﻿using Imazen.Common.Issues;
-using System;
 using System.Collections.Concurrent;
-using System.IO;
-using System.Linq;
 using System.Text;
-using System.Threading;
 
 namespace Imazen.Common.Persistence
 {
@@ -17,38 +13,28 @@ namespace Imazen.Common.Persistence
     // TODO: use a friendlier ACL when creating directories and files?
 
     // Original version made files written world-readable (but not writable)
-    class MultiFolderStorage
+    internal class MultiFolderStorage(
+        string issueSource,
+        string dataKind,
+        IIssueReceiver sink,
+        string[] candidateFolders,
+        FolderOptions options)
     {
-        IIssueReceiver sink;
-        string issueSource;
-        string[] candidateFolders;
-        FolderOptions options;
-        string dataKind;
-
-        public MultiFolderStorage(string issueSource, string dataKind, IIssueReceiver sink, string[] candidateFolders, FolderOptions options)
-        {
-            this.dataKind = dataKind;
-            this.issueSource = issueSource;
-            this.candidateFolders = candidateFolders;
-            this.sink = sink;
-            this.options = options;
-        }
-
-        ConcurrentBag<string> badReadLocations = new ConcurrentBag<string>();
-        void AddBadReadLocation(string path, IIssue i)
+        readonly ConcurrentBag<string> badReadLocations = new();
+        void AddBadReadLocation(string path, IIssue? i)
         {
             badReadLocations.Add(path);
             if (i != null) sink.AcceptIssue(i);
         }
 
-        ConcurrentBag<string> badWriteLocations = new ConcurrentBag<string>();
-        void AddBadWriteLocation(string path, IIssue i)
+        readonly ConcurrentBag<string> badWriteLocations = new();
+        void AddBadWriteLocation(string path, IIssue? i)
         {
             badWriteLocations.Add(path);
             if (i != null) sink.AcceptIssue(i);
         }
 
-        ReaderWriterLockSlim filesystem = new ReaderWriterLockSlim();
+        readonly ReaderWriterLockSlim filesystem = new();
 
         /// <summary>
         /// Returns false if any copy of the file failed to delete. Doesn't reference failed directories
@@ -70,7 +56,7 @@ namespace Imazen.Common.Persistence
                     }
                     catch (Exception e)
                     {
-                        sink.AcceptIssue(new Issue(this.issueSource, "Failed to delete " + dataKind + " at location " + path, e.ToString(), IssueSeverity.Warning));
+                        sink.AcceptIssue(new Issue(issueSource, "Failed to delete " + dataKind + " at location " + path, e.ToString(), IssueSeverity.Warning));
                         failedAtSomething = true;
                     }
                 }
@@ -88,7 +74,7 @@ namespace Imazen.Common.Persistence
         /// <param name="filename"></param>
         /// <param name="value"></param>
         /// <returns></returns>
-        public bool TryDiskWrite(string filename, string value)
+        public bool TryDiskWrite(string filename, string? value)
         {
             if (value == null)
             {
@@ -109,7 +95,7 @@ namespace Imazen.Common.Persistence
                             }
                             catch (Exception e)
                             {
-                                AddBadWriteLocation(dest, new Issue(this.issueSource, "Failed to create directory " + dest, e.ToString(), IssueSeverity.Warning));
+                                AddBadWriteLocation(dest, new Issue(issueSource, "Failed to create directory " + dest, e.ToString(), IssueSeverity.Warning));
                             }
                         }else if (!Directory.Exists(dest))
                         {
@@ -136,7 +122,7 @@ namespace Imazen.Common.Persistence
                             }
                             catch (Exception e)
                             {
-                                AddBadWriteLocation(dest, new Issue(this.issueSource, "Failed to write " + dataKind + " to location " + path, e.ToString(), IssueSeverity.Warning));
+                                AddBadWriteLocation(dest, new Issue(issueSource, "Failed to write " + dataKind + " to location " + path, e.ToString(), IssueSeverity.Warning));
                             }
                         }
                     }
@@ -146,7 +132,7 @@ namespace Imazen.Common.Persistence
                 {
                     filesystem.ExitWriteLock();
                 }
-                sink.AcceptIssue(new Issue(this.issueSource,"Unable to cache " + dataKind + " to disk in any location.", null, IssueSeverity.Error));
+                sink.AcceptIssue(new Issue(issueSource,"Unable to cache " + dataKind + " to disk in any location.", null, IssueSeverity.Error));
                 return false;
             }
         }
@@ -156,7 +142,7 @@ namespace Imazen.Common.Persistence
         /// </summary>
         /// <param name="filename"></param>
         /// <returns></returns>
-        public string TryDiskRead(string filename)
+        public string? TryDiskRead(string filename)
         {
             bool readFailed = false; //To tell non-existent files apart from I/O errors
             try
@@ -174,7 +160,7 @@ namespace Imazen.Common.Persistence
                         catch (Exception e)
                         {
                             readFailed = true;
-                            AddBadReadLocation(path, new Issue(this.issueSource,  "Failed to read " + dataKind + " from location " + path, e.ToString(), IssueSeverity.Warning));
+                            AddBadReadLocation(path, new Issue(issueSource,  "Failed to read " + dataKind + " from location " + path, e.ToString(), IssueSeverity.Warning));
                         }
                     }
                 }
@@ -185,7 +171,7 @@ namespace Imazen.Common.Persistence
             }
             if (readFailed)
             {
-                sink.AcceptIssue(new Issue(this.issueSource, "Unable to read " + dataKind + " from disk despite its existence.", null, IssueSeverity.Error));
+                sink.AcceptIssue(new Issue(issueSource, "Unable to read " + dataKind + " from disk despite its existence.", null, IssueSeverity.Error));
             }
             return null;
         }
@@ -212,7 +198,7 @@ namespace Imazen.Common.Persistence
                         catch (Exception e)
                         {
                             readFailed = true;
-                            AddBadReadLocation(path, new Issue(this.issueSource, "Failed to read write time of " + dataKind + " from location " + path, e.ToString(), IssueSeverity.Warning));
+                            AddBadReadLocation(path, new Issue(issueSource, "Failed to read write time of " + dataKind + " from location " + path, e.ToString(), IssueSeverity.Warning));
                         }
                     }
                 }
@@ -223,7 +209,7 @@ namespace Imazen.Common.Persistence
             }
             if (readFailed)
             {
-                sink.AcceptIssue(new Issue(this.issueSource, "Unable to read write time of " + dataKind + " from disk despite its existence.", null, IssueSeverity.Error));
+                sink.AcceptIssue(new Issue(issueSource, "Unable to read write time of " + dataKind + " from disk despite its existence.", null, IssueSeverity.Error));
             }
             return null;
         }

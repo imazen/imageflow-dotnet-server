@@ -55,7 +55,7 @@ namespace Imageflow.Server.Storage.RemoteReader
 
             var urlBase64 = remote[0];
             var hmac = remote[1];
-            
+
             var sig = Signatures.SignString(urlBase64, options.SigningKey, 8);
             if (hmac != sig)
             {
@@ -78,36 +78,34 @@ namespace Imageflow.Server.Storage.RemoteReader
             }
 
             var httpClientName = httpClientSelector(uri);
-            using (var http = httpFactory.CreateClient(httpClientName))
+            // Per the docs, we do not need to dispose HttpClient instances. HttpFactories track backing resources and handle
+            // everything. https://source.dot.net/#Microsoft.Extensions.Http/IHttpClientFactory.cs,4f4eda17fc4cd91b
+            var client = httpFactory.CreateClient(httpClientName);
+            try
             {
+                var resp = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
 
-
-                try
+                if (!resp.IsSuccessStatusCode)
                 {
-                    var resp = await http.GetAsync(url);
-
-                    if (!resp.IsSuccessStatusCode)
-                    {
-                        logger?.LogWarning(
-                            "RemoteReader blob {VirtualPath} not found. The remote {Url} responded with status: {StatusCode}",
-                            virtualPath, url, resp.StatusCode);
-                        throw new BlobMissingException(
-                            $"RemoteReader blob \"{virtualPath}\" not found. The remote \"{url}\" responded with status: {resp.StatusCode}");
-                    }
-
-                    return new RemoteReaderBlob(resp);
-                }
-                catch (BlobMissingException)
-                {
-                    throw;
-                }
-                catch (Exception ex)
-                {
-                    logger?.LogWarning(ex, "RemoteReader blob error retrieving {Url} for {VirtualPath}", url,
-                        virtualPath);
+                    logger?.LogWarning(
+                        "RemoteReader blob {VirtualPath} not found. The remote {Url} responded with status: {StatusCode}",
+                        virtualPath, url, resp.StatusCode);
                     throw new BlobMissingException(
-                        $"RemoteReader blob error retrieving \"{url}\" for \"{virtualPath}\".", ex);
+                        $"RemoteReader blob \"{virtualPath}\" not found. The remote \"{url}\" responded with status: {resp.StatusCode}");
                 }
+
+                return new RemoteReaderBlob(resp);
+            }
+            catch (BlobMissingException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                logger?.LogWarning(ex, "RemoteReader blob error retrieving {Url} for {VirtualPath}", url,
+                    virtualPath);
+                throw new BlobMissingException(
+                    $"RemoteReader blob error retrieving \"{url}\" for \"{virtualPath}\".", ex);
             }
         }
 

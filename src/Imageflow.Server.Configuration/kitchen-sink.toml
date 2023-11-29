@@ -1,5 +1,75 @@
 
 
+# ===== Define connections (credentials & endpoints & configs) to remote services
+
+[connections.s3-east]
+type = "s3"
+region = "us-east-1" # required
+endpoint = "https://s3.amazonaws.com"
+access_key_id = "${env.S3AccessID}" # required
+access_key_secret = "${env.S3AccessKey}" # required
+
+[connections.s3-auto]
+type = "s3"
+sdk_use_default_credential = true # Use the default credential from the environment (e.g. AWS_PROFILE, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN)
+
+[connections.s3-cache-connection]
+type = "s3"
+region = "us-west-2" # required
+endpoint = "https://s3.amazonaws.com"
+access_key_id = "${env.S3AccessID}" # required
+access_key_secret = "${env.S3AccessKey}" # required
+
+[connections.r2]
+type = "s3"
+endpoint = "https://asfasfsaffsa.r2.cloudflarestorage.com"
+access_key_id = "235r23f23gf33f2awsgdgqw4eggqwe"
+secret_access_key = "bsdsabsbaddsabbbasdabdsasdbsadbbasdbsdasbdabsad"
+region = "auto"
+
+[connections.spaces-nyc3]
+type = "s3"
+endpoint = "https://nyc3.digitaloceanspaces.com" # Find your endpoint in the control panel, under Settings. Prepend "https://".
+region = "nyc3" # Use the region in your endpoint.
+access_key_id = "C500000000000001O00N" # Access key pair. You can create access key pairs using the control panel or API.
+secret_access_key = "${env.SPACES_SECRET}" # Secret access key defined through an environment variable.`
+
+[connections.azure]
+type="azureblob"
+account_url = "https://myaccount.blob.core.windows.net"
+# credential.connection_string = "${AzureBlobConnection}"
+credential.sdk_use_default_credential = true # Use the default credential from the environment (e.g. Azure Managed Identity) https://learn.microsoft.com/en-us/dotnet/azure/sdk/authentication/?tabs=command-line#authentication-in-server-environments
+
+[connections.https-client]
+type = "http"
+max_redirections = 6 # Max redirects to follow (0 to prevent redirections)
+max_connections = 16 # Max simultaneous connections to the same host - increase unless you hit problems
+max_retries = 3 # Max retries per request w/ jitter ttps://github.com/App-vNext/Polly/wiki/Retry-with-jitter
+initial_retry_ms = 100 # Initial retry delay in milliseconds
+require_https = true # Require HTTPS for all requests (TODO: implement)
+# TODO - also implement a timeout, and a max response size, and magic byte verification
+request_headers = [
+    # { name = "Accept-Encoding", value = "gzip, deflate, br" },
+    { name = "User-Agent", value = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36" },
+    #{ name = "Accept", value = "image/webp,image/apng,*/*;q=0.8"}
+    { name = "Authorization", value = "image/webp,image/apng,*/*;q=0.8" },
+]
+
+# Define caches
+[caches.s3-east-1-cache]
+type = "s3"
+connection = "s3-cache-connection"
+bucket = "cache-imageflow-west-2"
+
+[sources.s3-source]
+type = "s3"
+connection = "s3-east"
+
+
+
+allowed_domains = ["*.example.com", "example.com"] # Allow requests to these domains (TODO: implement)
+blocked_domains = ["*.example.org", "example.org"] # Block requests to these domains (TODO: implement)
+
 # ======  Define Image Sources ======
 [[source]]
 name = "fs" # name is required
@@ -15,6 +85,8 @@ region = "us-east-1" # required
 endpoint = "https://s3.amazonaws.com"
 access_key_id = "${vars.S3AccessID}" # required
 access_key_secret = "${vars.S3AccessKey}" # required
+
+
 
 
 [[source]]

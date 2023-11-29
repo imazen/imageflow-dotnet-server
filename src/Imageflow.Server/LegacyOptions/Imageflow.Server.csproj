@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <RootNamespace>Imageflow.Server</RootNamespace>
+    <Title>Imageflow .NET Server - Middleware for fetching, processing, and caching images on-demand.</Title>
+    <Description>Imageflow.Server - Middleware for fetching, processing, and caching images on-demand. Commercial licenses available.</Description>
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
+
+  <Import Project="..\NugetPackages.targets" />
+  
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />    
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Imazen.Common\Imazen.Common.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Imageflow.AllPlatforms" Version="0.10.2" />
+  </ItemGroup>
+
+</Project>

@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Text;
 using System.Collections.Concurrent;
 using Imazen.Common.Issues;
 using System.Security.Cryptography;
@@ -17,15 +14,14 @@ namespace Imazen.Common.Persistence
     /// </summary>
     class WriteThroughCache : IIssueProvider
     {
+        private readonly string prefix = "resizer_key_";
+        private readonly string sinkSource = "LicenseCache";
+        private readonly string dataKind = "license";
 
-        string prefix = "resizer_key_";
-        string sinkSource = "LicenseCache";
-        string dataKind = "license";
 
-        
-        IIssueReceiver sink;
-        MultiFolderStorage store;
-        ConcurrentDictionary<string, string> cache = new ConcurrentDictionary<string, string>();
+        private readonly IIssueReceiver sink;
+        private readonly MultiFolderStorage store;
+        private readonly ConcurrentDictionary<string, string?> cache = new();
         
         /// <summary>
         /// Here's how the original version calculated candidateFolders.
@@ -40,14 +36,14 @@ namespace Imazen.Common.Persistence
         /// </summary>
         /// <param name="keyPrefix"></param>
         /// <param name="candidateFolders"></param>
-        internal WriteThroughCache(string keyPrefix, string[] candidateFolders)
+        internal WriteThroughCache(string? keyPrefix, string[] candidateFolders)
         {
             prefix = keyPrefix ?? prefix;
             sink = new IssueSink(sinkSource);
             store = new MultiFolderStorage(sinkSource, dataKind, sink, candidateFolders, FolderOptions.Default);
         }
         
-        string hashToBase16(string data)
+        string HashToBase16(string data)
         {
             byte[] bytes = SHA256.Create().ComputeHash(new UTF8Encoding().GetBytes(data));
             StringBuilder sb = new StringBuilder(bytes.Length * 2);
@@ -61,7 +57,7 @@ namespace Imazen.Common.Persistence
         {
             if (key.Any(c => !Char.IsLetterOrDigit(c) && c != '_') || key.Length + prefix.Length > 200)
             {
-                return this.prefix + hashToBase16(key) + ".txt";
+                return this.prefix + HashToBase16(key) + ".txt";
             }
             else
             {
@@ -76,10 +72,9 @@ namespace Imazen.Common.Persistence
         /// <param name="key"></param>
         /// <param name="value"></param>
         /// <returns></returns>
-        internal StringCachePutResult TryPut(string key, string value)
+        internal StringCachePutResult TryPut(string key, string? value)
         {
-            string current;
-            if (cache.TryGetValue(key, out current) && current == value)
+            if (cache.TryGetValue(key, out var current) && current == value)
             {
                 return StringCachePutResult.Duplicate;
             }
@@ -92,21 +87,18 @@ namespace Imazen.Common.Persistence
         /// </summary>
         /// <param name="key"></param>
         /// <returns></returns>
-        internal string TryGet(string key)
+        internal string? TryGet(string key)
         {
-            string current;
-            if (cache.TryGetValue(key, out current))
+            if (cache.TryGetValue(key, out var current))
             {
                 return current;
-            }else
-            {
-                var disk = store.TryDiskRead(FilenameKeyFor(key));
-                if (disk != null)
-                {
-                    cache[key] = disk;
-                }
-                return disk;
             }
+            var disk = store.TryDiskRead(FilenameKeyFor(key));
+            if (disk != null)
+            {
+                cache[key] = disk;
+            }
+            return disk;
         }
 
 
@@ -126,23 +118,22 @@ namespace Imazen.Common.Persistence
     /// </summary>
     internal class PersistentGlobalStringCache : IPersistentStringCache, IIssueProvider
     {
-        private static WriteThroughCache _processCache;
+        private static WriteThroughCache? _processCache;
 
 
-        WriteThroughCache cache;
+        private readonly WriteThroughCache cache;
         public PersistentGlobalStringCache(string keyPrefix, string[] candidateFolders)
         {
-            if (_processCache == null)
-                _processCache = new WriteThroughCache(keyPrefix, candidateFolders);
+            _processCache ??= new WriteThroughCache(keyPrefix, candidateFolders);
             cache = _processCache;
         }
 
-        public string Get(string key)
+        public string? Get(string key)
         {
             return cache.TryGet(key);
         }
 
-        public StringCachePutResult TryPut(string key, string value)
+        public StringCachePutResult TryPut(string key, string? value)
         {
             return cache.TryPut(key, value);
         }

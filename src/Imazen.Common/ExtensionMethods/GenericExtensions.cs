@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace Imazen.Common.ExtensionMethods
 {
     internal static class GenericExtensions

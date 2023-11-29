@@ -3,8 +3,6 @@
 // propagated, or distributed except as permitted in COPYRIGHT.txt.
 // Licensed under the Apache License, Version 2.0.
 
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections;
 
@@ -30,38 +28,46 @@ namespace Imazen.Common.Collections {
     /// Enumerates the collection from end to beginning
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public class ReverseEnumerator<T> : IEnumerator<T> {
+    public sealed class ReverseEnumerator<T> : IEnumerator<T>
+    {
         private readonly ReadOnlyCollection<T> collection;
-        private int curIndex;
+        private int currentIndex;
 
-
-        public ReverseEnumerator(ReadOnlyCollection<T> collection) {
+        public ReverseEnumerator(ReadOnlyCollection<T> collection)
+        {
             this.collection = collection;
-            curIndex = this.collection.Count;
-            Current = default;
-
+            currentIndex = collection.Count; // Start just after the last element
         }
 
-        public bool MoveNext() {
-            curIndex--;
-            //Avoids going beyond the beginning of the collection.
-            if (curIndex < 0) {
-                Current = default;
-                return false;
+        public T Current
+        {
+            get
+            {
+                if (currentIndex < 0 || currentIndex >= collection.Count)
+                {
+                    throw new InvalidOperationException("The collection was modified after the enumerator was created.");
+                }
+                return collection[currentIndex];
             }
-
-            // Set current box to next item in collection.
-            Current = collection[curIndex];
-            return true;
         }
 
-        public void Reset() { curIndex = collection.Count; Current = default; }
+        object IEnumerator.Current => Current!;
 
-        void IDisposable.Dispose() { }
+        public bool MoveNext()
+        {
+            currentIndex--;
+            return currentIndex >= 0;
+        }
 
-        public T Current { get; private set; }
+        public void Reset()
+        {
+            currentIndex = collection.Count;
+        }
 
-
-        object IEnumerator.Current => Current;
+        public void Dispose()
+        {
+            // No resources to dispose in this example
+        }
     }
+
 }

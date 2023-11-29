@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace Imazen.Common.Instrumentation
 {
     internal interface IImageJobInstrumentation
@@ -17,18 +15,18 @@ namespace Imazen.Common.Instrumentation
         /// <summary>
         /// var ext = PathUtils.GetExtension(job.SourcePathData).ToLowerInvariant().TrimStart('.');
         /// </summary>
-        string SourceFileExtension { get; }
+        string? SourceFileExtension { get; }
         
         /// <summary>
         /// request?.Url?.DnsSafeHost
         /// </summary>
-        string ImageDomain { get; }
+        string? ImageDomain { get; }
         /// <summary>
         /// request?.UrlReferrer?.DnsSafeHost
         /// </summary>
-        string PageDomain { get; }
+        string? PageDomain { get; }
         
-        IEnumerable<string> FinalCommandKeys { get;  }
+        IEnumerable<string>? FinalCommandKeys { get;  }
 
     }
 }

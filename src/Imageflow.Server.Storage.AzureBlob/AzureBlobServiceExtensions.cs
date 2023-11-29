@@ -1,6 +1,8 @@
-using Imazen.Common.Storage;
+using Azure.Storage.Blobs;
+using Imazen.Abstractions.Blobs.LegacyProviders;
+using Imazen.Abstractions.Logging;
+using Microsoft.Extensions.Azure;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 
 namespace Imageflow.Server.Storage.AzureBlob
 {
@@ -10,10 +12,14 @@ namespace Imageflow.Server.Storage.AzureBlob
         public static IServiceCollection AddImageflowAzureBlobService(this IServiceCollection services,
             AzureBlobServiceOptions options)
         {
-            services.AddSingleton<IBlobProvider>((container) =>
+            services.AddImageflowReLogStoreAndReLoggerFactoryIfMissing();
+            services.AddSingleton<IBlobWrapperProvider>((container) =>
             {
-                var logger = container.GetRequiredService<ILogger<AzureBlobService>>();
-                return new AzureBlobService(options, logger);
+                var loggerFactory = container.GetRequiredService<IReLoggerFactory>();
+                var blobServiceClient = container.GetService<BlobServiceClient>();
+                var clientFactory = container.GetService<IAzureClientFactory<BlobServiceClient>>();
+              
+                return new AzureBlobService(options, loggerFactory, blobServiceClient, clientFactory);
             });
 
             return services;

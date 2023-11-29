@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Imazen.Common.Instrumentation.Support
+﻿namespace Imazen.Common.Instrumentation.Support
 {
     readonly struct AddMulModHash : IHash
     {

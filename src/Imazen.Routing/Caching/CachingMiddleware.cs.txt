@@ -1,0 +1,118 @@
+namespace Imazen.Routing.RequestRouting;
+
+public class CachingMiddleware : IPromiseMiddleware
+{
+    public ValueTask<ICacheableBlobPromise> DoStuff(ICacheableBlobPromise original, CancellationToken cancellationToken)
+    {
+        
+    }
+    
+     private string MakeWeakEtag(string cacheKey) => $"W/\"{cacheKey}\"";
+        // ReSharper disable once UnusedMember.Global
+
+
+        private async Task ProcessWithCacheManager(TResponse response, string cacheKey, ImageJobInfo<TRequest,TResponse,TContext> info)
+        {
+            cacheKey = await imageJobInfo.GetFastCacheKey();
+                
+            // W/"etag" should be used instead, since we might have to regenerate the result non-deterministically while a client is downloading it with If-Range
+            // If-None-Match is supposed to be weak always
+            var etagHeader = MakeWeakEtag(cacheKey);
+            
+            if (request.TryGetHeader(HttpHeaderNames.IfNoneMatch, out var conditionalEtag) && etagHeader == conditionalEtag)
+            {
+                GlobalPerf.Singleton.IncrementCounter("etag_hit");
+                response.SetContentLength(0);
+                response.SetStatusCode(304);
+                return true;
+            }
+            GlobalPerf.Singleton.IncrementCounter("etag_miss");
+            
+            string fullPathInfo = $"{info.FinalVirtualPath}?{info.CommandString}";
+            if (info.HasParams){
+                var cacheResult = await cacheManager.GetOrProcess(cacheKey, fullPathInfo, async (cancellationToken) =>
+                {
+                    if (info.HasParams)
+                    {
+                        logger?.LogDebug("Cache miss: Processing image {VirtualPath}?{Querystring}", info.FinalVirtualPath,info.ToString());
+                        var result = await info.ProcessUncached();
+                        
+                        return new StreamCacheInput(result.ContentType, result.Bytes);
+                    }
+                    
+                    logger?.LogDebug("Cache miss: Proxying image {VirtualPath}", info.FinalVirtualPath);
+                    var bytes = await info.GetPrimaryBlobBytesAsync();
+                    return new StreamCacheInput(null, bytes);
+                
+                },CancellationToken.None);
+                
+                SetCachingHeaders(response, MakeWeakEtag(cacheKey));
+                await MagicBytes.ProxyToStream(cacheResult.Data, response);
+            }
+            else
+            {
+                var proxyResult = await cacheManager.ProxyBlob(cacheKey, fullPathInfo, async (cancellationToken) =>
+                {
+                    logger?.LogDebug("Cache miss: Proxying image {VirtualPath}", info.FinalVirtualPath);
+                    var bytes = await info.GetPrimaryBlobBytesAsync();
+                    return new StreamCacheInput(null, bytes);
+                }, CancellationToken.None);
+
+            
+                SetCachingHeaders(response, MakeWeakEtag(cacheKey));
+                await MagicBytes.ProxyToStream(proxyResult.Data, response);
+            }
+
+
+        }
+  
+        private async Task ProcessWithNoCache(TRequest request, TResponse response, ImageJobInfo<TRequest,TResponse,TContext> info)
+        {
+            // If we're not caching, we should always use the modified date from source blobs as part of the etag
+            var betterCacheKey = await info.GetExactCacheKey();
+            // Still use weak since recompression is non-deterministic
+            
+            var etagHeader = MakeWeakEtag(betterCacheKey);
+            if (request.TryGetHeader(HttpHeaderNames.IfNoneMatch, out var conditionalEtag) && etagHeader == conditionalEtag)
+            {
+                GlobalPerf.Singleton.IncrementCounter("etag_hit");
+                response.SetContentLength(0);
+                response.SetStatusCode(304);
+                return;
+            }
+            GlobalPerf.Singleton.IncrementCounter("etag_miss");
+            if (info.HasParams)
+            {
+                logger?.LogInformation("Processing image {VirtualPath} with params {CommandString}", info.FinalVirtualPath, info.CommandString);
+                GlobalPerf.Singleton.IncrementCounter("nocache_processed");
+                var imageData = await info.ProcessUncached();
+
+                var contentType = imageData.Attributes.ContentType;
+                
+                await using var byteStream = imageData.CreateReadStream();
+                
+                if (contentType == null)
+                {
+                    SetCachingHeaders(response, etagHeader);
+                    await MagicBytes.ProxyToStream(byteStream, response);
+                }
+                else
+                {
+                    response.SetContentType(contentType);
+                    response.SetContentLength(byteStream.Length);
+                    SetCachingHeaders(response, etagHeader);
+                    await byteStream.CopyToAsync(response.GetBodyWriteStream()).ConfigureAwait(false);
+                }
+            }
+            else
+            {
+                logger?.LogInformation("Proxying image {VirtualPath} with params {CommandString}", info.FinalVirtualPath, info.CommandString);
+                GlobalPerf.Singleton.IncrementCounter("nocache_proxied");
+                await using var sourceStream = (await info.GetPrimaryBlob()).OpenRead();
+                SetCachingHeaders(response, etagHeader);
+                await MagicBytes.ProxyToStream(sourceStream, response);
+            }
+            
+
+        }
+}

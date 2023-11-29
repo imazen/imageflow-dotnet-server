@@ -1,12 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
     <Title>Imageflow.Server.Storage.RemoteReader - Plugin for fetching source images from remote URLs.</Title>
     <Description>Imageflow.Server plugin for fetching source images from remote URLs.</Description>
-    <IsPackable>true</IsPackable>
   </PropertyGroup>
-  <Import Project="..\NugetPackages.targets" />
+  <Import Project="..\NugetPackageDefaults.targets" />
 
   <ItemGroup>
     <ProjectReference Include="..\Imazen.Common\Imazen.Common.csproj" />

@@ -1,25 +1,34 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\NugetPackages.targets" />
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFrameworks>net6.0;net8.0</TargetFrameworks>
     <RootNamespace>Imageflow.Server</RootNamespace>
     <Title>Imageflow .NET Server - Middleware for fetching, processing, and caching images on-demand.</Title>
     <Description>Imageflow.Server - Middleware for fetching, processing, and caching images on-demand. Commercial licenses available.</Description>
-    <IsPackable>true</IsPackable>
+
+    <EnableTrimAnalyzer Condition="'$(TargetFramework)' == 'net8.0'">true</EnableTrimAnalyzer>
+    <EnableSingleFileAnalyzer Condition="'$(TargetFramework)' == 'net8.0'">true</EnableSingleFileAnalyzer>
+    <EnableAotAnalyzer Condition="'$(TargetFramework)' == 'net8.0'">true</EnableAotAnalyzer>
   </PropertyGroup>
 
-  <Import Project="..\NugetPackages.targets" />
   
+
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />    
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Imazen.Common\Imazen.Common.csproj" />
+    <ProjectReference Include="..\Imazen.Routing\Imazen.Routing.csproj" />
+    </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Imageflow.AllPlatforms" Version="0.12.0" />
+    <PackageReference Include="Microsoft.IO.RecyclableMemoryStream" Version="3.0.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Imageflow.AllPlatforms" Version="0.10.2" />
     <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="3.3.4">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
@@ -28,5 +37,6 @@
   <ItemGroup>
     <AdditionalFiles Include="PublicAPI.Shipped.txt" />
     <AdditionalFiles Include="PublicAPI.Unshipped.txt" />
+    <Folder Include="Obsolete\" />
   </ItemGroup>
 </Project>

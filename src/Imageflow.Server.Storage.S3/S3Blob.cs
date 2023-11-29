@@ -1,34 +1,34 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using Amazon.S3.Model;
-using Imazen.Common.Storage;
-using Imazen.Common.Storage.Caching;
+using Imazen.Abstractions.Blobs;
 
 namespace Imageflow.Server.Storage.S3
 {
-    internal class S3Blob : IBlobData, IDisposable, ICacheBlobData, ICacheBlobDataExpiry
+    internal static class S3BlobHelpers
     {
-        private readonly GetObjectResponse response;
-
-        internal S3Blob(GetObjectResponse r)
+        public static ConsumableStreamBlob CreateS3Blob(GetObjectResponse r)
         {
-            response = r;
-        }
+            if (r.HttpStatusCode != System.Net.HttpStatusCode.OK)
+            {
+                throw new Exception($"S3 returned {r.HttpStatusCode} for {r.BucketName}/{r.Key}");
+            }
 
-        public bool? Exists => true;
-        public DateTime? LastModifiedDateUtc => response.LastModified.ToUniversalTime();
-
-        public DateTimeOffset? EstimatedExpiry => response.Expiration?.ExpiryDateUtc;
-
-
-        public Stream OpenRead()
-        {
-            return response.ResponseStream;
-        }
-
-        public void Dispose()
-        {
-            response?.Dispose();
+            // metadata starting with t_ is a tag
+            var tags = r.Metadata.Keys.Where(k => k.StartsWith("t_"))
+                .Select(key => SearchableBlobTag.CreateUnvalidated(key.Substring(2), r.Metadata[key])).ToList();
+            var a = new BlobAttributes()
+            {
+                BlobByteCount = r.ContentLength,
+                ContentType = r.Headers?.ContentType,
+                Etag = r.ETag,
+                LastModifiedDateUtc = r.LastModified.ToUniversalTime(),
+                StorageTags = tags,
+                EstimatedExpiry = r.Expiration?.ExpiryDateUtc,
+                BlobStorageReference = new S3BlobStorageReference(r.BucketName, r.Key)
+            };
+            return new ConsumableStreamBlob(a, r.ResponseStream, r);
         }
     }
 }

@@ -1,29 +1,43 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Net;
-using System.Runtime.CompilerServices;
-using System.Threading;
 using Amazon;
 using Amazon.Runtime;
 using Amazon.S3;
 using Imageflow.Fluent;
-using Imageflow.Server.DiskCache;
+using Imageflow.Server.HybridCache;
 using Imageflow.Server.Storage.RemoteReader;
 using Imageflow.Server.Storage.S3;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Imageflow.Server.Tests
 {
-    public class IntegrationTest
+    public static class LoggingExtensions
+    {
+        internal static void AddXunitLoggingDefaults(this IServiceCollection services, ITestOutputHelper outputHelper)
+        {
+            services.AddLogging(builder =>
+            {
+                // log to output so we get it on xunit failures.
+                builder.AddXunit(outputHelper, LogLevel.Trace);
+                builder.AddFilter("Microsoft", LogLevel.Warning);
+                builder.AddFilter("System", LogLevel.Warning);
+                // trace log to console for when xunit crashes with stack overflow
+                builder.AddConsole(options =>
+                {
+                    options.LogToStandardErrorThreshold = LogLevel.Trace;
+                });
+            });
+        }
+    }
+    public class IntegrationTest(ITestOutputHelper OutputHelper)
     {
 
+        
         [Fact]
         public async void TestLocalFiles()
         {
@@ -38,6 +52,10 @@ namespace Imageflow.Server.Tests
             {
 
                 var hostBuilder = new HostBuilder()
+                    .ConfigureServices(services =>
+                    {
+                        services.AddXunitLoggingDefaults(OutputHelper);
+                    })
                     .ConfigureWebHost(webHost =>
                     {
                         // Add TestServer
@@ -88,15 +106,15 @@ namespace Imageflow.Server.Tests
 
                 using var wrongImageExtension1 = await client.GetAsync("/wrong.webp");
                 wrongImageExtension1.EnsureSuccessStatusCode();
-                Assert.Equal("image/png", wrongImageExtension1.Content.Headers.ContentType.MediaType);
+                Assert.Equal("image/png", wrongImageExtension1.Content.Headers.ContentType?.MediaType);
                 
                 using var wrongImageExtension2 = await client.GetAsync("/wrong.jpg");
                 wrongImageExtension2.EnsureSuccessStatusCode();
-                Assert.Equal("image/png", wrongImageExtension2.Content.Headers.ContentType.MediaType);
+                Assert.Equal("image/png", wrongImageExtension2.Content.Headers.ContentType?.MediaType);
 
                 using var extensionlessRequest = await client.GetAsync("/extensionless/file");
                 extensionlessRequest.EnsureSuccessStatusCode();
-                Assert.Equal("image/png", extensionlessRequest.Content.Headers.ContentType.MediaType);
+                Assert.Equal("image/png", extensionlessRequest.Content.Headers.ContentType?.MediaType);
 
                 
                 using var response2 = await client.GetAsync("/fire.jpg?width=1");
@@ -149,8 +167,8 @@ namespace Imageflow.Server.Tests
                 var hostBuilder = new HostBuilder()
                     .ConfigureServices(services =>
                     {
-                        services.AddImageflowDiskCache(
-                            new DiskCacheOptions(diskCacheDir) {AsyncWrites = false});
+                        services.AddImageflowHybridCache(new HybridCacheOptions(diskCacheDir)); //TODO: sync writes wanted
+                        services.AddXunitLoggingDefaults(OutputHelper);
                     })
                     .ConfigureWebHost(webHost =>
                     {
@@ -188,15 +206,15 @@ namespace Imageflow.Server.Tests
 
                 using var wrongImageExtension1 = await client.GetAsync("/wrong.webp");
                 wrongImageExtension1.EnsureSuccessStatusCode();
-                Assert.Equal("image/png", wrongImageExtension1.Content.Headers.ContentType.MediaType);
+                Assert.Equal("image/png", wrongImageExtension1.Content.Headers.ContentType?.MediaType);
                 
                 using var wrongImageExtension2 = await client.GetAsync("/wrong.jpg");
                 wrongImageExtension2.EnsureSuccessStatusCode();
-                Assert.Equal("image/png", wrongImageExtension2.Content.Headers.ContentType.MediaType);
+                Assert.Equal("image/png", wrongImageExtension2.Content.Headers.ContentType?.MediaType);
 
                 using var extensionlessRequest = await client.GetAsync("/extensionless/file");
                 extensionlessRequest.EnsureSuccessStatusCode();
-                Assert.Equal("image/png", extensionlessRequest.Content.Headers.ContentType.MediaType);
+                Assert.Equal("image/png", extensionlessRequest.Content.Headers.ContentType?.MediaType);
 
                 
                 await host.StopAsync(CancellationToken.None);
@@ -218,11 +236,13 @@ namespace Imageflow.Server.Tests
                 var hostBuilder = new HostBuilder()
                     .ConfigureServices(services =>
                     {
+                        services.AddXunitLoggingDefaults(OutputHelper);
                         services.AddSingleton<IAmazonS3>(new AmazonS3Client(new AnonymousAWSCredentials(), RegionEndpoint.USEast1));
-                        services.AddImageflowDiskCache(new DiskCacheOptions(diskCacheDir) {AsyncWrites = false});
+                        services.AddImageflowHybridCache(new HybridCacheOptions(diskCacheDir));
                         services.AddImageflowS3Service(
                             new S3ServiceOptions()
                                 .MapPrefix("/ri/", "resizer-images"));
+                        
                     })
                     .ConfigureWebHost(webHost =>
                     {
@@ -252,6 +272,9 @@ namespace Imageflow.Server.Tests
                 
                 await host.StopAsync(CancellationToken.None);
                 
+                // This could be failing because writes are still in the queue, or because no caches are deemed worthy of writing to, or health status reasons
+                // TODO: diagnose 
+                
                 var cacheFiles = Directory.GetFiles(diskCacheDir, "*.png", SearchOption.AllDirectories);
                 Assert.Single(cacheFiles);
             }
@@ -269,8 +292,9 @@ namespace Imageflow.Server.Tests
                 var hostBuilder = new HostBuilder()
                     .ConfigureServices(services =>
                     {
+                        services.AddXunitLoggingDefaults(OutputHelper);
                         services.AddSingleton<IAmazonS3>(new AmazonS3Client(new AnonymousAWSCredentials(), RegionEndpoint.USEast1));
-                        services.AddImageflowDiskCache(new DiskCacheOptions(diskCacheDir) {AsyncWrites = false});
+                        services.AddImageflowHybridCache(new HybridCacheOptions(diskCacheDir));
                         services.AddImageflowS3Service(
                             new S3ServiceOptions()
                                 .MapPrefix("/ri/", new AmazonS3Client(new AnonymousAWSCredentials(), RegionEndpoint.USEast1), "resizer-images", "", false, false));
@@ -307,60 +331,58 @@ namespace Imageflow.Server.Tests
                 Assert.Single(cacheFiles);
             }
         }
-        
+
+
         [Fact]
         public async void TestPresetsExclusive()
         {
-            using (var contentRoot = new TempContentRoot()
-                .AddResource("images/fire.jpg", "TestFiles.fire-umbrella-small.jpg"))
-            {
-
-                var hostBuilder = new HostBuilder()
-                    .ConfigureWebHost(webHost =>
-                    {
-                        // Add TestServer
-                        webHost.UseTestServer();
-                        webHost.Configure(app =>
-                        {
-                            app.UseImageflow(new ImageflowMiddlewareOptions()
-                                .SetMapWebRoot(false)
-                                // Maps / to ContentRootPath/images
-                                .MapPath("/", Path.Combine(contentRoot.PhysicalPath, "images"))
-                                .SetUsePresetsExclusively(true)
-                                .AddPreset(new PresetOptions("small", PresetPriority.OverrideQuery)
-                                    .SetCommand("maxwidth", "1")
-                                    .SetCommand("maxheight", "1"))
-                                );
-                        });
-                    });
-
-                // Build and start the IHost
-                using var host = await hostBuilder.StartAsync();
-
-                // Create an HttpClient to send requests to the TestServer
-                using var client = host.GetTestClient();
-
-                using var notFoundResponse = await client.GetAsync("/not_there.jpg");
-                Assert.Equal(HttpStatusCode.NotFound,notFoundResponse.StatusCode);
-                
-                using var foundResponse = await client.GetAsync("/fire.jpg");
-                foundResponse.EnsureSuccessStatusCode();
-                
-                
-                using var presetValidResponse = await client.GetAsync("/fire.jpg?preset=small");
-                presetValidResponse.EnsureSuccessStatusCode();
-                
-                
-                await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            using var contentRoot = new TempContentRoot()
+                .AddResource("images/fire.jpg", "TestFiles.fire-umbrella-small.jpg");
+            await using var host = await new HostBuilder()
+                .ConfigureServices(services => { services.AddXunitLoggingDefaults(OutputHelper); })
+                .ConfigureWebHost(webHost =>
                 {
-                    using var watermarkInvalidResponse = await client.GetAsync("/fire.jpg?preset=not-a-preset");
-                });
-                
-                using var nonPresetResponse = await client.GetAsync("/fire.jpg?width=1");
-                Assert.Equal(HttpStatusCode.Forbidden,nonPresetResponse.StatusCode);
-                
-                await host.StopAsync(CancellationToken.None);
-            }
+                    // Add TestServer
+                    webHost.UseTestServer();
+                    webHost.ConfigureServices(services =>
+                    {
+                        services.AddImageflowHybridCache(
+                            new HybridCacheOptions(Path.Combine(contentRoot.PhysicalPath, "diskcache")));
+                        services.AddXunitLoggingDefaults(OutputHelper);
+                    });
+                    webHost.Configure(app =>
+                    {
+                        app.UseImageflow(new ImageflowMiddlewareOptions()
+                            .SetMapWebRoot(false)
+                            // Maps / to ContentRootPath/images
+                            .MapPath("/", Path.Combine(contentRoot.PhysicalPath, "images"))
+                            .SetUsePresetsExclusively(true)
+                            .AddPreset(new PresetOptions("small", PresetPriority.OverrideQuery)
+                                .SetCommand("maxwidth", "1")
+                                .SetCommand("maxheight", "1"))
+                        );
+                    });
+                }).StartDisposableHost();
+            
+            // Create an HttpClient to send requests to the TestServer
+            using var client = host.GetTestClient();
+
+            using var notFoundResponse = await client.GetAsync("/not_there.jpg");
+            Assert.Equal(HttpStatusCode.NotFound, notFoundResponse.StatusCode);
+
+            using var foundResponse = await client.GetAsync("/fire.jpg");
+            foundResponse.EnsureSuccessStatusCode();
+
+
+            using var presetValidResponse = await client.GetAsync("/fire.jpg?preset=small");
+            presetValidResponse.EnsureSuccessStatusCode();
+
+
+            using var watermarkInvalidResponse = await client.GetAsync("/fire.jpg?preset=not-a-preset");
+            Assert.Equal(HttpStatusCode.BadRequest,watermarkInvalidResponse.StatusCode);
+            
+            using var nonPresetResponse = await client.GetAsync("/fire.jpg?width=1");
+            Assert.Equal(HttpStatusCode.Forbidden, nonPresetResponse.StatusCode);
         }
 
         [Fact]
@@ -371,6 +393,10 @@ namespace Imageflow.Server.Tests
             {
 
                 var hostBuilder = new HostBuilder()
+                    .ConfigureServices(services =>
+                    {
+                        services.AddXunitLoggingDefaults(OutputHelper);
+                    })
                     .ConfigureWebHost(webHost =>
                     {
                         // Add TestServer
@@ -427,6 +453,10 @@ namespace Imageflow.Server.Tests
             {
 
                 var hostBuilder = new HostBuilder()
+                    .ConfigureServices(services =>
+                    {
+                        services.AddXunitLoggingDefaults(OutputHelper);
+                    })
                     .ConfigureWebHost(webHost =>
                     {
                         // Add TestServer
@@ -500,6 +530,10 @@ namespace Imageflow.Server.Tests
             {
 
                 var hostBuilder = new HostBuilder()
+                    .ConfigureServices(services =>
+                    {
+                        services.AddXunitLoggingDefaults(OutputHelper);
+                    })
                     .ConfigureServices(services =>
                     {
                         services.AddHttpClient();

@@ -1,6 +1,5 @@
 ﻿namespace Imageflow.Server.Host;
 using Imageflow.Server.Configuration;
-using Microsoft.AspNetCore.Mvc.ApplicationParts;
 
 public partial class Startup
 {

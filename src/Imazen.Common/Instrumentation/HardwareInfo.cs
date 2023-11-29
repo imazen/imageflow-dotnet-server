@@ -1,9 +1,4 @@
-﻿
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net.NetworkInformation;
+﻿using System.Net.NetworkInformation;
 using Imazen.Common.Instrumentation.Support;
 using Imazen.Common.Instrumentation.Support.InfoAccumulators;
 using Imazen.Common.Issues;

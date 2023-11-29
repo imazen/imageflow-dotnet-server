@@ -1,0 +1,262 @@
+using System.Diagnostics;
+using Imazen.Common.Concurrency;
+using Imazen.Common.Concurrency.BoundedTaskCollection;
+using Imazen.Abstractions.BlobCache;
+using Imazen.Abstractions.Blobs;
+using Imazen.Abstractions.Logging;
+using Imazen.Abstractions.Resulting;
+using Imazen.Common.Extensibility.StreamCache;
+using Imazen.Common.Extensibility.Support;
+using Imazen.Common.Issues;
+using Microsoft.Extensions.Logging;
+
+namespace Imageflow.Server.Caching;
+
+internal readonly struct BlobCacheEntry
+{
+    public BlobCacheEntry(byte[] keyBasis, HashBasedPathBuilder builder)
+    {
+        Hash = builder.HashKeyBasis(keyBasis);
+        RelativePath = builder.GetRelativePathFromHash(Hash);
+        PhysicalPath = builder.GetPhysicalPathFromRelativePath(RelativePath);
+        HashString = builder.GetStringFromHash(Hash);
+    }
+    
+    public byte[] Hash { get; }
+    public string PhysicalPath { get; }
+    public string HashString { get; }
+        
+    public string RelativePath { get; }
+        
+}
+
+internal enum AsyncCacheDetailResult
+{
+    Unknown = 0,
+    MemoryHit,
+    QueueLockTimeoutAndCreated,
+    Miss,
+    QueueLockTimeoutAndFailed,
+    BlobCacheHit
+}
+internal class AsyncBlobCacheResult : IStreamCacheResult
+{
+    public Stream? Data { get; set; }
+    public string? ContentType { get; set; }
+
+    public DateTime? CreatedAt { get; set; }
+
+    public string Status => Detail.ToString();
+            
+    public AsyncCacheDetailResult Detail { get; set; }
+}
+//
+// internal class CacheSequence : INamedStreamCache
+// {
+//     public CacheSequence(List<INamedStreamCache> caches, IReLogger logger)
+//     {
+//         Caches = caches;
+//         name =
+//             string.Join('>', caches.Select(c => c.UniqueName).ToArray());
+//
+//         markedNames = caches.Select(active =>
+//             string.Join('>', caches.Select(c =>
+//                 c.UniqueName == active.UniqueName ? $"({c.UniqueName})" : c.UniqueName).ToArray())
+//         ).ToArray();
+//
+//
+//     }
+//
+//     private readonly string name;
+//     private readonly string[] markedNames;
+//     internal List<INamedStreamCache> Caches { get; }
+
+internal class BlobCacheEngine 
+{
+
+    IReLogger Logger { get; }
+
+    public BlobCacheEngine(IBlobCache blobCache, BlobCacheEngineOptions options, IReLogger parentLogger)
+    {
+        BlobCache = blobCache;
+        QueueLocks = new AsyncLockProvider();
+        CurrentWrites = new BoundedTaskCollection<BlobTaskItem>(options.MaxQueueBytes);
+        Options = options;
+        Logger = parentLogger.WithSubcategory($"BlobCacheEngine({blobCache.GetType().Name}:{blobCache.UniqueName})");
+        HashPathBuilder = new HashBasedPathBuilder("/", 256, '/', "");
+        UniqueName = $"{BlobCache.UniqueName}[adapted]";
+    }
+
+    public HashBasedPathBuilder HashPathBuilder { get; }
+    public BlobCacheEngineOptions Options { get; }
+    public IBlobCache BlobCache { get; }
+    public string UniqueName { get; private set; }
+
+    /// <summary>
+    /// Provides string-based locking for image resizing (not writing, just processing). Prevents duplication of efforts in asynchronous mode, where 'Locks' is not being used.
+    /// </summary>
+    private AsyncLockProvider QueueLocks { get; }
+
+    /// <summary>
+    /// Contains all the queued and in-progress writes to the cache. 
+    /// </summary>
+    private BoundedTaskCollection<BlobTaskItem> CurrentWrites { get; }
+
+    public IEnumerable<IIssue> GetIssues()
+    {
+        // Probably not relevant since the migration.
+        if (BlobCache is IIssueProvider provider) return provider.GetIssues();
+        return System.Array.Empty<IIssue>();
+    }
+
+    public Task StartAsync(CancellationToken cancellationToken)
+    {
+        //TODO: Fetch the probability blob.
+        return Task.CompletedTask;
+    }
+
+    public async Task StopAsync(CancellationToken cancellationToken)
+    {
+        //TODO: Save the probability blob
+        Logger?.LogInformation("BlobCacheEngine is shutting down...");
+        var sw = Stopwatch.StartNew();
+        await AwaitEnqueuedTasks();
+        sw.Stop();
+        Logger?.LogInformation("BlobCacheEngine shut down in {ShutdownTime}", sw.Elapsed);
+    }
+
+
+
+    public Task AwaitEnqueuedTasks()
+    {
+        return CurrentWrites.AwaitAllCurrentTasks();
+    }
+
+    public async Task<IStreamCacheResult> GetOrCreateBytes(byte[] key, AsyncBytesResult dataProviderCallback,
+        CancellationToken cancellationToken,
+        bool retrieveContentType)
+    {
+        var swGetOrCreateBytes = Stopwatch.StartNew();
+        var entry = new BlobCacheEntry(key, HashPathBuilder);
+        var cacheResult = new AsyncBlobCacheResult();
+        var swFileExists = Stopwatch.StartNew();
+
+        var queueLockComplete = await QueueLocks.TryExecuteAsync(entry.HashString,
+            Options.WaitForIdenticalRequestsTimeoutMs, cancellationToken,
+            async () =>
+            {
+                var swInsideQueueLock = Stopwatch.StartNew();
+
+                // Now, if the item we seek is in the queue, we have a memcached hit.
+                // If not, we should check the filesystem. It's possible the item has been written to disk already.
+                // If both are a miss, we should see if there is enough room in the write queue.
+                // If not, switch to in-thread writing. 
+
+                var existingQueuedWrite = CurrentWrites.Get(entry.HashString);
+
+                if (existingQueuedWrite != null)
+                {
+                    cacheResult.Data = existingQueuedWrite.GetReadonlyStream();
+                    cacheResult.CreatedAt = null; // Hasn't been written yet
+                    cacheResult.ContentType = existingQueuedWrite.Blob.Attributes.ContentType;
+                    cacheResult.Detail = AsyncCacheDetailResult.MemoryHit;
+                    return;
+                }
+
+                if (cancellationToken.IsCancellationRequested)
+                    throw new OperationCanceledException(cancellationToken);
+
+                swFileExists.Start();
+
+                var cacheRequest = new BlobCacheRequest(BlobGroup.GeneratedCacheEntry, entry.Hash, entry.HashString, false);
+                
+                // Fast path on disk hit, now that we're in a synchronized state
+                var blobFetchResult =
+                    await BlobCache.CacheFetch(cacheRequest, CancellationToken.None);
+                if (blobFetchResult.IsOk)
+                {
+                    var value = blobFetchResult.Unwrap();
+                    cacheResult = new AsyncBlobCacheResult
+                    {
+                        Data = value.TakeOrMakeConsumable().TakeStream(), //TODO: review if this the right lifetime
+                        ContentType = value.Attributes.ContentType,
+                        Detail = AsyncCacheDetailResult.BlobCacheHit
+                    };
+                    return;
+                }
+
+                swFileExists.Stop();
+
+                var swDataCreation = Stopwatch.StartNew();
+                //Read, resize, process, and encode the image. Lots of exceptions thrown here.
+                var result = await dataProviderCallback(cancellationToken);
+                swDataCreation.Stop();
+                
+                var blobData = new ReusableArraySegmentBlob(result.Bytes, new BlobAttributes(){ContentType = result.ContentType});
+                
+                //Create AsyncWrite object to enqueue
+                var w = new BlobTaskItem(entry.HashString, blobData);
+
+                cacheResult.Detail = AsyncCacheDetailResult.Miss;
+                cacheResult.ContentType = w.Blob.Attributes.ContentType;
+                cacheResult.CreatedAt = null; // Hasn't been written yet.
+                cacheResult.Data = w.GetReadonlyStream();
+
+                var swEnqueue = Stopwatch.StartNew();
+                var queueResult = CurrentWrites.Queue(w, async delegate
+                {
+                    try
+                    {
+                        var putResult = await BlobCache.CachePut(BlobGroup.GeneratedCacheEntry,
+                            w.UniqueKey, new BytesBlobData(result.Bytes, result.ContentType),
+                            new CacheEventDetails(), CancellationToken.None);
+                        if (!putResult.IsOk)
+                        {
+                            Logger?.LogError("BlobCacheEngine failed to write {Path} to blob cache, {Reason}",
+                                entry.RelativePath, putResult.StatusMessage);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger?.LogError(ex,
+                            "BlobCacheEngine failed to flush async write, {Exception} {Path}\n{StackTrace}",
+                            ex.ToString(),
+                            entry.RelativePath, ex.StackTrace);
+                    }
+
+                });
+                swEnqueue.Stop();
+                swInsideQueueLock.Stop();
+                swGetOrCreateBytes.Stop();
+                if (queueResult == BoundedTaskCollection<BlobTaskItem>.EnqueueResult.QueueFull)
+                {
+                    // TODO: Log that we had to discard writes because the queue RAM limit was reached
+                    Logger?.LogWarning("BlobCacheEngine queue full, discarding write for {Path}",
+                        entry.RelativePath);
+                }
+            });
+        if (queueLockComplete) return cacheResult;
+        //On queue lock failure
+        if (!Options.FailRequestsOnEnqueueLockTimeout)
+        {
+            // We run the callback with no intent of caching
+            var cacheInputEntry = await dataProviderCallback(cancellationToken);
+
+            cacheResult.Detail = AsyncCacheDetailResult.QueueLockTimeoutAndCreated;
+            cacheResult.ContentType = cacheInputEntry.ContentType;
+            cacheResult.CreatedAt = null; //Hasn't been written yet
+
+            cacheResult.Data = new MemoryStream(cacheInputEntry.Bytes.Array ?? throw new NullReferenceException(),
+                cacheInputEntry.Bytes.Offset, cacheInputEntry.Bytes.Count, false, true);
+        }
+        else
+        {
+            cacheResult.Detail = AsyncCacheDetailResult.QueueLockTimeoutAndFailed;
+        }
+
+        return cacheResult;
+
+
+    }
+}
+

@@ -4,25 +4,9 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Reflection.Metadata.Ecma335;
-using System.Text;
-using System.Text.RegularExpressions;
-using Imageflow.Fluent;
-using Imageflow.Server;
-using Imageflow.Server.HybridCache;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Rewrite;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.FileProviders;
-
-using Tomlyn.Model;
-using Tomlyn.Syntax;
-
 using Imageflow.Server.Configuration.Parsing;
 using Imageflow.Server.Configuration.Execution;
 

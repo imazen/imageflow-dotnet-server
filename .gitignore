@@ -24,6 +24,8 @@ bld/
 [Oo]bj/
 [Ll]og/
 host/
+NugetPackages/
+test-publish/
 
 # DocFX build results
 _site/ 

@@ -1,7 +1,6 @@
-using System.IO;
-
 namespace Imazen.Common.Extensibility.ClassicDiskCache
 {
+    [Obsolete("Implement IBlobCacheResult instead")]
     public interface ICacheResult
     {
         /// <summary>

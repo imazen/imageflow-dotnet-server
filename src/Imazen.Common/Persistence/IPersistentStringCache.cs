@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Imazen.Common.Persistence
+﻿namespace Imazen.Common.Persistence
 {
     /// <summary>
     /// The result of the cache write
@@ -27,7 +25,7 @@ namespace Imazen.Common.Persistence
     internal interface IPersistentStringCache
     {
         StringCachePutResult TryPut(string key, string value);
-        string Get(string key);
+        string? Get(string key);
 
 
         DateTime? GetWriteTimeUtc(string key);

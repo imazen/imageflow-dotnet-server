@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Text;
 using Imazen.Common.Helpers;
 
 namespace Imazen.Common.Instrumentation.Support.InfoAccumulators
@@ -32,7 +29,7 @@ namespace Imazen.Common.Instrumentation.Support.InfoAccumulators
             a.AddString(key, value?.ToString());
         }
 
-        public static void Add(this IInfoAccumulator a, string key, string value)
+        public static void Add(this IInfoAccumulator a, string key, string? value)
         {
             a.AddString(key, value);
         }
@@ -40,8 +37,8 @@ namespace Imazen.Common.Instrumentation.Support.InfoAccumulators
         {
             const string truncated = "truncated=true";
             var limit = characterLimit - truncated.Length;
-            var pairs = a.GetInfo().Where(pair => pair.Value != null && pair.Key != null)
-                     .Select(pair => Uri.EscapeDataString(pair.Key) + "=" + Uri.EscapeDataString(pair.Value));
+            var pairs = a.GetInfo().Where(pair => pair is { Value: not null, Key: not null })
+                     .Select(pair => Uri.EscapeDataString(pair.Key) + "=" + (pair.Value == null ? "" : Uri.EscapeDataString(pair.Value)));
             var sb = new StringBuilder(1000);
             sb.Append("?");
             foreach (var s in pairs)

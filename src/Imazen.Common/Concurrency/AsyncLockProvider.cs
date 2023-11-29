@@ -1,13 +1,12 @@
 ﻿/* Copyright (c) 2014 Imazen See license.txt for your rights. */
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
+
+using Imazen.Abstractions.Resulting;
+using InvalidOperationException = System.InvalidOperationException;
 
 namespace Imazen.Common.Concurrency {
     
     /// <summary>
-    /// Provides locking based on a string key. 
+    /// Provides lightweight locking based on a string key. Useful for fixing the thundering herd problem. 
     /// Locks are local to the LockProvider instance.
     /// The class handles disposing of unused locks. Generally used for 
     /// coordinating writes to files (of which there can be millions). 
@@ -16,7 +15,8 @@ namespace Imazen.Common.Concurrency {
     /// Uses SemaphoreSlim instead of locks to be thread-context agnostic.
     /// </summary>
     public class AsyncLockProvider {
-        
+
+    
 
         /// <summary>
         /// The only objects in this collection should be for open files. 
@@ -76,8 +76,31 @@ namespace Imazen.Common.Concurrency {
         /// <param name="key"></param>
         /// <param name="cancellationToken"></param>
         /// <param name="success"></param>
-        /// <param name="timeoutMs"></param>
-        public async Task<bool> TryExecuteAsync(string key, int timeoutMs, CancellationToken cancellationToken, Func<Task> success)
+        /// <param name="lockTimeoutMs"></param>
+        public async Task<bool> TryExecuteAsync(string key, int lockTimeoutMs, CancellationToken cancellationToken,
+            Func<Task> success)
+        {
+            var result = await TryExecuteAsync<Empty, Empty>(key, lockTimeoutMs, cancellationToken, Empty.Value ,async (Empty e, CancellationToken ct) => {
+                await success();
+                return Empty.Value;
+            });
+            return result.IsOk;
+        }
+
+
+        /// <summary>
+        /// Attempts to execute the 'T work(TP param, CancellationToken ct)' callback inside a lock based on 'key'.  If successful, returns an OK result wrapping the return
+        /// value. CancellationToken is passed through.
+        /// If the lock cannot be acquired within 'timeoutMs', returns false
+        /// In a worst-case scenario, it could take up to twice as long as 'timeoutMs' to return false.
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="cancellationToken"></param>
+        /// <param name="workParameter"></param>
+        /// <param name="work"></param>
+        /// <param name="lockTimeoutMs"></param>
+        /// 
+        public async Task<IResult<T,Empty>> TryExecuteAsync<T,TP>(string key, int lockTimeoutMs, CancellationToken cancellationToken, TP workParameter, Func<TP,CancellationToken,Task<T>> work)
         {
             //Record when we started. We don't want an infinite loop.
             DateTime startedAt = DateTime.UtcNow;
@@ -85,7 +108,7 @@ namespace Imazen.Common.Concurrency {
             // Tracks whether the lock acquired is still correct
             bool validLock = true; 
             // The lock corresponding to 'key'
-            SemaphoreSlim itemLock = null;
+            SemaphoreSlim? itemLock = null;
 
             try {
                 //We have to loop until we get a valid lock and it stays valid until we lock it.
@@ -105,7 +128,7 @@ namespace Imazen.Common.Concurrency {
                     // insert a new value for 'itemLock' into the dictionary... etc, etc..
 
                     // 2) Execute phase
-                    if (await itemLock.WaitAsync(timeoutMs, cancellationToken)) {
+                    if (await itemLock.WaitAsync(lockTimeoutMs, cancellationToken)) {
                         try {
                             // May take minutes to acquire this lock. 
 
@@ -117,23 +140,22 @@ namespace Imazen.Common.Concurrency {
                             }
                             // Only run the callback if the lock is valid
                             if (validLock) {
-                                await success(); // Extremely long-running callback, perhaps throwing exceptions
-                                return true;
+                                return Result<T,Empty>.Ok(await work(workParameter, cancellationToken)); // Extremely long-running callback, perhaps throwing exceptions
                             }
-
+                            // if control reaches here, the lock is invalid, and we should try again via the outer loop
                         } finally {
                             itemLock.Release();
                         }
                     } else {
                         validLock = false; //So the finally clause doesn't try to clean up the lock, someone else will do that.
-                        return false; //Someone else had the lock, they can clean it up.
+                        return Result<T,Empty>.Err(); //Someone else had the lock, they can clean it up.
                     }
 
                     //Are we out of time, still having an invalid lock?
                     // ReSharper disable once ConditionIsAlwaysTrueOrFalse
-                    if (!validLock && Math.Abs(DateTime.UtcNow.Subtract(startedAt).TotalMilliseconds) > timeoutMs) {
+                    if (!validLock && Math.Abs(DateTime.UtcNow.Subtract(startedAt).TotalMilliseconds) > lockTimeoutMs) {
                         //We failed to get a valid lock in time. 
-                        return false;
+                        return Result<T,Empty>.Err();
                     }
 
 
@@ -167,7 +189,10 @@ namespace Imazen.Common.Concurrency {
                 }
             }
             // Ideally the only objects in 'locks' will be open operations now.
-            return true;
+            //This should be impossible to reach, the loop only exits when validLock is true.
+            //And if validLock equals true, then the function will return
+            // otherwise an exception is thrown.
+            throw new InvalidOperationException("Unreachable code");
         }
     }
 }

@@ -1,20 +1,29 @@
+using Imazen.Common.Extensibility.Support;
+
 namespace Imazen.HybridCache
 {
     internal readonly struct CacheEntry
     {
-        public CacheEntry(byte[] keyBasis, HashBasedPathBuilder builder)
+        
+        private CacheEntry(byte[] hash, string relativePath, string physicalPath, string hashString)
         {
-            Hash = builder.HashKeyBasis(keyBasis);
-            RelativePath = builder.GetRelativePathFromHash(Hash);
-            PhysicalPath = builder.GetPhysicalPathFromRelativePath(RelativePath);
-            StringKey = builder.GetStringFromHash(Hash);
+            Hash = hash;
+            RelativePath = relativePath;
+            PhysicalPath = physicalPath;
+            HashString = hashString;
         }
 
         public byte[] Hash { get; }
         public string PhysicalPath { get; }
-        public string StringKey { get; }
+        public string HashString { get; }
         
         public string RelativePath { get; }
+        
+        internal static CacheEntry FromHash(byte[] hash, string hashString, HashBasedPathBuilder builder)
+        {
+            var relative = builder.GetRelativePathFromHash(hash);
+            return new CacheEntry(hash, builder.GetRelativePathFromHash(hash), builder.GetPhysicalPathFromRelativePath(relative), hashString);
+        }
         
     }
 }

@@ -1,28 +1,13 @@
-using System;
-
 namespace Imazen.Common.Licensing
 {
 
     [AttributeUsage(AttributeTargets.Assembly)]
-    public class CommitAttribute : Attribute
+    [Obsolete("Use Imazen.Abstractions.AssemblyAttributes.CommitAttribute instead")]
+    public class CommitAttribute : Abstractions.AssemblyAttributes.CommitAttribute
     {
-        private readonly string commitId;
-
         public CommitAttribute()
-        {
-            commitId = string.Empty;
-        }
+        {}
 
-        public CommitAttribute(string commitId)
-        {
-            this.commitId = commitId;
-        }
-
-        public string Value => commitId;
-
-        public override string ToString()
-        {
-            return commitId;
-        }
+        public CommitAttribute(string commitId):base(commitId){}
     }
 }

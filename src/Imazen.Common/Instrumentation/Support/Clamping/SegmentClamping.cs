@@ -1,15 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-
-namespace Imazen.Common.Instrumentation.Support.Clamping
+﻿namespace Imazen.Common.Instrumentation.Support.Clamping
 {
     internal class SegmentClamping
     {
         public long MaxPossibleValues { get; set; } = 100000;
         public long MinValue { get; set; } = 0;
         public long MaxValue { get; set; } = long.MaxValue;
-        public SegmentPrecision[] Segments { get; set; }
+        public required SegmentPrecision[] Segments { get; set; }
 
         public void Sort()
         {

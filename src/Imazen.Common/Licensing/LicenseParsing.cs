@@ -1,20 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Numerics;
+﻿using System.Numerics;
 using System.Security.Cryptography;
 using System.Text;
 using static System.String;
 
 namespace Imazen.Common.Licensing
 {
-    class LicenseBlob : ILicenseBlob
+    record LicenseBlob : ILicenseBlob
     {
-        public string Original { get; private set; }
-        public byte[] Signature { get; private set; }
-        public byte[] Data { get; private set; }
-        public ILicenseDetails Fields { get; private set; }
+        public required string Original { get; init; }
+        public required byte[] Signature { get; init; }
+        public required byte[] Data { get; init; }
+        public required ILicenseDetails Fields { get; init; }
 
         public static LicenseBlob Deserialize(string license)
         {
@@ -25,12 +21,12 @@ namespace Imazen.Common.Licensing
                     nameof(license));
             }
 
-            var dataBytes = Convert.FromBase64String(parts[parts.Count - 2]);
+            var dataBytes = Convert.FromBase64String(parts[^2]);
             var b = new LicenseBlob {
                 Original = license,
-                Signature = Convert.FromBase64String(parts[parts.Count - 1]),
+                Signature = Convert.FromBase64String(parts[^1]),
                 Data = dataBytes,
-                Fields = new LicenseDetails(System.Text.Encoding.UTF8.GetString(dataBytes))
+                Fields = new LicenseDetails(Encoding.UTF8.GetString(dataBytes))
             };
             // b.Info = System.Text.Encoding.UTF8.GetString(b.Data);
             // b.Comments = parts.Take(parts.Count - 2);
@@ -40,14 +36,14 @@ namespace Imazen.Common.Licensing
         public static string TryRedact(string license)
         {
             var segments = license.Split(':');
-            return segments.Count() > 1 ? string.Join(":",
+            return segments.Count() > 1 ? Join(":",
                 segments.Take(segments.Count() - 2).Concat(new[] { "****redacted****", segments.Last() })) : license;
         }
 
         public override string ToString() => Original;
     }
 
-    class LicenseDetails : ILicenseDetails
+    record LicenseDetails : ILicenseDetails
     {
         public LicenseDetails(string plaintext)
         {
@@ -76,8 +72,11 @@ namespace Imazen.Common.Licensing
             Pairs = pairs;
 
 
-            Id = (Get("Id") ?? Get("Domain"))?.Trim().ToLowerInvariant();
-            if (IsNullOrEmpty(Id)) {
+            var id = (Get("Id") ?? Get("Domain"))?.Trim().ToLowerInvariant();
+            if (!IsNullOrEmpty(id) && id != null)
+            {
+                Id = id;
+            }else{
                 throw new ArgumentException("No 'Id' or 'Domain' fields found! At least one of the two is required");
             }
             if (IsNullOrEmpty(this.GetSecret()) && this.IsRemotePlaceholder()) {
@@ -85,17 +84,16 @@ namespace Imazen.Common.Licensing
             }
         }
 
-        public string Id { get; }
+        public string Id { get;  }
         public DateTimeOffset? Issued { get; }
         public DateTimeOffset? Expires { get; }
         public DateTimeOffset? ImageflowExpires { get; }
         public DateTimeOffset? SubscriptionExpirationDate { get; }
         public IReadOnlyDictionary<string, string> Pairs { get; }
 
-        public string Get(string key)
+        public string? Get(string key)
         {
-            string s;
-            return Pairs.TryGetValue(key, out s) ? s : null;
+            return Pairs.TryGetValue(key, out var s) ? s : null;
         }
 
         public override string ToString()
@@ -110,45 +108,45 @@ namespace Imazen.Common.Licensing
 
     static class StringIntParseExtensions
     {
-        public static int? TryParseInt(this string s)
+        public static int? TryParseInt(this string? s)
         {
             int temp;
-            return IsNullOrWhiteSpace(s) ? null : (int.TryParse(s, out temp) ? (int?) temp : null);
+            return IsNullOrWhiteSpace(s) ? null : (int.TryParse(s, out temp) ? temp : null);
         }
     }
 
 
     static class LicenseDetailsExtensions
     {
-        public static bool IsRemotePlaceholder(this ILicenseDetails details)
+        public static bool IsRemotePlaceholder(this ILicenseDetails? details)
             => "id".Equals(details?.Get("Kind"), StringComparison.OrdinalIgnoreCase);
 
-        public static bool IsRevoked(this ILicenseDetails details)
+        public static bool IsRevoked(this ILicenseDetails? details)
             => "false".Equals(details?.Get("Valid"), StringComparison.OrdinalIgnoreCase);
 
-        public static bool IsPublic(this ILicenseDetails details)
+        public static bool IsPublic(this ILicenseDetails? details)
             => "true".Equals(details?.Get("IsPublic"), StringComparison.OrdinalIgnoreCase);
 
-        public static bool MustBeFetched(this ILicenseDetails details)
+        public static bool MustBeFetched(this ILicenseDetails? details)
             => "true".Equals(details?.Get("MustBeFetched"), StringComparison.OrdinalIgnoreCase);
 
-        public static int? NetworkGraceMinutes(this ILicenseDetails details)
+        public static int? NetworkGraceMinutes(this ILicenseDetails? details)
             => details?.Get("NetworkGraceMinutes").TryParseInt();
 
-        public static int? CheckLicenseIntervalMinutes(this ILicenseDetails details)
+        public static int? CheckLicenseIntervalMinutes(this ILicenseDetails? details)
             => details?.Get("CheckLicenseIntervalMinutes").TryParseInt();
 
 
-        public static string GetSecret(this ILicenseDetails details)
+        public static string? GetSecret(this ILicenseDetails? details)
             => details?.Get("Secret");
 
-        public static string GetMessage(this ILicenseDetails details)
+        public static string? GetMessage(this ILicenseDetails? details)
             => details?.Get("Message");
 
-        public static string GetRestrictions(this ILicenseDetails details)
+        public static string? GetRestrictions(this ILicenseDetails? details)
             => details?.Get("Restrictions");
 
-        public static string GetExpiryMessage(this ILicenseDetails details)
+        public static string? GetExpiryMessage(this ILicenseDetails? details)
             => details?.Get("ExpiryMessage");
 
 
@@ -157,7 +155,7 @@ namespace Imazen.Common.Licensing
         /// </summary>
         /// <param name="details"></param>
         /// <returns></returns>
-        public static IEnumerable<string> GetFeatures(this ILicenseDetails details)
+        public static IEnumerable<string> GetFeatures(this ILicenseDetails? details)
             => details?.Get("Features")
                       ?.Split(new[] {' ', '\t', ','}, StringSplitOptions.RemoveEmptyEntries)
                       .Select(s => s.Trim())
@@ -196,15 +194,11 @@ namespace Imazen.Common.Licensing
             return details.Get("LicenseServers")
                           ?
                           .Split(new[] {' ', '\t'}, StringSplitOptions.RemoveEmptyEntries)
-                          .Where(s =>
-                          {
-                              Uri t;
-                              return Uri.TryCreate(s, UriKind.Absolute, out t) && t.Scheme == "https";
-                          })
+                          .Where(s => Uri.TryCreate(s, UriKind.Absolute, out var t) && t?.Scheme == "https")
                           .Select(s => s.Trim()) ?? Enumerable.Empty<string>();
         }
 
-        public static bool DataMatches(this ILicenseDetails me, ILicenseDetails other)
+        public static bool DataMatches(this ILicenseDetails? me, ILicenseDetails? other)
         {
             return me != null && other != null && me.Id == other.Id && me.Issued == other.Issued &&
                    me.Expires == other.Expires &&
@@ -223,7 +217,7 @@ namespace Imazen.Common.Licensing
         }
 
         public static bool VerifySignature(this ILicenseBlob b, IEnumerable<RSADecryptPublic> trustedKeys,
-                                           StringBuilder log)
+                                           StringBuilder? log)
         {
             return trustedKeys.Any(p =>
             {
@@ -235,8 +229,8 @@ namespace Imazen.Common.Licensing
                     var decryptedBytes = p.DecryptPublic(signature);
                     var valid = hashBytes.SequenceEqual(decryptedBytes);
 
-                    log?.AppendLine("Using public exponent " + p.Exponent.ToString() + " and modulus " +
-                                    p.Modulus.ToString());
+                    log?.AppendLine("Using public exponent " + p.Exponent + " and modulus " +
+                                    p.Modulus);
                     log?.AppendLine("Encrypted bytes: " + BitConverter.ToString(signature).ToLower().Replace("-", ""));
                     log?.AppendLine("Decrypted sha512: " +
                                     BitConverter.ToString(decryptedBytes).ToLower().Replace("-", ""));
@@ -331,7 +325,7 @@ namespace Imazen.Common.Licensing
 
     class SignatureTestApp
     {
-        static bool Test_Generic(StringBuilder log)
+        static bool Test_Generic(StringBuilder? log)
         {
             log?.AppendLine("Generic license decryption self-test");
             var exp = BigInteger.Parse("65537");
@@ -342,7 +336,7 @@ namespace Imazen.Common.Licensing
             return Validate(licenseStr, mod, exp, log);
         }
 
-        static bool Validate(string licenseStr, BigInteger mod, BigInteger exp, StringBuilder log)
+        static bool Validate(string licenseStr, BigInteger mod, BigInteger exp, StringBuilder? log)
         {
             var blob = LicenseBlob.Deserialize(licenseStr);
             using (var hash = SHA512.Create())
@@ -362,7 +356,7 @@ namespace Imazen.Common.Licensing
         static string ReadStdin()
         {
             using (var s = Console.OpenStandardInput())
-            using (var sr = new StreamReader(s, System.Text.Encoding.UTF8)) {
+            using (var sr = new StreamReader(s, Encoding.UTF8)) {
                 return sr.ReadToEnd();
             }
         }

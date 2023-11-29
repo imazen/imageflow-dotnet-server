@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
+﻿using System.Collections.Concurrent;
 using Imazen.Common.ExtensionMethods;
 using Imazen.Common.Issues;
 
@@ -115,7 +111,7 @@ namespace Imazen.Common.Licensing
         /// </summary>
         /// <param name="similarDomain"></param>
         /// <returns></returns>
-        public string FindKnownDomain(string similarDomain)
+        public string? FindKnownDomain(string similarDomain)
         {
             // Bound ConcurrentDictionary growth; fail on new domains instead
             if (lookupTableSize <= LookupTableLimit) {

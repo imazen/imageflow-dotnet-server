@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace Imazen.Common.Licensing
 {
     internal delegate void LicenseConfigEvent(object sender, ILicenseConfig forConfig);
@@ -28,7 +26,7 @@ namespace Imazen.Common.Licensing
         /// For each item, at least of of the feature codes in the sub-list must be present
         /// </summary>
         /// <returns></returns>
-        IEnumerable<IEnumerable<string>> GetFeaturesUsed();
+        IReadOnlyCollection<IReadOnlyCollection<string>> GetFeaturesUsed();
 
 
         // c.Plugins.GetAll<ILicenseProvider>()

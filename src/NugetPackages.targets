@@ -1,17 +1,37 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-
+    <PropertyGroup>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <IsPackable>true</IsPackable>
+        <LangVersion>latest</LangVersion>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
     <ItemGroup>
-        <AssemblyAttribute Include="Imazen.Common.Licensing.BuildDate">
+        <AssemblyAttribute Include="Imazen.Abstractions.AssemblyAttributes.BuildDate">
             <_Parameter1>$([System.DateTime]::UtcNow.ToString("o"))</_Parameter1>
         </AssemblyAttribute>
     </ItemGroup>
-    <ItemGroup Condition="'$(SourceRevisionId)' == ''">
-        <AssemblyAttribute Include="Imazen.Common.Licensing.Commit">
+    <ItemGroup>
+        <AssemblyAttribute Include="Imazen.Abstractions.AssemblyAttributes.VersionedWithAssemblies">
+            <_Parameter1>Imageflow.Server*</_Parameter1>
+            <_Parameter2>Imazen.Routing</_Parameter2>
+            <_Parameter3>Imazen.Common</_Parameter3>
+            <_Parameter4>Imazen.Abstractions</_Parameter4>
+            <_Parameter5>Imazen.HybridCache</_Parameter5>
+            <_Parameter6>Imazen.DiskCache</_Parameter6>
+        </AssemblyAttribute>
+        <AssemblyAttribute Include="Imazen.Abstractions.AssemblyAttributes.NugetPackage">
+            <_Parameter1>{Assembly.Name}</_Parameter1>
+        </AssemblyAttribute>
+    </ItemGroup>
+    <ItemGroup Condition="'$(SourceRevisionId)' != ''">
+        <AssemblyAttribute Include="Imazen.Abstractions.AssemblyAttributes.Commit">
             <_Parameter1>$(GITHUB_SHA)</_Parameter1>
         </AssemblyAttribute>
     </ItemGroup>
+    
+    
     <ItemGroup>
-        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All"/>
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
     </ItemGroup>
 
     <ItemGroup>
@@ -20,8 +40,8 @@
 
 
     <PropertyGroup>
-        <IntermediateOutputPath>$(MSBuildThisFileDirectory)..\obj\$(Configuration)</IntermediateOutputPath>
-        <OutputPath>$(MSBuildThisFileDirectory)..\bin\$(Configuration)</OutputPath>
+        <IntermediateOutputPath>obj\$(Configuration)\$(Platform)\</IntermediateOutputPath>
+        <PackageOutputPath>$(SolutionDir)NuGetPackages\$(Configuration)\</PackageOutputPath>
     </PropertyGroup>
 
     <PropertyGroup Condition="!$(MSBuildProjectName.EndsWith('Tests'))">

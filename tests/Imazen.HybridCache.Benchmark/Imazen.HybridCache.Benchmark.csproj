@@ -2,8 +2,8 @@
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <TargetFrameworks>net6.0</TargetFrameworks>
     </PropertyGroup>
+    <Import Project="..\..\src\ProjectDefaults.targets" />
 
     <ItemGroup>
       <ProjectReference Include="..\..\src\Imazen.HybridCache\Imazen.HybridCache.csproj" />

@@ -1,5 +1,6 @@
 namespace Imazen.Common.Extensibility.ClassicDiskCache
 {
+    [Obsolete("Use the IBlobCache system instead")]
     public enum CacheQueryResult
     {
         /// <summary>

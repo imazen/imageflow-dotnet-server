@@ -10,31 +10,31 @@ namespace Imazen.Common.Issues
     public class Issue : IIssue {
         public Issue() {
         }
-        public Issue(string message) {
+        public Issue(string? message) {
             Summary = message;
         }
-        public Issue(string message, string details, IssueSeverity severity) {
+        public Issue(string? message, string? details, IssueSeverity severity) {
             Summary = message;
             Details = details;
             Severity = severity;
         }
-        public Issue(string message, IssueSeverity severity) {
+        public Issue(string? message, IssueSeverity severity) {
             Summary = message;
             Severity = severity;
         }
 
-        public Issue(string source, string message, string details, IssueSeverity severity) {
+        public Issue(string? source, string? message, string? details, IssueSeverity severity) {
             Source = source;
             Summary = message;
             Details = details;
             Severity = severity;
         }
 
-        public string Source { get; set; }
+        public string? Source { get; set; }
 
-        public string Summary { get; private set; } = null;
+        public string? Summary { get; private set; } = null;
 
-        public string Details { get; private set; } = null;
+        public string? Details { get; private set; } = null;
 
         public IssueSeverity Severity { get; private set; } = IssueSeverity.Warning;
 
@@ -51,8 +51,7 @@ namespace Imazen.Common.Issues
         }
 
         public override string ToString() {
-            return Source + "(" + Severity.ToString() + "):\t" + Summary +
-                    ("\n" + Details).Replace("\n", "\n\t\t\t") + "\n";
+            return $"{Source}({Severity}):\t{Summary}\n{Details?.Replace("\n", "\n\t\t\t")}\n";
         }
     }
 }

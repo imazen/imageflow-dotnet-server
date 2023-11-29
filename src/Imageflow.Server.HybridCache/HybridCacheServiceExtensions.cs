@@ -1,6 +1,7 @@
-using Imazen.Common.Extensibility.StreamCache;
+using Imazen.Abstractions.BlobCache;
+using Imazen.Abstractions.Logging;
+using Imazen.Common.Extensibility.Support;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 
 namespace Imageflow.Server.HybridCache
 {
@@ -10,13 +11,26 @@ namespace Imageflow.Server.HybridCache
 
         public static IServiceCollection AddImageflowHybridCache(this IServiceCollection services, HybridCacheOptions options)
         {
-            services.AddSingleton<IStreamCache>((container) =>
+            services.AddImageflowReLogStoreAndReLoggerFactoryIfMissing();
+            services.AddSingleton<IBlobCacheProvider>((container) =>
             {
-                var logger = container.GetRequiredService<ILogger<HybridCacheService>>();
-                return new HybridCacheService(options, logger);
+                var loggerFactory = container.GetRequiredService<IReLoggerFactory>();
+                return new HybridCacheService(options, loggerFactory);
             });
             
-            services.AddHostedService<HybridCacheHostedServiceProxy>();
+            services.AddHostedService<HostedServiceProxy<IBlobCacheProvider>>();
+            return services;
+        }
+
+        public static IServiceCollection AddImageflowHybridCaches(this IServiceCollection services, IEnumerable<HybridCacheOptions> namedCacheConfigurations)
+        {
+            services.AddSingleton<IBlobCacheProvider>((container) =>
+            {
+                var loggerFactory = container.GetRequiredService<IReLoggerFactory>();
+                return new HybridCacheService(namedCacheConfigurations, loggerFactory);
+            });
+            
+            services.AddHostedService<HostedServiceProxy<IBlobCacheProvider>>();
             return services;
         }
     }

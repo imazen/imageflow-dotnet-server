@@ -1,0 +1,219 @@
+using System;
+using System.Linq;
+using Imageflow.Fluent;
+using Microsoft.AspNetCore.Http;
+using Compat = Imazen.Routing.Compatibility.ImageflowServer;
+
+namespace Imageflow.Server
+{
+    //TODO make [Obsolete("Use ImageflowRouteOptions instead")]
+    public class ImageflowMiddlewareOptionsTemp
+        : 
+        Compat.ImageflowMiddlewareOptions<Microsoft.AspNetCore.Http.HttpContext>
+    {
+        internal Licensing? Licensing { get; set; }
+        
+        /// <summary>
+        /// Use this to add default command values if they are missing. Does not affect image requests with no querystring.
+        /// Example: AddCommandDefault("down.colorspace", "srgb") reverts to ImageResizer's legacy behavior in scaling shadows and highlights.
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentOutOfRangeException"></exception>
+        public ImageflowMiddlewareOptionsTemp AddCommandDefault(string key, string value)
+        {
+            if (CommandDefaults.ContainsKey(key)) throw new ArgumentOutOfRangeException(nameof(key), "A default has already been added for this key");
+            CommandDefaults[key] = value;
+            return this;
+        }
+        
+        public ImageflowMiddlewareOptionsTemp AddPreset(PresetOptions preset)
+        {
+            if (Presets.ContainsKey(preset.Name)) throw new ArgumentOutOfRangeException(nameof(preset), "A preset by this name has already been added");
+            Presets[preset.Name] = preset;
+            return this;
+        }
+
+        public ImageflowMiddlewareOptionsTemp HandleExtensionlessRequestsUnder(string prefix, StringComparison prefixComparison = StringComparison.Ordinal)
+        {
+            AddHandleExtensionlessRequestsUnder(prefix, prefixComparison);
+            return this;
+        }
+
+        /// <summary>
+        /// Control when and where the diagnostics page is accessible when no password is used
+        /// </summary>
+        /// <param name="accessDiagnosticsFrom"></param>
+        /// <returns></returns>
+        public ImageflowMiddlewareOptionsTemp SetDiagnosticsPageAccess(AccessDiagnosticsFrom accessDiagnosticsFrom)
+        {
+            DiagnosticsAccess = (Compat.AccessDiagnosticsFrom)accessDiagnosticsFrom;
+            return this; 
+        }
+        
+        /// <summary>
+        /// When set, the diagnostics page will be accessible form anywhere by adding ?password=[password]
+        /// </summary>
+        /// <param name="password"></param>
+        /// <returns></returns>
+        public ImageflowMiddlewareOptionsTemp SetDiagnosticsPagePassword(string password)
+        {
+            DiagnosticsPassword = password;
+            return this; 
+        }
+
+        /// <summary>
+        /// Use this if you are complying with the AGPL v3 and open-sourcing your project.
+        /// Provide the URL to your version control system or source code download page.
+        /// Use .SetLicenseKey() instead if you are not open-sourcing your project.
+        /// </summary>
+        /// <param name="myOpenSourceProjectUrl">Provide the URL to your version control
+        /// system or source code download page.</param>
+        /// <returns></returns>
+        public ImageflowMiddlewareOptionsTemp SetMyOpenSourceProjectUrl(string myOpenSourceProjectUrl)
+        {
+            MyOpenSourceProjectUrl = myOpenSourceProjectUrl;
+            return this;
+        }
+        
+        /// <summary>
+        /// If you do not call this, Imageflow.Server will watermark image requests with a red dot. 
+        ///
+        /// If you are open-sourcing your project and complying with the AGPL v3, you can call
+        /// .SetMyOpenSourceProjectUrl() instead.
+        /// </summary>
+        /// <param name="licenseKey"></param>
+        /// <param name="enforcementMethod"></param>
+        /// <returns></returns>
+        public ImageflowMiddlewareOptionsTemp SetLicenseKey(EnforceLicenseWith enforcementMethod, string licenseKey)
+        {
+            EnforcementMethod = (Compat.EnforceLicenseWith)enforcementMethod;
+            LicenseKey = licenseKey;
+            return this;
+        }
+        
+        public ImageflowMiddlewareOptionsTemp SetRequestSignatureOptions(RequestSignatureOptions options)
+        {
+            RequestSignatureOptions = options;
+            return this;
+        }
+        
+        public ImageflowMiddlewareOptionsTemp AddRewriteHandler(string pathPrefix, Action<UrlEventArgs> handler)
+        {
+            Rewrite.Add(new Compat.UrlHandler<Func<Compat.MutableRequestEventArgs, bool>>
+            (pathPrefix, (e) =>
+            {
+                handler(new UrlEventArgs(e));
+                return true;
+            }));
+            return this;
+        }
+        public ImageflowMiddlewareOptionsTemp AddPreRewriteAuthorizationHandler(string pathPrefix, Func<UrlEventArgs, bool> handler)
+        {
+            PreRewriteAuthorization.Add(new Compat.UrlHandler<Func<Compat.MutableRequestEventArgs, bool>>
+                (pathPrefix, (e) => handler(new UrlEventArgs(e))));
+            return this;
+        }
+        public ImageflowMiddlewareOptionsTemp AddPostRewriteAuthorizationHandler(string pathPrefix, Func<UrlEventArgs, bool> handler)
+        {
+            PostRewriteAuthorization.Add(new Compat.UrlHandler<Func<Compat.MutableRequestEventArgs, bool>>
+                (pathPrefix, (e) => handler(new UrlEventArgs(e))));
+            return this;
+        }
+
+        public ImageflowMiddlewareOptionsTemp AddWatermarkingHandler(string pathPrefix, Action<WatermarkingEventArgs> handler)
+        {
+            Watermarking.Add(new Compat.UrlHandler<Action<Compat.WatermarkingContextEventArgs<HttpContext>>>
+                (pathPrefix, (e) => handler(new WatermarkingEventArgs(e))));
+            return this;
+        }
+        
+        public ImageflowMiddlewareOptionsTemp SetMapWebRoot(bool value)
+        {
+            MapWebRoot = value;
+            return this;
+        }
+        
+        public ImageflowMiddlewareOptionsTemp SetJobSecurityOptions(SecurityOptions securityOptions)
+        {
+            JobSecurityOptions = securityOptions;
+            return this;
+        }
+        
+        /// <summary>
+        /// If true, query strings will be discarded except for their preset key/value. Query strings without a preset key will throw an error. 
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public ImageflowMiddlewareOptionsTemp SetUsePresetsExclusively(bool value)
+        {
+            UsePresetsExclusively = value;
+            return this;
+        }
+
+
+        public ImageflowMiddlewareOptionsTemp MapPath(string virtualPath, string physicalPath)
+            => MapPath(virtualPath, physicalPath, false);
+        public ImageflowMiddlewareOptionsTemp MapPath(string virtualPath, string physicalPath, bool ignorePrefixCase)
+        {
+            mappedPaths.Add(new Compat.PathMapping(virtualPath, physicalPath, ignorePrefixCase));
+            return this;
+        }
+        
+        public ImageflowMiddlewareOptionsTemp AddWatermark(NamedWatermark watermark)
+        {
+            if (namedWatermarks.Any(w => w.Name.Equals(watermark.Name, StringComparison.OrdinalIgnoreCase)))
+            {
+                throw new InvalidOperationException($"A watermark already exists by the name {watermark.Name}");
+            }
+            namedWatermarks.Add(watermark);
+            return this;
+        }
+        
+        /// <summary>
+        /// Set to true to allow any registered IStreamCache plugin (such as Imageflow.Server.HybridCache) to be used.
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public ImageflowMiddlewareOptionsTemp SetAllowCaching(bool value)
+        {
+            this.AllowCaching = value;
+            return this;
+        }
+
+        /// <summary>
+        /// Set to true to allow the legacy disk caching system (Imageflow.Server.DiskCache) to be used
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public ImageflowMiddlewareOptionsTemp SetAllowDiskCaching(bool value)
+        {
+            this.AllowDiskCaching = value;
+            return this;
+        }
+
+        /// <summary>
+        /// Use "public, max-age=2592000" to cache for 30 days and cache on CDNs and proxies.
+        /// </summary>
+        /// <param name="cacheControlString"></param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        public ImageflowMiddlewareOptionsTemp SetDefaultCacheControlString(string cacheControlString)
+        {
+            DefaultCacheControlString = cacheControlString;
+            return this;
+        }
+
+        /// <summary>
+        /// Set to true have the command defaults to all urls, not just ones containing a valid query command.
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public ImageflowMiddlewareOptionsTemp SetApplyDefaultCommandsToQuerylessUrls(bool value)
+        {
+            this.ApplyDefaultCommandsToQuerylessUrls = value;
+            return this;
+        }
+    }
+}

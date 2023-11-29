@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Concurrent;
 using System.Security.Cryptography;
 
@@ -13,11 +12,11 @@ namespace Imazen.HybridCache
         /// <summary>
         /// We use a dictionary when at the beginning
         /// </summary>
-        private ConcurrentDictionary<int, ushort> dict;
+        private ConcurrentDictionary<int, ushort>? dict;
         /// <summary>
         /// We allocate a sparse array after a certain point
         /// </summary>
-        private ushort[] table;
+        private ushort[]? table;
 
         /// <summary>
         /// Lock object for transitioning from dictionary to sparse array
