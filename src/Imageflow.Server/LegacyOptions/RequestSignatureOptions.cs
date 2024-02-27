@@ -16,8 +16,8 @@ namespace Imageflow.Server
         internal List<string> DefaultSigningKeys { get; }
 
         internal List<SignaturePrefix> Prefixes { get; } = new List<SignaturePrefix>();
-        public bool IsEmpty => Prefixes.Count == 0 && DefaultSigningKeys.Count == 0 && DefaultRequirement == SignatureRequired.Never;
-        public static RequestSignatureOptions Empty => new RequestSignatureOptions(SignatureRequired.Never, new List<string>());
+        internal bool IsEmpty => Prefixes.Count == 0 && DefaultSigningKeys.Count == 0 && DefaultRequirement == SignatureRequired.Never;
+        internal static RequestSignatureOptions Empty => new RequestSignatureOptions(SignatureRequired.Never, new List<string>());
 
         public RequestSignatureOptions(SignatureRequired defaultRequirement, IEnumerable<string> defaultSigningKeys)
         {

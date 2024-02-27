@@ -14,14 +14,14 @@ namespace Imageflow.Server
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>
-        public static string CreateBase64UrlHash(string data) => Imazen.Routing.Helpers.PathHelpers.CreateBase64UrlHash(data);
+        internal static string CreateBase64UrlHash(string data) => Imazen.Routing.Helpers.PathHelpers.CreateBase64UrlHash(data);
 
         /// <summary>
         /// Creates a 43-character URL-safe hash of arbitrary data. Good for implementing caches. SHA256 is used, and the result is base64 encoded with no padding, and the + and / characters replaced with - and _.
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>
-        public static string CreateBase64UrlHash(byte[] data) => Imazen.Routing.Helpers.PathHelpers.CreateBase64UrlHash(data);
+        internal static string CreateBase64UrlHash(byte[] data) => Imazen.Routing.Helpers.PathHelpers.CreateBase64UrlHash(data);
 
 
     }

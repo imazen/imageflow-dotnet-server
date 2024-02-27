@@ -7,7 +7,7 @@ using Microsoft.Extensions.Primitives;
 namespace Imageflow.Server.Internal;
 
 
-public readonly struct QueryCollectionWrapper : IReadOnlyQueryWrapper
+internal readonly struct QueryCollectionWrapper : IReadOnlyQueryWrapper
 {
     public QueryCollectionWrapper(IQueryCollection collection)
     {

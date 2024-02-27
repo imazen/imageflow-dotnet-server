@@ -11,7 +11,7 @@ namespace Imageflow.Server
         public WatermarkOptions Watermark { get; } = watermark;
 
         // convert from IWatermark to NamedWatermark
-        public static NamedWatermark From(IWatermark watermark)
+        internal static NamedWatermark From(IWatermark watermark)
         {
             return new NamedWatermark(watermark.Name, watermark.VirtualPath, watermark.Watermark);
         }
