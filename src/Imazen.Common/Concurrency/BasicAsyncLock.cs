@@ -10,18 +10,10 @@
             releaser = Task.FromResult((IDisposable)new Releaser(this));
         }
 
-        public Task<IDisposable> LockAsync(CancellationToken cancellationToken = default)
+        public Task<IDisposable> LockAsync() => LockAsyncWithTimeout(Timeout.Infinite, CancellationToken.None);
+        public Task<IDisposable> LockAsyncWithTimeout(int timeoutMilliseconds = Timeout.Infinite, CancellationToken cancellationToken = default)
         {
-            var wait = semaphore.WaitAsync(cancellationToken);
-            return wait.IsCompleted ?
-                        releaser :
-                        wait.ContinueWith((_, state) => (IDisposable)state!,
-                            releaser.Result, CancellationToken.None,
-            TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
-        }
-        public Task<IDisposable> LockAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
-        {
-            var wait = semaphore.WaitAsync(timeout, cancellationToken);
+            var wait = semaphore.WaitAsync(timeoutMilliseconds, cancellationToken);
             return wait.IsCompleted ?
                 releaser :
                 wait.ContinueWith((_, state) => (IDisposable)state!,
