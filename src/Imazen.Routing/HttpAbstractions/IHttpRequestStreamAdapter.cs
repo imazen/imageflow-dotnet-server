@@ -92,8 +92,8 @@ public static class HttpRequestStreamAdapterExtensions
         var sb = new StringBuilder();
         sb.Append(request.Method);
         sb.Append(" ");
-        sb.Append(request.GetPathBase());
-        sb.Append(request.GetPath());
+        sb.Append(request.GetPathBase().Value);
+        sb.Append(request.GetPath().Value);
         sb.Append(request.GetQueryString());
         sb.Append(" ");
         sb.Append(request.Protocol);

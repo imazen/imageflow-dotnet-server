@@ -18,7 +18,8 @@ public class MutableRequest : IRequestSnapshot
         IsChildRequest = isChildRequest;
         ChildRequestUri = childRequestUri;
         ParentRequest = parent;
-        MutablePath = originatingRequest.GetPath();
+        MutablePath = originatingRequest.GetPath().Value ?? "";
+        
 #if DOTNET5_0_OR_GREATER
         MutableQueryString = new Dictionary<string, StringValues>(originatingRequest.GetQuery(), StringComparer.OrdinalIgnoreCase);
 #else
@@ -64,6 +65,9 @@ public class MutableRequest : IRequestSnapshot
     public IRequestSnapshot? ParentRequest { get; }
     public IDictionary<string, StringValues>? QueryString => MutableQueryString;
 
+    /// <summary>
+    /// Modifies the path in escaped form
+    /// </summary>
     public string MutablePath { get; set; }
     public IDictionary<string, StringValues> MutableQueryString { get; set; }
     
