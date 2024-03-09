@@ -1,12 +1,31 @@
-namespace Imazen.Common.Licensing
+namespace Imazen.Common.Licensing;
+
+[AttributeUsage(AttributeTargets.Assembly)]
+[Obsolete("Use Imazen.Abstractions.AssemblyAttributes.BuildDateAttribute instead")]
+public class BuildDateAttribute : Attribute
 {
-    [AttributeUsage(AttributeTargets.Assembly)]
-    [Obsolete("Use Imazen.Abstractions.AssemblyAttributes.BuildDateAttribute instead")]
-    public class BuildDateAttribute : Abstractions.AssemblyAttributes.BuildDateAttribute
+    public BuildDateAttribute() { Value = string.Empty; }
+    public BuildDateAttribute(string buildDateStringRoundTrip) { Value = buildDateStringRoundTrip; }
+
+    public string Value { get; }
+
+    public DateTimeOffset? ValueDate
     {
-        public BuildDateAttribute()
-        { }
-        public BuildDateAttribute(string buildDateStringRoundTrip):base(buildDateStringRoundTrip) { }
-        
+        get
+        {
+            DateTimeOffset v;
+            if (DateTimeOffset.TryParse(Value, null, System.Globalization.DateTimeStyles.RoundtripKind, out v))
+            {
+                return v;
+            }else
+            {
+                return null;
+            }
+        }
+    }
+
+    public override string ToString()
+    {
+        return Value;
     }
 }

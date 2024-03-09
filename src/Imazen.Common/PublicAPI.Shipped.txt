@@ -36,7 +36,7 @@ Imazen.Common.Extensibility.StreamCache.IStreamCacheInput
 Imazen.Common.Extensibility.StreamCache.IStreamCacheInput.Bytes.get -> System.ArraySegment<byte>
 Imazen.Common.Extensibility.StreamCache.IStreamCacheInput.ContentType.get -> string!
 Imazen.Common.Extensibility.StreamCache.IStreamCacheResult
-Imazen.Common.Extensibility.StreamCache.IStreamCacheResult.ContentType.get -> string!
+Imazen.Common.Extensibility.StreamCache.IStreamCacheResult.ContentType.get -> string?
 Imazen.Common.Extensibility.StreamCache.IStreamCacheResult.Data.get -> System.IO.Stream!
 Imazen.Common.Extensibility.StreamCache.IStreamCacheResult.Status.get -> string!
 Imazen.Common.Extensibility.StreamCache.StreamCacheInput
@@ -47,7 +47,7 @@ Imazen.Common.Extensibility.StreamCache.StreamCacheInput.ToIStreamCacheInput() -
 Imazen.Common.ExtensionMethods.DateTimeExtensions
 Imazen.Common.FileTypeDetection.FileTypeDetector
 Imazen.Common.FileTypeDetection.FileTypeDetector.FileTypeDetector() -> void
-Imazen.Common.FileTypeDetection.FileTypeDetector.GuessMimeType(byte[]! first12Bytes) -> string!
+Imazen.Common.FileTypeDetection.FileTypeDetector.GuessMimeType(byte[]! first12Bytes) -> string?
 Imazen.Common.Helpers.EncodingUtils
 Imazen.Common.Helpers.Signatures
 Imazen.Common.Instrumentation.Support.Clamping.SignificantDigitsClampingFloat
@@ -61,8 +61,8 @@ Imazen.Common.Instrumentation.Support.Clamping.SignificantDigitsClampingFloat.Si
 Imazen.Common.Instrumentation.Support.Clamping.SignificantDigitsClampingFloat.SignificantDigits.set -> void
 Imazen.Common.Instrumentation.Support.Clamping.SignificantDigitsClampingFloat.SignificantDigitsClampingFloat() -> void
 Imazen.Common.Instrumentation.Support.InfoAccumulators.IInfoAccumulator
-Imazen.Common.Instrumentation.Support.InfoAccumulators.IInfoAccumulator.AddString(string! key, string! value) -> void
-Imazen.Common.Instrumentation.Support.InfoAccumulators.IInfoAccumulator.GetInfo() -> System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string!, string!>>!
+Imazen.Common.Instrumentation.Support.InfoAccumulators.IInfoAccumulator.AddString(string! key, string? value) -> void
+Imazen.Common.Instrumentation.Support.InfoAccumulators.IInfoAccumulator.GetInfo() -> System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string!, string?>>!
 Imazen.Common.Instrumentation.Support.InfoAccumulators.IInfoAccumulator.WithPrefix(string! prefix) -> Imazen.Common.Instrumentation.Support.InfoAccumulators.IInfoAccumulator!
 Imazen.Common.Instrumentation.Support.InfoAccumulators.IInfoAccumulator.WithPrepend(bool prepend) -> Imazen.Common.Instrumentation.Support.InfoAccumulators.IInfoAccumulator!
 Imazen.Common.Instrumentation.Support.InfoAccumulators.IInfoProvider
@@ -79,17 +79,17 @@ Imazen.Common.Issues.IIssueProvider.GetIssues() -> System.Collections.Generic.IE
 Imazen.Common.Issues.IIssueReceiver
 Imazen.Common.Issues.IIssueReceiver.AcceptIssue(Imazen.Common.Issues.IIssue! i) -> void
 Imazen.Common.Issues.Issue
-Imazen.Common.Issues.Issue.Details.get -> string!
+Imazen.Common.Issues.Issue.Details.get -> string?
 Imazen.Common.Issues.Issue.Hash() -> int
 Imazen.Common.Issues.Issue.Issue() -> void
-Imazen.Common.Issues.Issue.Issue(string! message) -> void
-Imazen.Common.Issues.Issue.Issue(string! message, Imazen.Common.Issues.IssueSeverity severity) -> void
-Imazen.Common.Issues.Issue.Issue(string! message, string! details, Imazen.Common.Issues.IssueSeverity severity) -> void
-Imazen.Common.Issues.Issue.Issue(string! source, string! message, string! details, Imazen.Common.Issues.IssueSeverity severity) -> void
+Imazen.Common.Issues.Issue.Issue(string? message) -> void
+Imazen.Common.Issues.Issue.Issue(string? message, Imazen.Common.Issues.IssueSeverity severity) -> void
+Imazen.Common.Issues.Issue.Issue(string? message, string? details, Imazen.Common.Issues.IssueSeverity severity) -> void
+Imazen.Common.Issues.Issue.Issue(string? source, string? message, string? details, Imazen.Common.Issues.IssueSeverity severity) -> void
 Imazen.Common.Issues.Issue.Severity.get -> Imazen.Common.Issues.IssueSeverity
-Imazen.Common.Issues.Issue.Source.get -> string!
+Imazen.Common.Issues.Issue.Source.get -> string?
 Imazen.Common.Issues.Issue.Source.set -> void
-Imazen.Common.Issues.Issue.Summary.get -> string!
+Imazen.Common.Issues.Issue.Summary.get -> string?
 Imazen.Common.Issues.IssueSeverity
 Imazen.Common.Issues.IssueSeverity.ConfigurationError = 2 -> Imazen.Common.Issues.IssueSeverity
 Imazen.Common.Issues.IssueSeverity.Critical = 0 -> Imazen.Common.Issues.IssueSeverity
@@ -116,11 +116,11 @@ Imazen.Common.Licensing.ILicenseBlob.Fields.get -> Imazen.Common.Licensing.ILice
 Imazen.Common.Licensing.ILicenseBlob.Original.get -> string!
 Imazen.Common.Licensing.ILicenseBlob.Signature.get -> byte[]!
 Imazen.Common.Licensing.ILicenseChain
-Imazen.Common.Licensing.ILicenseChain.CachedLicense() -> Imazen.Common.Licensing.ILicenseBlob!
-Imazen.Common.Licensing.ILicenseChain.FetchedLicense() -> Imazen.Common.Licensing.ILicenseBlob!
+Imazen.Common.Licensing.ILicenseChain.CachedLicense() -> Imazen.Common.Licensing.ILicenseBlob?
+Imazen.Common.Licensing.ILicenseChain.FetchedLicense() -> Imazen.Common.Licensing.ILicenseBlob?
 Imazen.Common.Licensing.ILicenseChain.Id.get -> string!
 Imazen.Common.Licensing.ILicenseChain.IsRemote.get -> bool
-Imazen.Common.Licensing.ILicenseChain.LastFetchUrl() -> string!
+Imazen.Common.Licensing.ILicenseChain.LastFetchUrl() -> string?
 Imazen.Common.Licensing.ILicenseChain.Licenses() -> System.Collections.Generic.IEnumerable<Imazen.Common.Licensing.ILicenseBlob!>!
 Imazen.Common.Licensing.ILicenseChain.Shared.get -> bool
 Imazen.Common.Licensing.ILicenseChain.ToPublicString() -> string!
@@ -132,7 +132,7 @@ Imazen.Common.Licensing.ILicenseClock.GetUtcNow() -> System.DateTimeOffset
 Imazen.Common.Licensing.ILicenseClock.TicksPerSecond.get -> long
 Imazen.Common.Licensing.ILicenseDetails
 Imazen.Common.Licensing.ILicenseDetails.Expires.get -> System.DateTimeOffset?
-Imazen.Common.Licensing.ILicenseDetails.Get(string! key) -> string!
+Imazen.Common.Licensing.ILicenseDetails.Get(string! key) -> string?
 Imazen.Common.Licensing.ILicenseDetails.Id.get -> string!
 Imazen.Common.Licensing.ILicenseDetails.ImageflowExpires.get -> System.DateTimeOffset?
 Imazen.Common.Licensing.ILicenseDetails.Issued.get -> System.DateTimeOffset?
