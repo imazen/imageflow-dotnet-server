@@ -63,7 +63,7 @@ public class ImageServerTests
     public void TestMightHandleRequest()
     {
         var b = new RoutingBuilder();
-        b.AddGlobalEndpoint(Conditions.PathEquals("/hi"),
+        b.AddEndpoint(Conditions.PathEquals("/hi"),
             SmallHttpResponse.Text(200, "HI"));
         
         var imageServer = CreateImageServer(
@@ -79,7 +79,7 @@ public class ImageServerTests
     public async void TestTryHandleRequestAsync()
     {
         var b = new RoutingBuilder();
-        b.AddGlobalEndpoint(Conditions.PathEquals("/hi"),
+        b.AddEndpoint(Conditions.PathEquals("/hi"),
             SmallHttpResponse.Text(200, "HI"));
         
         var imageServer = CreateImageServer(

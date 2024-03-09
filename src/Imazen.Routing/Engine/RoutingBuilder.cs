@@ -8,120 +8,84 @@ namespace Imazen.Routing.Engine;
 
 public class RoutingBuilder
 {
-    protected IFastCond? GlobalPreconditions { get; set; }
-    protected List<IRoutingLayer> Layers { get; } = new List<IRoutingLayer>();
-    // set default conditions (IFastCond)
-    // add page endpoints (IRoutingEndpoint)
     
-    // Add endpoints based on suffixes or exact matches. At build time, we roll these up into a single FastCond that can be evaluated quickly.
+    public RoutingGroupBuilder Endpoints { get; } = new("Endpoints");
+    
+    public RoutingGroupBuilder Media { get; } = new("Media");
+    public RoutingBuilder ConfigureNewGroup(string name, Action<RoutingGroupBuilder> configure)
+    {
+        var group = new RoutingGroupBuilder(name);
+        configure(group);
+        Groups.Add(group);
+        return this;
+    }
 
-    /// <summary>
-    /// Adds an endpoint that also extends GlobalPreconditions
-    /// </summary>
-    /// <param name="fastMatcher"></param>
-    /// <param name="endpoint"></param>
-    /// <returns></returns>
-    public RoutingBuilder AddGlobalEndpoint(IFastCond fastMatcher, IRoutingEndpoint endpoint)
-        => AddEndpoint(true, fastMatcher, endpoint);
+    private List<RoutingGroupBuilder> Groups { get; } = new();
     
-    public RoutingBuilder AddEndpoint(IFastCond fastMatcher, IRoutingEndpoint endpoint)
-        => AddEndpoint(false, fastMatcher, endpoint);
-    
-    private RoutingBuilder AddEndpoint(bool global, IFastCond fastMatcher, IRoutingEndpoint endpoint)
+    public RoutingBuilder ConfigureMedia(Action<RoutingGroupBuilder> configure)
     {
-        if (global) AddAlternateGlobalPrecondition(fastMatcher);
-        Layers.Add(new SimpleLayer(fastMatcher.ToString() ?? "(error describing route)",
-            (request) => fastMatcher.Matches(request.MutablePath, request.ReadOnlyQueryWrapper) ? 
-                CodeResult<IRoutingEndpoint>.Ok(endpoint) : null, fastMatcher));
+        configure(Media);
         return this;
     }
-    public RoutingBuilder AddLayer(IRoutingLayer layer)
+    
+    public RoutingBuilder ConfigureEndpoints(Action<RoutingGroupBuilder> configure)
     {
-        Layers.Add(layer);
+        configure(Endpoints);
         return this;
     }
-    public RoutingBuilder AddGlobalLayer(IRoutingLayer layer)
+    
+
+    public RoutingBuilder AddMediaLayer(IRoutingLayer layer)
     {
-        AddAlternateGlobalPrecondition(layer.FastPreconditions ?? Conditions.True);
-        Layers.Add(layer);
+        Media.AddLayer(layer);
+        return this;
+    }
+    public RoutingBuilder AddEndpointLayer(IRoutingLayer layer)
+    {
+        Endpoints.AddLayer(layer);
         return this;
     }
     //Add predefined reusable responses
     
     /// <summary>
-    /// Adds an endpoint that also extends GlobalPreconditions
+    /// Adds an endpoint that is not subject to the media pipeline preconditions.
     /// </summary>
     /// <param name="fastMatcher"></param>
     /// <param name="response"></param>
     /// <returns></returns>
-    public RoutingBuilder AddGlobalEndpoint(IFastCond fastMatcher, IAdaptableReusableHttpResponse response)
-    {
-        var endpoint = new PredefinedResponseEndpoint(response);
-        return AddGlobalEndpoint(fastMatcher, endpoint);
-    }
     public RoutingBuilder AddEndpoint(IFastCond fastMatcher, IAdaptableReusableHttpResponse response)
     {
         var endpoint = new PredefinedResponseEndpoint(response);
         return AddEndpoint(fastMatcher, endpoint);
     }
+
     /// <summary>
-    /// Adds an endpoint that also extends GlobalPreconditions
+    /// Adds an endpoint that is not subject to the media pipeline preconditions.
     /// </summary>
     /// <param name="fastMatcher"></param>
     /// <param name="handler"></param>
     /// <returns></returns>
-    public RoutingBuilder AddGlobalEndpoint(IFastCond fastMatcher, Func<IRequestSnapshot, IAdaptableHttpResponse> handler)
-    {
-        var endpoint = new SyncEndpointFunc(handler);
-        return AddGlobalEndpoint(fastMatcher, endpoint);
-    }
-    
     public RoutingBuilder AddEndpoint(IFastCond fastMatcher, Func<IRequestSnapshot, IAdaptableHttpResponse> handler)
     {
         var endpoint = new SyncEndpointFunc(handler);
         return AddEndpoint(fastMatcher, endpoint);
     }
-    
-    // Set default Preconditions IFastCond
-    
-    
-    public RoutingBuilder SetGlobalPreconditions(IFastCond fastMatcher)
+    /// <summary>
+    /// Adds an endpoint that is not subject to the media pipeline preconditions.
+    /// </summary>
+    /// <param name="fastMatcher"></param>
+    /// <param name="endpoint"></param>
+    /// <returns></returns>
+    private RoutingBuilder AddEndpoint(IFastCond fastMatcher, IRoutingEndpoint endpoint)
     {
-        GlobalPreconditions = fastMatcher;
+        Endpoints.AddLayer(new SimpleLayer(fastMatcher.ToString() ?? "(error describing route)",
+            (request) => fastMatcher.Matches(request.MutablePath, request.ReadOnlyQueryWrapper) ? 
+                CodeResult<IRoutingEndpoint>.Ok(endpoint) : null, fastMatcher));
         return this;
     }
-    public IFastCond CreatePreconditionToRequireImageExtensionOrExtensionlessPathPrefixes<T>(IReadOnlyCollection<T>? extensionlessPaths = null)
-        where T : IStringAndComparison
-    {
-        if (extensionlessPaths is { Count: > 0 })
-        {
-            return Conditions.HasSupportedImageExtension.Or(
-                Conditions.PathHasNoExtension.And(Conditions.HasPathPrefix(extensionlessPaths)));
-        }
-        return Conditions.HasSupportedImageExtension;
-    }
-    
-    public IFastCond CreatePreconditionToRequireImageExtensionOrSuffixOrExtensionlessPathPrefixes<T>(IReadOnlyCollection<T>? extensionlessPaths = null, string[]? alternatePathSuffixes = null)
-        where T : IStringAndComparison
-    {
-        if (alternatePathSuffixes is { Length: > 0 })
-        {
-            return CreatePreconditionToRequireImageExtensionOrExtensionlessPathPrefixes(extensionlessPaths)
-                .Or(Conditions.HasPathSuffixOrdinalIgnoreCase(alternatePathSuffixes));
-        }
-        return CreatePreconditionToRequireImageExtensionOrExtensionlessPathPrefixes(extensionlessPaths);
-    }
-    
-    public RoutingBuilder AddAlternateGlobalPrecondition(IFastCond? fastMatcher)
-    {
-        if (fastMatcher == null) return this;
-        if (fastMatcher is Conditions.FastCondFalse) return this;
-        GlobalPreconditions = GlobalPreconditions?.Or(fastMatcher) ?? fastMatcher;
-        return this;
-    }
-    
+
     public RoutingEngine Build(IReLogger logger)
     {
-        return new RoutingEngine(Layers.ToArray(), GlobalPreconditions ?? Conditions.True, logger);
+        return new RoutingEngine(Groups.Concat(new[] { Media, Endpoints}).Select(g => g.Build()).ToArray(), logger);
     }
 }

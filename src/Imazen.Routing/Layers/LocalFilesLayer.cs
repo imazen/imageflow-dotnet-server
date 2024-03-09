@@ -28,17 +28,17 @@ public class LocalFilesLayer : IRoutingLayer
 {
     public LocalFilesLayer(List<IPathMapping> pathMappings)
     {
-        this.PathMappings = pathMappings; // TODO, should we clone it?
+        PathMappings = pathMappings; // TODO, should we clone it?
         // We want to compare the longest prefixes first so they match in case of collisions
-        this.PathMappings.Sort((a, b) => b.VirtualPath.Length.CompareTo(a.VirtualPath.Length));
+        PathMappings.Sort((a, b) => b.VirtualPath.Length.CompareTo(a.VirtualPath.Length));
         
         // ReSharper disable twice ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
-        if (this.PathMappings.Any(m => m.PhysicalPath == null || m.VirtualPath == null))
+        if (PathMappings.Any(m => m.PhysicalPath == null || m.VirtualPath == null))
         {
             throw new ArgumentException("Path mappings must have both a virtual and physical path");
         }
-        FastPreconditions = Conditions.HasPathPrefix(PathMappings);
-        
+        // if any is simply '/', replace the condition with Tru
+        FastPreconditions = PathMappings.Any(m => m.VirtualPath == "/") ? Conditions.True : Conditions.HasPathPrefix(PathMappings);
     }
     protected readonly List<IPathMapping> PathMappings;
     
@@ -51,17 +51,17 @@ public class LocalFilesLayer : IRoutingLayer
         var path = request.Path;
         foreach (var mapping in PathMappings)
         {
-            if (path.StartsWith(mapping.VirtualPath, mapping.IgnorePrefixCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal))
+            if (path.StartsWith(mapping.VirtualPath, mapping.StringComparison))
             {
                 
-                bool isRoot = mapping.VirtualPath == "/" || mapping.VirtualPath == "";
-                if (isRoot && !Conditions.HasSupportedImageExtension.Matches(request))
-                {
-                    // If it's a / mapping, we only take image extensions.
-                    // This breaks extensionless paths configuration if the root is mapped to a directory or blob provider, however.
-                    
-                    return Tasks.ValueResult<CodeResult<IRoutingEndpoint>?>(null);
-                }
+                // bool isRoot = mapping.VirtualPath is "/" or "";
+                // if (isRoot && !Conditions.HasSupportedImageExtension.Matches(request))
+                // {
+                //     // If it's a / mapping, we only take image extensions.
+                //     // This breaks extensionless paths configuration if the root is mapped to a directory or blob provider, however.
+                //     // Which is in our unit test. With the new layer groups, we don't need to worry about this.
+                //     return Tasks.ValueResult<CodeResult<IRoutingEndpoint>?>(null);
+                // }
                     
                 var relativePath = path
                     .Substring(mapping.VirtualPath.Length)
@@ -116,7 +116,7 @@ public class LocalFilesLayer : IRoutingLayer
         public override ValueTask<CodeResult<IBlobWrapper>> TryGetBlobAsync(IRequestSnapshot request, IBlobRequestRouter router, IBlobPromisePipeline pipeline,
             CancellationToken cancellationToken = default)
         {
-            return Tasks.ValueResult(CodeResult<IBlobWrapper>.Ok(new BlobWrapper(this.LatencyZone, PhysicalFileBlobHelper.CreateConsumableBlob(PhysicalPath, LastWriteTimeUtc))));
+            return Tasks.ValueResult(CodeResult<IBlobWrapper>.Ok(new BlobWrapper(LatencyZone, PhysicalFileBlobHelper.CreateConsumableBlob(PhysicalPath, LastWriteTimeUtc))));
         }
     }
 

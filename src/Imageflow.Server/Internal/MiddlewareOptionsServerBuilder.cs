@@ -153,11 +153,15 @@ internal class MiddlewareOptionsServerBuilder(
         });
     }
     private RoutingBuilder CreateRoutes(RoutingBuilder builder, IReadOnlyCollection<IPathMapping> mappedPaths,
-        List<ImageflowMiddlewareOptions.ExtensionlessPath> optionsExtensionlessPaths)
+        IEnumerable<ImageflowMiddlewareOptions.ExtensionlessPath> optionsExtensionlessPaths)
     {
-        var precondition = builder.CreatePreconditionToRequireImageExtensionOrExtensionlessPathPrefixes(optionsExtensionlessPaths);
-        
-        builder.SetGlobalPreconditions(precondition);
+        builder.ConfigureMedia((media) =>
+        {
+            media.ConfigurePreconditions((preconditions) =>
+            {
+                preconditions.IncludeDefaultImageExtensions().IncludePathPrefixes(optionsExtensionlessPaths);
+            });
+        });
         
         // signature layer
         var signatureOptions = options.RequestSignatureOptions;
@@ -166,7 +170,7 @@ internal class MiddlewareOptionsServerBuilder(
             var newOpts = new Imazen.Routing.Layers.RequestSignatureOptions(
                 (Imazen.Routing.Layers.SignatureRequired)signatureOptions.DefaultRequirement, signatureOptions.DefaultSigningKeys)
                 .AddAllPrefixes(signatureOptions.Prefixes);
-            builder.AddLayer(new SignatureVerificationLayer(new SignatureVerificationLayerOptions(newOpts)));
+            builder.AddMediaLayer(new SignatureVerificationLayer(new SignatureVerificationLayerOptions(newOpts)));
         }
         
         //GlobalPerf.Singleton.PreRewriteQuery(request.GetQuery().Keys);
@@ -174,7 +178,7 @@ internal class MiddlewareOptionsServerBuilder(
         // MutableRequestEventLayer (PreRewriteAuthorization), use lambdas to inject Context, and possibly also copy/restore dictionary.
         if (options.PreRewriteAuthorization.Count > 0)
         {
-            builder.AddLayer(new MutableRequestEventLayer("PreRewriteAuthorization",
+            builder.AddMediaLayer(new MutableRequestEventLayer("PreRewriteAuthorization",
                 options.PreRewriteAuthorization.Select(
                     h => WrapUrlEventArgs(h.PathPrefix, h.Handler, true)).ToList()));
         }
@@ -182,7 +186,7 @@ internal class MiddlewareOptionsServerBuilder(
         // Preset expansion layer
         if (options.Presets.Count > 0)
         {
-            builder.AddLayer(new PresetsLayer(new PresetsLayerOptions()
+            builder.AddMediaLayer(new PresetsLayer(new PresetsLayerOptions()
             {
                 Presets = options.Presets.Values
                     .Select(a => new 
@@ -195,7 +199,7 @@ internal class MiddlewareOptionsServerBuilder(
         // MutableRequestEventLayer (Rewrites), use lambdas to inject Context, and possibly also copy/restore dictionary.
         if (options.Rewrite.Count > 0)
         {
-            builder.AddLayer(new MutableRequestEventLayer("Rewrites", options.Rewrite.Select(
+            builder.AddMediaLayer(new MutableRequestEventLayer("Rewrites", options.Rewrite.Select(
                 h => WrapUrlEventArgs(h.PathPrefix, (urlArgs) =>
                 {
                     h.Handler(urlArgs); return true;
@@ -206,7 +210,7 @@ internal class MiddlewareOptionsServerBuilder(
         // TODO: only to already processing images?
         if (options.CommandDefaults.Count > 0)
         {
-            builder.AddLayer(new CommandDefaultsLayer(new CommandDefaultsLayerOptions()
+            builder.AddMediaLayer(new CommandDefaultsLayer(new CommandDefaultsLayerOptions()
             {
                 CommandDefaults = options.CommandDefaults,
             }));
@@ -215,7 +219,7 @@ internal class MiddlewareOptionsServerBuilder(
         // MutableRequestEventLayer (PostRewriteAuthorization), use lambdas to inject Context, and possibly also copy/restore dictionary.
         if (options.PostRewriteAuthorization.Count > 0)
         {
-            builder.AddLayer(new MutableRequestEventLayer("PostRewriteAuthorization",
+            builder.AddMediaLayer(new MutableRequestEventLayer("PostRewriteAuthorization",
                 options.PostRewriteAuthorization.Select(
                     h => WrapUrlEventArgs(h.PathPrefix, h.Handler, true)).ToList()));
         }
@@ -226,7 +230,7 @@ internal class MiddlewareOptionsServerBuilder(
 
         if (mappedPaths.Count > 0)
         {
-            builder.AddLayer(new LocalFilesLayer(mappedPaths.Select(a => 
+            builder.AddMediaLayer(new LocalFilesLayer(mappedPaths.Select(a => 
                 (IPathMapping)new PathMapping(a.VirtualPath, a.PhysicalPath, a.IgnorePrefixCase)).ToList()));
         }
 
@@ -236,15 +240,15 @@ internal class MiddlewareOptionsServerBuilder(
         var blobWrapperProviders = serverContainer.GetService<IEnumerable<IBlobWrapperProvider>>()?.ToList();
         if (blobProviders?.Count > 0 || blobWrapperProviders?.Count > 0)
         {
-            builder.AddLayer(new BlobProvidersLayer(blobProviders, blobWrapperProviders));
+            builder.AddMediaLayer(new BlobProvidersLayer(blobProviders, blobWrapperProviders));
         }
         
-        builder.AddGlobalLayer(diagnosticsPage);
+        builder.AddEndpointLayer(diagnosticsPage);
 
         // We don't want signature requirements and the like applying to these endpoints.
         // Media delivery endpoints should be a separate thing...
         
-        builder.AddGlobalEndpoint(Conditions.HasPathSuffix("/imageflow.ready"),
+        builder.AddEndpoint(Conditions.HasPathSuffix("/imageflow.ready"),
                 (_) =>
                 {
                     using (new JobContext())
@@ -253,13 +257,13 @@ internal class MiddlewareOptionsServerBuilder(
                     }
                 });
             
-        builder.AddGlobalEndpoint(Conditions.HasPathSuffix("/imageflow.health"),
+        builder.AddEndpoint(Conditions.HasPathSuffix("/imageflow.health"),
             (_) =>
             {
                 return SmallHttpResponse.NoStore(200, "Imageflow.Server is healthy.");
             });
             
-        builder.AddGlobalEndpoint(Conditions.HasPathSuffix("/imageflow.license"),
+        builder.AddEndpoint(Conditions.HasPathSuffix("/imageflow.license"),
             (req) =>
             {
                 var s = new StringBuilder(8096);
