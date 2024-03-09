@@ -19,6 +19,14 @@ internal interface IFastCondCanMerge : IFastCond
     IFastCond? TryMerge(IFastCond other);
 }
 
+
+/// <summary>
+/// The condition cannot be evaluated because it has no data, and should be ignored.
+/// </summary>
+internal interface IFastCondNoOp : IFastCond
+{
+}
+
 public interface IStringAndComparison
 {
     string StringToCompare { get; }
@@ -27,6 +35,16 @@ public interface IStringAndComparison
 
 public static class Conditions
 {
+    /// <summary>
+    /// Returns true if the given condition is capable of ever returning false.
+    /// Excludes FastCondTrue, FastCondEmpty, and null.
+    /// </summary>
+    /// <param name="condition"></param>
+    /// <returns></returns>
+    public static bool HasConditions(this IFastCond? condition)
+    {
+        return condition is not (FastCondTrue or FastCondEmpty or null);
+    }
     public static IFastCond Optimize(this IFastCond condition)
     {
         if (FastCondOptimizer.TryOptimize(condition, out var optimized))
@@ -35,6 +53,16 @@ public static class Conditions
         }
         return condition;
     }
+
+    public static IFastCond OrDefault(this IFastCond? condition, bool matches)
+    {
+        if (condition is (null or IFastCondNoOp))
+        {
+            return matches ? Conditions.True : Conditions.False;
+        }
+        return condition;
+    }
+
     public static bool Matches(this IFastCond condition, IHttpRequestStreamAdapter request)
     {
         var path = request.GetPath().Value;
@@ -55,6 +83,10 @@ public static class Conditions
     // All paths are potentially handled
     public static readonly FastCondTrue True = new FastCondTrue();
     public static readonly FastCondFalse False = new FastCondFalse();
+
+    public static readonly FastCondEmpty NoOp = new FastCondEmpty();
+
+    public static readonly FastCondEmpty Empty = new FastCondEmpty();
     
     // Contains one of these querystring keys
     public static FastCondHasQueryStringKey HasQueryStringKey(params string[] keys)
@@ -70,15 +102,29 @@ public static class Conditions
             .Select(g => (IFastCond)(new FastCondHasPathPrefixes(g.Select(p => p.StringToCompare).ToArray(), g.Key)))
             .AnyPrecondition().Optimize();
     }
+    
+    public static IFastCond HasPathPrefix(StringComparison stringComparison, params string[] prefixes)
+    {
+        return new FastCondHasPathPrefixes(prefixes, stringComparison);
+    }
     public static FastCondHasPathPrefixes HasPathPrefixOrdinalIgnoreCase(params string[] prefixes)
         => new FastCondHasPathPrefixes(prefixes, StringComparison.OrdinalIgnoreCase);
     
     public static FastCondHasPathPrefixes HasPathPrefixInvariantIgnoreCase(params string[] prefixes)
         => new FastCondHasPathPrefixes(prefixes, StringComparison.InvariantCultureIgnoreCase);
-    public static FastCondAny AnyPrecondition<T>(this IEnumerable<T> preconditions) where T:IFastCond 
-        => new(preconditions.Select(c => (IFastCond)c).ToList());
+
+    public static IFastCond AnyPrecondition<T>(this IEnumerable<T> preconditions) where T : IFastCond
+    {
+        var list = preconditions.Select(c => (IFastCond)c).ToList();
+        if (list.Count == 0) return new FastCondEmpty();
+        return new FastCondAny(list);
+    }
     
-    public static FastCondAny AnyPrecondition(IReadOnlyCollection<IFastCond> preconditions) => new (preconditions);
+    public static IFastCond AnyPrecondition(this IReadOnlyCollection<IFastCond> preconditions)
+    {
+        if (preconditions.Count == 0) return new FastCondEmpty();
+        return new FastCondAny(preconditions);
+    }
 
 
     public static FastCondHasPathPrefixes HasPathPrefix(params string[] prefixes)
@@ -93,9 +139,30 @@ public static class Conditions
     public static FastCondHasPathSuffixes HasPathSuffix(params string[] suffixes)
         => new FastCondHasPathSuffixes(suffixes, StringComparison.Ordinal);
 
+    public static FastCondHasPathSuffixes HasPathSuffix(StringComparison stringComparison, params string[] suffixes)
+        => new FastCondHasPathSuffixes(suffixes, stringComparison);
     
+    public static IFastCond HasPathSuffix<T>(IEnumerable<T> suffixes) where T : IStringAndComparison
+    {
+        return suffixes.GroupBy(p => p.StringComparison)
+            .Select(g => (IFastCond)(new FastCondHasPathSuffixes(g.Select(p => p.StringToCompare).ToArray(), g.Key)))
+            .AnyPrecondition().Optimize();
+    }
+
     public static FastCondAnd<T, TU> And<T, TU>(this T a, TU b) where T : IFastCond where TU : IFastCond
         => new FastCondAnd<T, TU>(a, b);
+    
+    // all
+    public static IFastCond All(this IEnumerable<IFastCond> conditions)
+    {
+        var list = conditions as IReadOnlyCollection<IFastCond> ?? conditions.ToList();
+        return list.Count switch
+        {
+            0 => NoOp,
+            1 => list.First(),
+            _ => new FastCondAll(list)
+        };
+    }
 
     public static FastCondOr<T, TU> Or<T, TU>(this T a, TU b) where T : IFastCond where TU : IFastCond
         => new FastCondOr<T, TU>(a, b);
@@ -115,7 +182,7 @@ public static class Conditions
         public bool Matches(string path, IReadOnlyQueryWrapper query)
             => !A.Matches(path, query);
         
-        public override string ToString() => $"not({A})";
+        public override string ToString() => $"not^{A}^";
         public IFastCond NotThis => A;
     }
     
@@ -135,11 +202,22 @@ public static class Conditions
         
         public override string ToString() => "false()";
     }
+    
+    public readonly record struct FastCondEmpty : IFastCondNoOp
+    {
+        public bool Matches(string path, IReadOnlyQueryWrapper query)
+            => throw new NotSupportedException("FastCondEmpty cannot be evaluated");
+        
+        public override string ToString() => "noop()";
+    }
+    
     private interface IFastCondAnd : IFastCond
     {
         IEnumerable<IFastCond> RequiredConditions { get; }
     }
-
+    
+        
+        
     public readonly record struct FastCondAnd<T, TU>(T A, TU B)
         : IFastCondAnd where T : IFastCond where TU : IFastCond
     {
@@ -147,7 +225,7 @@ public static class Conditions
         public bool Matches(string path, IReadOnlyQueryWrapper query)
             => A.Matches(path, query) && B.Matches(path, query);
 
-        public override string ToString() => $"and({A}, {B})";
+        public override string ToString() => $"and{{{A} && {B}}}";
 
         public IEnumerable<IFastCond> RequiredConditions
         {
@@ -170,7 +248,7 @@ public static class Conditions
         
         public override string ToString()
         {
-            return $"or({A}, {B})";
+            return $"or[{A} || {B}]";
         }
     }
 
@@ -221,12 +299,12 @@ public static class Conditions
                         {
                             FlattenRecursiveAndOptimize(flattened, replacementOr.AlternateConditions);
                         }
-                        else
+                        else if (replacement is not IFastCondNoOp or null)
                         {
                             flattened.Add(replacement);
                         }
                     }
-                    else
+                    else if (condition is not IFastCondNoOp or null)
                     {
                         flattened.Add(condition);
                     }
@@ -234,7 +312,25 @@ public static class Conditions
             }
         }
 
-        
+        private static bool TryOptimizeOr(IFastCondOr orOp, out IFastCond replacement)
+        {
+            var alternations =
+                FastCondOptimizer.FlattenRecursiveOptimizeMergeAndOptimize(orOp.AlternateConditions);
+            switch (alternations.Count)
+            {
+                // If we have only one condition, we can replace the OR with that condition
+                // If we have zero left, it's a no-op
+                case 1:
+                    replacement = alternations.First();
+                    return true;
+                case 0:
+                    replacement = Conditions.NoOp;
+                    return true;
+                default:
+                    replacement = new FastCondAny(alternations);
+                    return true;
+            }
+        }
         internal static List<IFastCond> FlattenRecursiveOptimizeMergeAndOptimize<T>(IEnumerable<T> alternateConditions) where T:IFastCond
         {
             var flattened = new List<IFastCond?>((alternateConditions as IReadOnlyCollection<T>)?.Count ?? 2 + 2);
@@ -244,8 +340,8 @@ public static class Conditions
             {
                 return [new FastCondTrue()];
             }
-            // false can be removed
-            flattened.RemoveAll(f => f is FastCondFalse);
+            // false and no-op can be removed
+            flattened.RemoveAll(f => f is FastCondFalse or IFastCondNoOp);
             
             var combinedCount = flattened.Count;
             // Now try to combine, each with every other, stealing from the flattened list
@@ -305,8 +401,8 @@ public static class Conditions
                 FastCondHasQueryStringKey => 70,
                 FastCondPathEquals => 5,
                 FastCondPathEqualsAny => 10,
-                IFastCondAnd a => GetSortRankFor(a.RequiredConditions.First(),false),
-                IFastCondOr o => GetSortRankFor(o.AlternateConditions.First(),true),
+                IFastCondAnd a when a.RequiredConditions.Any() => GetSortRankFor(a.RequiredConditions.First(),false),
+                IFastCondOr o when o.AlternateConditions.Any() =>  GetSortRankFor(o.AlternateConditions.First(),true),
                 IFastCondNot n => GetSortRankFor(n.NotThis, !moreLikelyIsHigher),
                 _ => 0
             };
@@ -334,82 +430,98 @@ public static class Conditions
 
         internal static bool TryOptimize(IFastCond logicalOp, out IFastCond replacement)
         {
-            if (logicalOp is IFastCondAnd andOp)
+            switch (logicalOp)
             {
-                var newAnd =
-                    andOp.RequiredConditions
-                        .Select(c => c.Optimize())
-                        .Where(c => c is not FastCondTrue)
-                        .ToList();
-                
-                if (newAnd.Any(c => c is FastCondFalse))
-                {
-                    replacement = Conditions.False;
-                    return true;
-                }
-                if (newAnd.Any(c => c is IFastCondAnd))
-                {
-                    var expanded = new List<IFastCond>(newAnd.Count * 2);
-                    foreach (var c in newAnd)
-                    {
-                        if (c is IFastCondAnd and)
-                        {
-                            expanded.AddRange(and.RequiredConditions);
-                        }
-                        else
-                        {
-                            expanded.Add(c);
-                        }
-                    }
-                    newAnd = expanded;
-                }
-                if (newAnd.Count == 1)
-                {
-                    replacement = newAnd[0];
-                    return true;
-                }
+                case IFastCondAnd andOp:
+                    return TryOptimizeAnd(andOp, out replacement);
+                case IFastCondOr orOp:
+                    return TryOptimizeOr(orOp, out replacement);
+                case IFastCondNot notOp:
+                    return TryOptimizeNot(notOp, out replacement);
+                default:
+                    replacement = logicalOp;
+                    return false;
+            }
+        }
+        
 
-                TryOptimizeOrder(ref newAnd, false);
-                replacement = new FastCondAll(newAnd);
-                return true;
+        private static bool TryOptimizeAnd(IFastCondAnd andOp, out IFastCond replacement)
+        {
+            var newAnd =
+                andOp.RequiredConditions
+                    .Select(c => c.Optimize())
+                    .Where(c => c is not (IFastCondNoOp or FastCondTrue))
+                    .ToList();
                 
-            }
-            else if (logicalOp is IFastCondOr orOp)
+            if (newAnd.Any(c => c is FastCondFalse))
             {
-                var optimizedOr = new FastCondAny(
-                    FastCondOptimizer.FlattenRecursiveOptimizeMergeAndOptimize(orOp.AlternateConditions));
-                replacement = optimizedOr.AlternateConditions.Count == 1 ? optimizedOr.AlternateConditions.First()
-                        : optimizedOr;
+                replacement = Conditions.False;
                 return true;
             }
-            else if (logicalOp is IFastCondNot notOp)
+            if (newAnd.Any(c => c is IFastCondAnd))
             {
-                
-                if (notOp.NotThis is FastCondTrue)
+                // Rely on the fact we individually optimized each child already, which calls this recursively.
+                var expanded = new List<IFastCond>(newAnd.Count * 2);
+                foreach (var c in newAnd)
                 {
+                    if (c is IFastCondAnd and)
+                    {
+                        expanded.AddRange(and.RequiredConditions);
+                    }
+                    else
+                    {
+                        expanded.Add(c);
+                    }
+                }
+                newAnd = expanded;
+            }
+            // If we have only one condition, we can replace the AND with that condition
+            if (newAnd.Count == 1)
+            {
+                replacement = newAnd[0];
+                return true;
+            }
+            // If we have zero left, it's a no-op    
+            if (newAnd.Count == 0)
+            {
+                replacement = Conditions.NoOp;
+                return true;
+            }
+
+            TryOptimizeOrder(ref newAnd, false);
+            replacement = new FastCondAll(newAnd);
+            return true;
+        }
+
+        private static bool TryOptimizeNot(IFastCondNot logicalOp, out IFastCond replacement)
+        {
+            // we could invert and -> not(each(or()) or or to and(each(not())) if some 
+            // sub-conditions are faster that way, but I don't see any usage at this point.
+            
+            var mustReplace = TryOptimize(logicalOp.NotThis, out var notThis);
+            if (!mustReplace)
+            {
+                notThis = logicalOp.NotThis;
+            }
+            switch (notThis)
+            {
+                case IFastCondNoOp:
+                    replacement = NoOp;
+                    return true;
+                case FastCondTrue:
                     replacement = new FastCondFalse();
                     return true;
-                }
-                if (notOp.NotThis is FastCondFalse)
-                {
+                case FastCondFalse:
                     replacement = new FastCondTrue();
                     return true;
-                }
-                if (TryOptimize(notOp.NotThis, out var optimized))
-                {
-                    replacement = new FastCondNot<IFastCond>(optimized);
-                    return true;
-                }
-                // we could invert and -> not(each(or()) or or to and(each(not())) if some 
-                // sub-conditions are faster that way, but I don't see any at this point.
-            
+                default:
+                    replacement = mustReplace ? new FastCondNot<IFastCond>(notThis) : logicalOp;
+                    return mustReplace;
             }
-            replacement = logicalOp;
-            return false;
         }
     }
-    
-   
+
+
     public readonly record struct FastCondAny(IReadOnlyCollection<IFastCond> Conditions) : IFastCondOr, IFastCondCanMerge
     {
         public IReadOnlyCollection<IFastCond> AlternateConditions => Conditions;
@@ -438,7 +550,7 @@ public static class Conditions
 
         public override string ToString()
         {
-            return $"any({string.Join(", ", Conditions)})";
+            return $"any[{string.Join(" || ", Conditions)}]";
         }
     }
     
@@ -469,7 +581,7 @@ public static class Conditions
 
         public override string ToString()
         {
-            return $"all({string.Join(", ", Conditions)})";
+            return $"all{{{string.Join(" && ", Conditions)}}}";
         }
 
         public IEnumerable<IFastCond> RequiredConditions => Conditions;
