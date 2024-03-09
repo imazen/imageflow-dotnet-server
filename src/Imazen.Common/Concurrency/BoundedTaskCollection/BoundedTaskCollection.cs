@@ -43,21 +43,14 @@ namespace Imazen.Common.Concurrency.BoundedTaskCollection {
             return c.TryGetValue(key, out result);
         }
 
-        public enum EnqueueResult
-        {
-            Enqueued,
-            AlreadyPresent,
-            QueueFull,
-            Stopped
-        }
         /// <summary>
         /// Tries to enqueue the given task and callback
         /// </summary>
         /// <param name="taskItem"></param>
         /// <param name="taskProcessor"></param>
         /// <returns></returns>
-        public EnqueueResult Queue(T taskItem, Func<T, CancellationToken, Task> taskProcessor){
-            if (stopped) return EnqueueResult.Stopped;
+        public TaskEnqueueResult Queue(T taskItem, Func<T, CancellationToken, Task> taskProcessor){
+            if (stopped) return TaskEnqueueResult.Stopped;
             if (queuedBytes < 0) throw new InvalidOperationException();
             
             // Deal with maximum queue size
@@ -65,17 +58,17 @@ namespace Imazen.Common.Concurrency.BoundedTaskCollection {
             Interlocked.Add(ref queuedBytes, taskSize);
             if (queuedBytes > MaxQueueBytes) {
                 Interlocked.Add(ref queuedBytes, -taskSize);
-                return EnqueueResult.QueueFull; //Because we would use too much ram.
+                return TaskEnqueueResult.QueueFull; //Because we would use too much ram.
             }
-            if (stopped) return EnqueueResult.Stopped;
+            if (stopped) return TaskEnqueueResult.Stopped;
             lock (syncStopping)
             {
-                if (stopped) return EnqueueResult.Stopped;
+                if (stopped) return TaskEnqueueResult.Stopped;
                 // Deal with duplicates
                 if (!c.TryAdd(taskItem.UniqueKey, taskItem))
                 {
                     Interlocked.Add(ref queuedBytes, -taskSize);
-                    return EnqueueResult.AlreadyPresent;
+                    return TaskEnqueueResult.AlreadyPresent;
                 }
 
 
@@ -98,7 +91,7 @@ namespace Imazen.Common.Concurrency.BoundedTaskCollection {
                     }));
             }
 
-            return EnqueueResult.Enqueued;
+            return TaskEnqueueResult.Enqueued;
         }
 
         /// <summary>
