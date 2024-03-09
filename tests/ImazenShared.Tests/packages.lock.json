@@ -92,10 +92,10 @@
       },
       "Imageflow.Net": {
         "type": "Transitive",
-        "resolved": "0.12.0",
-        "contentHash": "ZQNfvIIP+0TEeHCThL0DH+YtQfcA+Cpwn3otrIi+Pf55dICKHoT0Ipl2bs+4B3HClyU/Cr/IMsCk0Mpob9gaFw==",
+        "resolved": "0.13.0",
+        "contentHash": "nH3P2rLt5rNjPnDlCJ2n1qHLloNc0n+Iym8OVqk6neyW7+Gamuo4iuAXm4daQvcr354qD0St28kyl7j66oMC9g==",
         "dependencies": {
-          "Microsoft.IO.RecyclableMemoryStream": "[2.3.2, 4.0.0)",
+          "Microsoft.IO.RecyclableMemoryStream": "[3.0.0, 4.0.0)",
           "System.Text.Json": "6.0.9"
         }
       },
@@ -152,8 +152,8 @@
       },
       "Microsoft.IO.RecyclableMemoryStream": {
         "type": "Transitive",
-        "resolved": "2.3.2",
-        "contentHash": "Oh1qXXFdJFcHozvb4H6XYLf2W0meZFuG0A+TfapFPj9z5fd4vxiARGEhAaLj/6XWQaMYIv4SH/9Q6H78Hw0E2Q=="
+        "resolved": "3.0.0",
+        "contentHash": "irv0HuqoH8Ig5i2fO+8dmDNdFdsrO+DoQcedwIlb810qpZHBNQHZLW7C/AHBQDgLLpw2T96vmMAy/aE4Yj55Sg=="
       },
       "Microsoft.TestPlatform.ObjectModel": {
         "type": "Transitive",
@@ -304,7 +304,7 @@
         "type": "Project",
         "dependencies": {
           "CommunityToolkit.HighPerformance": "[8.*, )",
-          "Imageflow.Net": "[0.12.0, )",
+          "Imageflow.Net": "[0.13.0, )",
           "Imazen.Abstractions": "[0.1.0--notset, )",
           "Imazen.Common": "[0.1.0--notset, )",
           "System.Collections.Immutable": "[6.*, )",
@@ -403,10 +403,10 @@
       },
       "Imageflow.Net": {
         "type": "Transitive",
-        "resolved": "0.12.0",
-        "contentHash": "ZQNfvIIP+0TEeHCThL0DH+YtQfcA+Cpwn3otrIi+Pf55dICKHoT0Ipl2bs+4B3HClyU/Cr/IMsCk0Mpob9gaFw==",
+        "resolved": "0.13.0",
+        "contentHash": "nH3P2rLt5rNjPnDlCJ2n1qHLloNc0n+Iym8OVqk6neyW7+Gamuo4iuAXm4daQvcr354qD0St28kyl7j66oMC9g==",
         "dependencies": {
-          "Microsoft.IO.RecyclableMemoryStream": "[2.3.2, 4.0.0)",
+          "Microsoft.IO.RecyclableMemoryStream": "[3.0.0, 4.0.0)",
           "System.Text.Json": "6.0.9"
         }
       },
@@ -463,8 +463,8 @@
       },
       "Microsoft.IO.RecyclableMemoryStream": {
         "type": "Transitive",
-        "resolved": "2.3.2",
-        "contentHash": "Oh1qXXFdJFcHozvb4H6XYLf2W0meZFuG0A+TfapFPj9z5fd4vxiARGEhAaLj/6XWQaMYIv4SH/9Q6H78Hw0E2Q=="
+        "resolved": "3.0.0",
+        "contentHash": "irv0HuqoH8Ig5i2fO+8dmDNdFdsrO+DoQcedwIlb810qpZHBNQHZLW7C/AHBQDgLLpw2T96vmMAy/aE4Yj55Sg=="
       },
       "Microsoft.TestPlatform.ObjectModel": {
         "type": "Transitive",
@@ -615,7 +615,7 @@
         "type": "Project",
         "dependencies": {
           "CommunityToolkit.HighPerformance": "[8.*, )",
-          "Imageflow.Net": "[0.12.0, )",
+          "Imageflow.Net": "[0.13.0, )",
           "Imazen.Abstractions": "[0.1.0--notset, )",
           "Imazen.Common": "[0.1.0--notset, )",
           "System.Collections.Immutable": "[6.*, )",

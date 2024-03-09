@@ -27,15 +27,15 @@
       },
       "AWSSDK.Core": {
         "type": "Transitive",
-        "resolved": "3.7.302.12",
-        "contentHash": "OaFHc2FD3vYldtdaH0Sqob3NoTXFBBMKxmq/VV3of5l+hHZmcaAjpJhh1Et0BxggeHqimVOTaoQxEO0PXQHeuw=="
+        "resolved": "3.7.302.16",
+        "contentHash": "iR/YHr8gkDqXHlOcSEzPFljboB8B7UhXdm3NfzvMeLGDW+pD3Xfs1+oh98DS1+PfC7rZKGco8jYEjOZgt7vwpw=="
       },
       "AWSSDK.S3": {
         "type": "Transitive",
-        "resolved": "3.7.305.28",
-        "contentHash": "kjnmtEIddQPmS8XxwGwu1Gdc0vO+3bbohPSH59s8OdXnZlSMtsldJM+jwS5LTz4DUusFwMk3E8h0DY0TlwkVzg==",
+        "resolved": "3.7.305.31",
+        "contentHash": "ElvGvXAekMu0FwY7LJSOeaVi47rafgLFEz2C+e7Y5+kHhsO8FIKcum4pLubKUwbd20VPvN/G2m9oBShbz6al+g==",
         "dependencies": {
-          "AWSSDK.Core": "[3.7.302.12, 4.0.0)"
+          "AWSSDK.Core": "[3.7.302.16, 4.0.0)"
         }
       },
       "Azure.Core": {
@@ -91,14 +91,14 @@
       },
       "Imageflow.AllPlatforms": {
         "type": "Transitive",
-        "resolved": "0.12.0",
-        "contentHash": "4jtDy2BEGMHKkCbH0SZ3sQacgeDgfg00HXP88Re8aDpiUy4GHMvY8mgY60iQKb6BEBP1dNTeS7UQmrwkYhdfhA==",
+        "resolved": "0.13.0",
+        "contentHash": "IlLfRRfyicRgWTrWApZvFWhJ1vaUNdSxG6qS1Ej/dj9TrKeomJzvB0kqrvci/Rz80TSyxrQX1vWGCL2Dhe8o1Q==",
         "dependencies": {
           "Imageflow.NativeRuntime.osx-x86_64": "2.0.0-preview8",
           "Imageflow.NativeRuntime.ubuntu-x86_64": "2.0.0-preview8",
           "Imageflow.NativeRuntime.win-x86": "2.0.0-preview8",
           "Imageflow.NativeRuntime.win-x86_64": "2.0.0-preview8",
-          "Imageflow.Net": "0.12.0"
+          "Imageflow.Net": "0.13.0"
         }
       },
       "Imageflow.NativeRuntime.osx-x86_64": {
@@ -123,10 +123,10 @@
       },
       "Imageflow.Net": {
         "type": "Transitive",
-        "resolved": "0.12.0",
-        "contentHash": "ZQNfvIIP+0TEeHCThL0DH+YtQfcA+Cpwn3otrIi+Pf55dICKHoT0Ipl2bs+4B3HClyU/Cr/IMsCk0Mpob9gaFw==",
+        "resolved": "0.13.0",
+        "contentHash": "nH3P2rLt5rNjPnDlCJ2n1qHLloNc0n+Iym8OVqk6neyW7+Gamuo4iuAXm4daQvcr354qD0St28kyl7j66oMC9g==",
         "dependencies": {
-          "Microsoft.IO.RecyclableMemoryStream": "[2.3.2, 4.0.0)",
+          "Microsoft.IO.RecyclableMemoryStream": "[3.0.0, 4.0.0)",
           "System.Text.Json": "6.0.9"
         }
       },
@@ -411,7 +411,7 @@
       "imageflow.server": {
         "type": "Project",
         "dependencies": {
-          "Imageflow.AllPlatforms": "[0.12.0, )",
+          "Imageflow.AllPlatforms": "[0.13.0, )",
           "Imazen.Common": "[0.1.0--notset, )",
           "Imazen.Routing": "[0.1.0--notset, )",
           "Microsoft.IO.RecyclableMemoryStream": "[3.0.0, )"
@@ -443,7 +443,7 @@
       "imageflow.server.storage.s3": {
         "type": "Project",
         "dependencies": {
-          "AWSSDK.S3": "[3.7.305.28, )",
+          "AWSSDK.S3": "[3.7.305.31, )",
           "Imazen.Common": "[0.1.0--notset, )",
           "Imazen.Routing": "[0.1.0--notset, )"
         }
@@ -473,7 +473,7 @@
         "type": "Project",
         "dependencies": {
           "CommunityToolkit.HighPerformance": "[8.*, )",
-          "Imageflow.Net": "[0.12.0, )",
+          "Imageflow.Net": "[0.13.0, )",
           "Imazen.Abstractions": "[0.1.0--notset, )",
           "Imazen.Common": "[0.1.0--notset, )",
           "System.Collections.Immutable": "[6.*, )",
@@ -507,15 +507,15 @@
       },
       "AWSSDK.Core": {
         "type": "Transitive",
-        "resolved": "3.7.302.12",
-        "contentHash": "OaFHc2FD3vYldtdaH0Sqob3NoTXFBBMKxmq/VV3of5l+hHZmcaAjpJhh1Et0BxggeHqimVOTaoQxEO0PXQHeuw=="
+        "resolved": "3.7.302.16",
+        "contentHash": "iR/YHr8gkDqXHlOcSEzPFljboB8B7UhXdm3NfzvMeLGDW+pD3Xfs1+oh98DS1+PfC7rZKGco8jYEjOZgt7vwpw=="
       },
       "AWSSDK.S3": {
         "type": "Transitive",
-        "resolved": "3.7.305.28",
-        "contentHash": "kjnmtEIddQPmS8XxwGwu1Gdc0vO+3bbohPSH59s8OdXnZlSMtsldJM+jwS5LTz4DUusFwMk3E8h0DY0TlwkVzg==",
+        "resolved": "3.7.305.31",
+        "contentHash": "ElvGvXAekMu0FwY7LJSOeaVi47rafgLFEz2C+e7Y5+kHhsO8FIKcum4pLubKUwbd20VPvN/G2m9oBShbz6al+g==",
         "dependencies": {
-          "AWSSDK.Core": "[3.7.302.12, 4.0.0)"
+          "AWSSDK.Core": "[3.7.302.16, 4.0.0)"
         }
       },
       "Azure.Core": {
@@ -571,14 +571,14 @@
       },
       "Imageflow.AllPlatforms": {
         "type": "Transitive",
-        "resolved": "0.12.0",
-        "contentHash": "4jtDy2BEGMHKkCbH0SZ3sQacgeDgfg00HXP88Re8aDpiUy4GHMvY8mgY60iQKb6BEBP1dNTeS7UQmrwkYhdfhA==",
+        "resolved": "0.13.0",
+        "contentHash": "IlLfRRfyicRgWTrWApZvFWhJ1vaUNdSxG6qS1Ej/dj9TrKeomJzvB0kqrvci/Rz80TSyxrQX1vWGCL2Dhe8o1Q==",
         "dependencies": {
           "Imageflow.NativeRuntime.osx-x86_64": "2.0.0-preview8",
           "Imageflow.NativeRuntime.ubuntu-x86_64": "2.0.0-preview8",
           "Imageflow.NativeRuntime.win-x86": "2.0.0-preview8",
           "Imageflow.NativeRuntime.win-x86_64": "2.0.0-preview8",
-          "Imageflow.Net": "0.12.0"
+          "Imageflow.Net": "0.13.0"
         }
       },
       "Imageflow.NativeRuntime.osx-x86_64": {
@@ -603,10 +603,10 @@
       },
       "Imageflow.Net": {
         "type": "Transitive",
-        "resolved": "0.12.0",
-        "contentHash": "ZQNfvIIP+0TEeHCThL0DH+YtQfcA+Cpwn3otrIi+Pf55dICKHoT0Ipl2bs+4B3HClyU/Cr/IMsCk0Mpob9gaFw==",
+        "resolved": "0.13.0",
+        "contentHash": "nH3P2rLt5rNjPnDlCJ2n1qHLloNc0n+Iym8OVqk6neyW7+Gamuo4iuAXm4daQvcr354qD0St28kyl7j66oMC9g==",
         "dependencies": {
-          "Microsoft.IO.RecyclableMemoryStream": "[2.3.2, 4.0.0)",
+          "Microsoft.IO.RecyclableMemoryStream": "[3.0.0, 4.0.0)",
           "System.Text.Json": "6.0.9"
         }
       },
@@ -891,7 +891,7 @@
       "imageflow.server": {
         "type": "Project",
         "dependencies": {
-          "Imageflow.AllPlatforms": "[0.12.0, )",
+          "Imageflow.AllPlatforms": "[0.13.0, )",
           "Imazen.Common": "[0.1.0--notset, )",
           "Imazen.Routing": "[0.1.0--notset, )",
           "Microsoft.IO.RecyclableMemoryStream": "[3.0.0, )"
@@ -923,7 +923,7 @@
       "imageflow.server.storage.s3": {
         "type": "Project",
         "dependencies": {
-          "AWSSDK.S3": "[3.7.305.28, )",
+          "AWSSDK.S3": "[3.7.305.31, )",
           "Imazen.Common": "[0.1.0--notset, )",
           "Imazen.Routing": "[0.1.0--notset, )"
         }
@@ -953,7 +953,7 @@
         "type": "Project",
         "dependencies": {
           "CommunityToolkit.HighPerformance": "[8.*, )",
-          "Imageflow.Net": "[0.12.0, )",
+          "Imageflow.Net": "[0.13.0, )",
           "Imazen.Abstractions": "[0.1.0--notset, )",
           "Imazen.Common": "[0.1.0--notset, )",
           "System.Collections.Immutable": "[6.*, )",
