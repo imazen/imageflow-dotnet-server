@@ -76,11 +76,11 @@ namespace Imazen.Common.Concurrency {
         /// <param name="key"></param>
         /// <param name="cancellationToken"></param>
         /// <param name="success"></param>
-        /// <param name="lockTimeoutMs"></param>
-        public async Task<bool> TryExecuteAsync(string key, int lockTimeoutMs, CancellationToken cancellationToken,
+        /// <param name="timeoutMs"></param>
+        public async Task<bool> TryExecuteAsync(string key, int timeoutMs, CancellationToken cancellationToken,
             Func<Task> success)
         {
-            var result = await TryExecuteAsync<Empty, Empty>(key, lockTimeoutMs, cancellationToken, Empty.Value ,async (Empty e, CancellationToken ct) => {
+            var result = await TryExecuteAsync<Empty, Empty>(key, timeoutMs, cancellationToken, Empty.Value ,async (Empty e, CancellationToken ct) => {
                 await success();
                 return Empty.Value;
             });

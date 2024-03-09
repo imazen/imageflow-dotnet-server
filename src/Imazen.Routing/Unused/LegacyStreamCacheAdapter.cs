@@ -248,7 +248,7 @@ internal class LegacyStreamCacheAdapter : IStreamCache
                     swInsideQueueLock.Stop();
                     swGetOrCreateBytes.Stop();
 
-                    if (queueResult == BoundedTaskCollection<BlobTaskItem>.EnqueueResult.QueueFull)
+                    if (queueResult == TaskEnqueueResult.QueueFull)
                     {
                         if (Options.WriteSynchronouslyWhenQueueFull)
                         {

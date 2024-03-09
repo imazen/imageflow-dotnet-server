@@ -26,8 +26,4 @@
 
         <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.*" Condition="'$(TargetFramework)' == 'netstandard2.0'" />
     </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Compatibility\ImageflowServer\Internal\" />
-    </ItemGroup>
 </Project>

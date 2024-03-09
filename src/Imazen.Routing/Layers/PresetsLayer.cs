@@ -58,10 +58,7 @@ public record PresetsLayerOptions
 public class PresetsLayer(PresetsLayerOptions options) : IRoutingLayer
 {
     public string Name => "Presets";
-    public IFastCond? FastPreconditions { get; } = new Conditions.FastCondAny(new List<IFastCond>
-    {
-        Conditions.HasQueryStringKey("preset")
-    });
+    public IFastCond? FastPreconditions { get; } = Conditions.HasQueryStringKey("preset");
 
     public ValueTask<CodeResult<IRoutingEndpoint>?> ApplyRouting(MutableRequest request, CancellationToken cancellationToken = default)
     {

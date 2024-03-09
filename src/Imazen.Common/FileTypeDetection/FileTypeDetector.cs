@@ -14,7 +14,7 @@ namespace Imazen.Common.FileTypeDetection{
         /// </summary>
         /// <param name="first12Bytes"></param>
         /// <returns></returns>
-        public static string? GuessMimeType(byte[] first12Bytes)
+        public string? GuessMimeType(byte[] first12Bytes)
         {
             return MagicBytes.GetImageContentType(first12Bytes);
         }
