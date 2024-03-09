@@ -229,7 +229,7 @@ internal record ImagingPromise : ICacheableBlobPromise
             }
             // Check for errors and create the sources
 
-            var byteSources = new List<IBytesSource>(dependencyResults.Count);
+            var byteSources = new List<IAsyncMemorySource>(dependencyResults.Count);
             foreach (var result in dependencyResults)
             {
                 // TODO: aggregate them!
@@ -238,8 +238,17 @@ internal record ImagingPromise : ICacheableBlobPromise
                 {
                     var consumable = unwrapped.MakeOrTakeConsumable();
                     toDispose.Add(consumable); // Dispose the consumable
-                    var source = new StreamSource(consumable.BorrowStream(DisposalPromise.CallerDisposesBlobOnly), false);
-                    byteSources.Add(source);
+                    if (consumable is IConsumableMemoryBlob memoryBlob)
+                    {
+                        byteSources.Add(MemorySource.Borrow(memoryBlob.BorrowMemory, MemoryLifetimePromise.MemoryValidUntilAfterJobDisposed));
+                    }
+                    else
+                    {
+                        var bufferedSource =
+                            BufferedStreamSource.BorrowEntireStream(
+                                consumable.BorrowStream(DisposalPromise.CallerDisposesBlobOnly));
+                        byteSources.Add(bufferedSource);
+                    }
                 }
                 else
                 {
