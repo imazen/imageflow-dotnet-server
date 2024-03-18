@@ -227,9 +227,12 @@
       "imazen.abstractions": {
         "type": "Project",
         "dependencies": {
+          "CommunityToolkit.HighPerformance": "[8.*, )",
           "Microsoft.Bcl.AsyncInterfaces": "[6.*, )",
           "Microsoft.Extensions.Hosting.Abstractions": "[2.*, )",
           "System.Buffers": "[4.*, )",
+          "System.Collections.Immutable": "[6.*, )",
+          "System.IO.Pipelines": "[6.*, )",
           "System.Memory": "[4.*, )",
           "System.Text.Encodings.Web": "[6.*, )",
           "System.Threading.Tasks.Extensions": "[4.*, )"
@@ -404,7 +407,9 @@
       "imazen.abstractions": {
         "type": "Project",
         "dependencies": {
+          "CommunityToolkit.HighPerformance": "[8.*, )",
           "Microsoft.Extensions.Hosting.Abstractions": "[2.*, )",
+          "System.Collections.Immutable": "[6.*, )",
           "System.Text.Encodings.Web": "[6.*, )"
         }
       },
@@ -576,7 +581,9 @@
       "imazen.abstractions": {
         "type": "Project",
         "dependencies": {
+          "CommunityToolkit.HighPerformance": "[8.*, )",
           "Microsoft.Extensions.Hosting.Abstractions": "[2.*, )",
+          "System.Collections.Immutable": "[6.*, )",
           "System.Text.Encodings.Web": "[6.*, )"
         }
       },

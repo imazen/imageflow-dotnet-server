@@ -33,7 +33,7 @@ internal class ImageServer<TRequest, TResponse, TContext> : IImageServer<TReques
     private readonly RoutingEngine routingEngine;
     private readonly IBlobPromisePipeline pipeline;
     private readonly IPerformanceTracker perf;
-    private readonly CancellationTokenSource cts = new();
+    private readonly CancellationTokenSource uploadCancellationTokenSource = new();
     private readonly BoundedTaskCollection<BlobTaskItem> uploadQueue;
     private readonly bool shutdownRegisteredServices;
     private readonly IImageServerContainer container;
@@ -70,7 +70,7 @@ internal class ImageServer<TRequest, TResponse, TContext> : IImageServer<TReques
         uploadQueue = container.GetService<BoundedTaskCollection<BlobTaskItem>>();
         if (uploadQueue == null)
         {
-            uploadQueue = new BoundedTaskCollection<BlobTaskItem>(1, cts);
+            uploadQueue = new BoundedTaskCollection<BlobTaskItem>(150 * 1024 * 1024, uploadCancellationTokenSource);
             container.Register<BoundedTaskCollection<BlobTaskItem>>(uploadQueue);
         }
 
@@ -82,7 +82,18 @@ internal class ImageServer<TRequest, TResponse, TContext> : IImageServer<TReques
                 1000, 1000 * 10, TimeSpan.FromSeconds(10)));
             container.Register<MemoryCache>(memoryCache);
         }
-        var allCaches = container.GetService<IEnumerable<IBlobCache>>()?.ToList();
+
+        var allCachesFromProviders = container.GetService<IEnumerable<IBlobCacheProvider>>()
+            ?.SelectMany(p => p.GetBlobCaches());
+        
+        var allIndependentCaches = container.GetService<IEnumerable<IBlobCache>>();
+        var allCaches = (allCachesFromProviders ?? Enumerable.Empty<IBlobCache>()).Concat(allIndependentCaches ?? Enumerable.Empty<IBlobCache>()).ToList();
+        
+        foreach (var cache in allCaches)
+        {
+            cache.Initialize(new BlobCacheSupportData(this.AwaitBeforeShutdown));
+        }
+        
         var allCachesExceptMemory = allCaches?.Where(c => c != memoryCache)?.ToList();
 
         var watermarkingLogic = container.GetService<WatermarkingLogicOptions>() ??
@@ -108,6 +119,11 @@ internal class ImageServer<TRequest, TResponse, TContext> : IImageServer<TReques
         pipeline = new CacheEngine(null, sourceCacheOptions);
         pipeline = new ImagingMiddleware(null, imagingOptions);
         pipeline = new CacheEngine(pipeline, sourceCacheOptions);
+    }
+
+    private Task AwaitBeforeShutdown()
+    {
+        return uploadQueue.AwaitAllCurrentTasks();
     }
 
     public string GetDiagnosticsPageSection(DiagnosticsPageArea area)
@@ -211,14 +227,14 @@ internal class ImageServer<TRequest, TResponse, TContext> : IImageServer<TReques
                     return true;
                 }
 
-                var blob = blobResult.Unwrap();
+                using var blobWrapper = blobResult.Unwrap();
 
                 // TODO: if the blob provided an etag, it could be from blob storage, or it could be from a cache.
                 // TODO: TryGetBlobAsync already calculates the cache if it's a serverless promise...
                 // Since cache provider has to calculate the cache key anyway, can't we figure out how to improve this?
                 promisedEtag ??= CreateEtag(finalPromise);
 
-                if (blob.Attributes.Etag != null && blob.Attributes.Etag != promisedEtag)
+                if (blobWrapper.Attributes.Etag != null && blobWrapper.Attributes.Etag != promisedEtag)
                 {
                     perf.IncrementCounter("etag_internal_external_mismatch");
                 }
@@ -229,15 +245,15 @@ internal class ImageServer<TRequest, TResponse, TContext> : IImageServer<TReques
                 //   if (options.DefaultCacheControlString != null)
                 //       response.SetHeader(HttpHeaderNames.CacheControl, options.DefaultCacheControlString);
 
-                if (blob.Attributes.ContentType != null)
+                if (blobWrapper.Attributes.ContentType != null)
                 {
-                    response.SetContentType(blob.Attributes.ContentType);
-                    using var consumable = blob.MakeOrTakeConsumable();
+                    response.SetContentType(blobWrapper.Attributes.ContentType);
+                    using var consumable = await blobWrapper.GetConsumablePromise().IntoConsumableBlob();
                     await response.WriteBlobWrapperBody(consumable, cancellationToken);
                 }
                 else
                 {
-                    using var consumable = blob.MakeOrTakeConsumable();
+                    using var consumable = await blobWrapper.GetConsumablePromise().IntoConsumableBlob();
                     using var stream = consumable.BorrowStream(DisposalPromise.CallerDisposesStreamThenBlob);
                     await MagicBytes.ProxyToStream(stream, response, cancellationToken);
                 }
@@ -296,7 +312,7 @@ internal class ImageServer<TRequest, TResponse, TContext> : IImageServer<TReques
     public async Task StopAsync(CancellationToken cancellationToken)
     {
         //TODO: error handling or no?
-        cts.Cancel();
+        //await uploadCancellationTokenSource.CancelAsync();
         await uploadQueue.StopAsync(cancellationToken);
         if (shutdownRegisteredServices)
         {

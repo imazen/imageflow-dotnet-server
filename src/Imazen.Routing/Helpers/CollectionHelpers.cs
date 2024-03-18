@@ -1,6 +1,6 @@
 namespace Imazen.Routing.Helpers;
 
-public static class CollectionHelpers
+internal static class CollectionHelpers
 {
     public static void AddIfUnique<T>(this ICollection<T> collection, T value)
     {

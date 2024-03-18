@@ -97,7 +97,12 @@ public class MemoryCache(MemoryCacheOptions options) : IBlobCache
         RequiresInlineExecution = true, // Unsure if this is true
         FixedSize = true
     };
-    
+
+
+    public void Initialize(BlobCacheSupportData supportData)
+    {
+        
+    }
 
     public Task<CacheFetchResult> CacheFetch(IBlobCacheRequest request, CancellationToken cancellationToken = default)
     {
@@ -151,7 +156,7 @@ public class MemoryCache(MemoryCacheOptions options) : IBlobCache
 
     private bool TryAdd(string cacheKey, IBlobWrapper blob)
     {
-        if (!blob.IsNativelyReusable)
+        if (!blob.IsReusable)
         {
             throw new InvalidOperationException("Cannot cache a blob that is not natively reusable");
         }

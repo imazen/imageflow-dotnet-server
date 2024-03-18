@@ -82,9 +82,7 @@ internal class LegacyStreamCacheAdapter : IStreamCache
         {
             // We intentionally don't make CreateConsumable cancellable, as an incomplete operation
             // could cause other users to fail.
-            var resultBlob = result.Unwrap().CanTakeConsumable
-                ? result.Unwrap().TakeConsumable()
-                : await result.Unwrap().CreateConsumable(reusableBlobFactory, default); 
+            var resultBlob = await result.Unwrap().AddFutureConsumableReference().GetConsumable(reusableBlobFactory, default); 
             
             //TODO: We never dispose the resultBlob. This is a bug.
             return new StreamCacheResult(resultBlob.BorrowStream(DisposalPromise.CallerDisposesStreamThenBlob), resultBlob.Attributes?.ContentType, "Hit");
@@ -109,7 +107,7 @@ internal class LegacyStreamCacheAdapter : IStreamCache
             if (cacheInputEntry.Bytes.Array == null)
                 throw new InvalidOperationException("Null entry byte array provided by dataProviderCallback");
             IReusableBlob blobGenerated 
-                = new ReusableArraySegmentBlob(cacheInputEntry.Bytes, new BlobAttributes(){
+                = new MemoryBlob(cacheInputEntry.Bytes, new BlobAttributes(){
                     ContentType = cacheInputEntry.ContentType}, sw.Elapsed);
             return Result<IBlobWrapper, HttpStatus>.Ok(new BlobWrapper(null, blobGenerated));
         });
@@ -117,9 +115,7 @@ internal class LegacyStreamCacheAdapter : IStreamCache
         var result = await GetOrCreateResult(cacheRequest, wrappedCallback, cancellationToken, retrieveContentType);
         if (result.IsOk)
         {
-            var resultBlob = result.Unwrap().CanTakeConsumable
-                ? result.Unwrap().TakeConsumable()
-                : await result.Unwrap().CreateConsumable(reusableBlobFactory, default);
+            var resultBlob = await result.Unwrap().AddFutureConsumableReference().GetConsumable(reusableBlobFactory, default);
             //TODO: We never dispose the resultBlob. This is a bug.
             return new StreamCacheResult(resultBlob.BorrowStream(DisposalPromise.CallerDisposesStreamThenBlob), resultBlob.Attributes?.ContentType, "Hit");
         }

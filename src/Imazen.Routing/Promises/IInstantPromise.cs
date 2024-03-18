@@ -88,7 +88,6 @@ public static class CacheableBlobPromiseExtensions
        
 #if NET5_0_OR_GREATER
         var bytesWritten = SHA256.HashData(buffer.WrittenSpan, buffer32Bytes);
-buffer.Dispose();
         return buffer32Bytes[..bytesWritten];
 #elif NETSTANDARD2_0
         using var hasher = SHA256.Create();

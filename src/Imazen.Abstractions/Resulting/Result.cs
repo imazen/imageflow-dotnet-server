@@ -152,6 +152,18 @@ public static class ResultExtensions
         return result.IsOk ? Result<TB, TE>.Ok(func(result.Value!)) : Result<TB, TE>.Err(result.Error!);
     }
     
+    public static async ValueTask<Result<TB, TE>> MapOkAsync<T, TB, TE>(this IResult<T, TE> result, Func<T, ValueTask<TB>> func)
+    {
+        return result.IsOk ? Result<TB, TE>.Ok(await func(result.Value!)) : Result<TB, TE>.Err(result.Error!);
+    }
+    public static async ValueTask<Result<TB, TE>> MapOkAsync<T, TB, TE>(this ValueTask<IResult<T, TE>> result, Func<T, ValueTask<TB>> func)
+    {
+        var r = await result;
+        return r.IsOk ? Result<TB, TE>.Ok(await func(r.Value!)) : Result<TB, TE>.Err(r.Error!);
+    }
+    
+
+    
     public static Result<T, TEB> MapErr<T, TE, TEB>(this IResult<T, TE> result, Func<TE, TEB> func)
     {
         return result.IsOk ? Result<T, TEB>.Ok(result.Value!) : Result<T, TEB>.Err(func(result.Error!));
@@ -196,6 +208,12 @@ public class CodeResult<T> : Result<T, HttpStatus>
     {
         return IsOk ? CodeResult<TE>.Ok(func(Value!)) : CodeResult<TE>.Err(Error!);
     }
+    
+    public async ValueTask<CodeResult<TE>> MapOkAsync<TE>(Func<T, ValueTask<TE>> func)
+    {
+        return IsOk ? CodeResult<TE>.Ok(await func(Value!)) : CodeResult<TE>.Err(Error!);
+    }
+    
 }
 
 public class CodeResult : Result<HttpStatus, HttpStatus>

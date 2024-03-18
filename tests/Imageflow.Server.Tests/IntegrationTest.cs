@@ -6,6 +6,7 @@ using Imageflow.Fluent;
 using Imageflow.Server.HybridCache;
 using Imageflow.Server.Storage.RemoteReader;
 using Imageflow.Server.Storage.S3;
+using Imazen.Abstractions.Logging;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,25 +24,31 @@ namespace Imageflow.Server.Tests
             services.AddLogging(builder =>
             {
                 // log to output so we get it on xunit failures.
-                builder.AddXunit(outputHelper, LogLevel.Trace);
-                builder.AddFilter("Microsoft", LogLevel.Warning);
-                builder.AddFilter("System", LogLevel.Warning);
+                builder.AddXUnit(outputHelper, configuration =>
+                {
+                    configuration.Filter = (category, level) => level >= LogLevel.Trace;
+                   
+                });
+                builder.SetMinimumLevel(LogLevel.Trace);
+                // builder.AddFilter("Microsoft", LogLevel.Warning);
+                // builder.AddFilter("System", LogLevel.Warning);
                 // trace log to console for when xunit crashes with stack overflow
                 builder.AddConsole(options =>
                 {
                     options.LogToStandardErrorThreshold = LogLevel.Trace;
                 });
             });
+            services.AddImageflowReLogStoreAndReLoggerFactoryIfMissing();
         }
     }
-    public class IntegrationTest(ITestOutputHelper OutputHelper)
+    public class IntegrationTest(ITestOutputHelper outputHelper)
     {
 
         
         [Fact]
         public async void TestLocalFiles()
         {
-            using (var contentRoot = new TempContentRoot()
+            using (var contentRoot = new TempContentRoot(outputHelper)
                 .AddResource("images/fire.jpg", "TestFiles.fire-umbrella-small.jpg")
                 .AddResource("images/fire.jfif", "TestFiles.fire-umbrella-small.jpg")
                 .AddResource("images/fire umbrella.jpg", "TestFiles.fire-umbrella-small.jpg")
@@ -50,11 +57,10 @@ namespace Imageflow.Server.Tests
                 .AddResource("images/wrong.jpg", "TestFiles.imazen_400.png")
                 .AddResource("images/extensionless/file", "TestFiles.imazen_400.png"))
             {
-
                 var hostBuilder = new HostBuilder()
                     .ConfigureServices(services =>
                     {
-                        services.AddXunitLoggingDefaults(OutputHelper);
+                        services.AddXunitLoggingDefaults(outputHelper);
                     })
                     .ConfigureWebHost(webHost =>
                     {
@@ -79,11 +85,14 @@ namespace Imageflow.Server.Tests
                                     }
                                 }));
                         });
+
                     });
 
+                
                 // Build and start the IHost
                 using var host = await hostBuilder.StartAsync();
 
+                
                 // Create an HttpClient to send requests to the TestServer
                 using var client = host.GetTestClient();
 
@@ -122,7 +131,7 @@ namespace Imageflow.Server.Tests
                 var responseBytes = await response2.Content.ReadAsByteArrayAsync();
                 Assert.True(responseBytes.Length < 1000);
                 
-                using var response3 = await client.GetAsync("/fire%20umbrella.jpg");
+                using var response3 = await client.GetAsync("/fire umbrella.jpg"); //Works with space...
                 response3.EnsureSuccessStatusCode();
                 responseBytes = await response3.Content.ReadAsByteArrayAsync();
                 Assert.Equal(contentRoot.GetResourceBytes("TestFiles.fire-umbrella-small.jpg"), responseBytes);
@@ -148,66 +157,75 @@ namespace Imageflow.Server.Tests
                 using var response9 = await client.GetAsync("/imageflow.ready");
                 response9.EnsureSuccessStatusCode();
                 
+                using var response10 = await client.GetAsync("/fire%20umbrella.jpg"); //Works with space...
+                response10.EnsureSuccessStatusCode();
+                
                 await host.StopAsync(CancellationToken.None);
             }
         }
-        
+
         [Fact]
         public async void TestDiskCache()
         {
-            using (var contentRoot = new TempContentRoot()
+            using var contentRoot = new TempContentRoot(outputHelper)
                 .AddResource("images/fire.jpg", "TestFiles.fire-umbrella-small.jpg")
                 .AddResource("images/logo.png", "TestFiles.imazen_400.png")
                 .AddResource("images/wrong.webp", "TestFiles.imazen_400.png")
                 .AddResource("images/wrong.jpg", "TestFiles.imazen_400.png")
-                .AddResource("images/extensionless/file", "TestFiles.imazen_400.png"))
-            {
+                .AddResource("images/extensionless/file", "TestFiles.imazen_400.png");
 
-                var diskCacheDir = Path.Combine(contentRoot.PhysicalPath, "diskcache");
-                var hostBuilder = new HostBuilder()
-                    .ConfigureServices(services =>
+
+            var diskCacheDir = Path.Combine(contentRoot.PhysicalPath, "diskcache");
+            await using var host = await new HostBuilder()
+                .ConfigureServices(services =>
+                {
+                    services.AddXunitLoggingDefaults(outputHelper);
+                    services.AddImageflowHybridCache(
+                        new HybridCacheOptions(diskCacheDir)); //TODO: sync writes wanted
+                })
+                .ConfigureWebHost(webHost =>
+                {
+                    // Add TestServer
+                    webHost.UseTestServer();
+                    webHost.Configure(app =>
                     {
-                        services.AddImageflowHybridCache(new HybridCacheOptions(diskCacheDir)); //TODO: sync writes wanted
-                        services.AddXunitLoggingDefaults(OutputHelper);
-                    })
-                    .ConfigureWebHost(webHost =>
-                    {
-                        // Add TestServer
-                        webHost.UseTestServer();
-                        webHost.Configure(app =>
-                        {
-                            app.UseImageflow(new ImageflowMiddlewareOptions()
-                                .SetMapWebRoot(false)
-                                .SetAllowDiskCaching(true)
-                                .HandleExtensionlessRequestsUnder("/extensionless/")
-                                // Maps / to ContentRootPath/images
-                                .MapPath("/", Path.Combine(contentRoot.PhysicalPath, "images")));
-                        });
+                        app.UseImageflow(new ImageflowMiddlewareOptions()
+                            .SetMapWebRoot(false)
+                            .SetAllowDiskCaching(true)
+                            .HandleExtensionlessRequestsUnder("/extensionless/")
+                            // Maps / to ContentRootPath/images
+                            .MapPath("/", Path.Combine(contentRoot.PhysicalPath, "images")));
                     });
+                }).StartDisposableHost();
 
-                // Build and start the IHost
-                using var host = await hostBuilder.StartAsync();
+            var logger = host.Services.GetService<IReLoggerFactory>()!.CreateReLogger("test");
 
+            logger.LogTrace("Test log");
+            {
                 // Create an HttpClient to send requests to the TestServer
                 using var client = host.GetTestClient();
 
                 using var response = await client.GetAsync("/not_there.jpg");
-                Assert.Equal(HttpStatusCode.NotFound,response.StatusCode);
-                
+                Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+
                 using var response2 = await client.GetAsync("/fire.jpg?width=1");
                 response2.EnsureSuccessStatusCode();
                 var responseBytes = await response2.Content.ReadAsByteArrayAsync();
                 Assert.True(responseBytes.Length < 1000);
-                
-                using var response3 = await client.GetAsync("/fire.jpg");
-                response3.EnsureSuccessStatusCode();
-                responseBytes = await response3.Content.ReadAsByteArrayAsync();
-                Assert.Equal(contentRoot.GetResourceBytes("TestFiles.fire-umbrella-small.jpg"), responseBytes);
 
-                using var wrongImageExtension1 = await client.GetAsync("/wrong.webp");
-                wrongImageExtension1.EnsureSuccessStatusCode();
-                Assert.Equal("image/png", wrongImageExtension1.Content.Headers.ContentType?.MediaType);
-                
+                using (var response3 = await client.GetAsync("/fire.jpg"))
+                {
+                    response3.EnsureSuccessStatusCode();
+                    responseBytes = await response3.Content.ReadAsByteArrayAsync();
+                    Assert.Equal(contentRoot.GetResourceBytes("TestFiles.fire-umbrella-small.jpg"), responseBytes);
+                }
+
+                {
+                    using var wrongImageExtension1 = await client.GetAsync("/wrong.webp");
+                    wrongImageExtension1.EnsureSuccessStatusCode();
+                    Assert.Equal("image/png", wrongImageExtension1.Content.Headers.ContentType?.MediaType);
+                }
+
                 using var wrongImageExtension2 = await client.GetAsync("/wrong.jpg");
                 wrongImageExtension2.EnsureSuccessStatusCode();
                 Assert.Equal("image/png", wrongImageExtension2.Content.Headers.ContentType?.MediaType);
@@ -215,75 +233,72 @@ namespace Imageflow.Server.Tests
                 using var extensionlessRequest = await client.GetAsync("/extensionless/file");
                 extensionlessRequest.EnsureSuccessStatusCode();
                 Assert.Equal("image/png", extensionlessRequest.Content.Headers.ContentType?.MediaType);
-
-                
-                await host.StopAsync(CancellationToken.None);
-                
-                var cacheFiles = Directory.GetFiles(diskCacheDir, "*.jpg", SearchOption.AllDirectories);
-                Assert.Single(cacheFiles);
             }
+            await host.StopAsync(CancellationToken.None);
+            await host.DisposeAsync();
+
+            var cacheFiles = Directory.GetFiles(diskCacheDir, "*.jpg", SearchOption.AllDirectories);
+            Assert.Single(cacheFiles);
         }
-        
-         [Fact]
+
+        [Fact]
         public async void TestAmazonS3()
         {
-            using (var contentRoot = new TempContentRoot()
+            using var contentRoot = new TempContentRoot(outputHelper)
                 .AddResource("images/fire.jpg", "TestFiles.fire-umbrella-small.jpg")
-                .AddResource("images/logo.png", "TestFiles.imazen_400.png"))
-            {
+                .AddResource("images/logo.png", "TestFiles.imazen_400.png");
 
-                var diskCacheDir = Path.Combine(contentRoot.PhysicalPath, "diskcache");
-                var hostBuilder = new HostBuilder()
-                    .ConfigureServices(services =>
+
+            var diskCacheDir = Path.Combine(contentRoot.PhysicalPath, "diskcache");
+            await using var host = await new HostBuilder()
+                .ConfigureServices(services =>
+                {
+                    services.AddXunitLoggingDefaults(outputHelper);
+                    services.AddSingleton<IAmazonS3>(new AmazonS3Client(new AnonymousAWSCredentials(),
+                        RegionEndpoint.USEast1));
+                    services.AddImageflowHybridCache(new HybridCacheOptions(diskCacheDir));
+                    services.AddImageflowS3Service(
+                        new S3ServiceOptions()
+                            .MapPrefix("/ri/", "resizer-images"));
+
+                })
+                .ConfigureWebHost(webHost =>
+                {
+                    // Add TestServer
+                    webHost.UseTestServer();
+                    webHost.Configure(app =>
                     {
-                        services.AddXunitLoggingDefaults(OutputHelper);
-                        services.AddSingleton<IAmazonS3>(new AmazonS3Client(new AnonymousAWSCredentials(), RegionEndpoint.USEast1));
-                        services.AddImageflowHybridCache(new HybridCacheOptions(diskCacheDir));
-                        services.AddImageflowS3Service(
-                            new S3ServiceOptions()
-                                .MapPrefix("/ri/", "resizer-images"));
-                        
-                    })
-                    .ConfigureWebHost(webHost =>
-                    {
-                        // Add TestServer
-                        webHost.UseTestServer();
-                        webHost.Configure(app =>
-                        {
-                            app.UseImageflow(new ImageflowMiddlewareOptions()
-                                .SetMapWebRoot(false)
-                                .SetAllowDiskCaching(true)
-                                // Maps / to ContentRootPath/images
-                                .MapPath("/", Path.Combine(contentRoot.PhysicalPath, "images")));
-                        });
+                        app.UseImageflow(new ImageflowMiddlewareOptions()
+                            .SetMapWebRoot(false)
+                            .SetAllowDiskCaching(true)
+                            // Maps / to ContentRootPath/images
+                            .MapPath("/", Path.Combine(contentRoot.PhysicalPath, "images")));
                     });
+                }).StartDisposableHost();
 
-                // Build and start the IHost
-                using var host = await hostBuilder.StartAsync();
+            // Create an HttpClient to send requests to the TestServer
+            using var client = host.GetTestClient();
 
-                // Create an HttpClient to send requests to the TestServer
-                using var client = host.GetTestClient();
+            using var response = await client.GetAsync("/ri/not_there.jpg");
+            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
 
-                using var response = await client.GetAsync("/ri/not_there.jpg");
-                Assert.Equal(HttpStatusCode.NotFound,response.StatusCode);
-                
-                using var response2 = await client.GetAsync("/ri/imageflow-icon.png?width=1");
-                response2.EnsureSuccessStatusCode();
-                
-                await host.StopAsync(CancellationToken.None);
-                
-                // This could be failing because writes are still in the queue, or because no caches are deemed worthy of writing to, or health status reasons
-                // TODO: diagnose 
-                
-                var cacheFiles = Directory.GetFiles(diskCacheDir, "*.png", SearchOption.AllDirectories);
-                Assert.Single(cacheFiles);
-            }
+            using var response2 = await client.GetAsync("/ri/imageflow-icon.png?width=1");
+            response2.EnsureSuccessStatusCode();
+
+            await host.StopAsync(CancellationToken.None);
+
+            // This could be failing because writes are still in the queue, or because no caches are deemed worthy of writing to, or health status reasons
+            // TODO: diagnose 
+
+            var cacheFiles = Directory.GetFiles(diskCacheDir, "*.jpg", SearchOption.AllDirectories);
+            Assert.Single(cacheFiles);
+
         }
-        
-         [Fact]
+
+        [Fact]
         public async void TestAmazonS3WithCustomClient()
         {
-            using (var contentRoot = new TempContentRoot()
+            using (var contentRoot = new TempContentRoot(outputHelper)
                 .AddResource("images/fire.jpg", "TestFiles.fire-umbrella-small.jpg")
                 .AddResource("images/logo.png", "TestFiles.imazen_400.png"))
             {
@@ -292,7 +307,7 @@ namespace Imageflow.Server.Tests
                 var hostBuilder = new HostBuilder()
                     .ConfigureServices(services =>
                     {
-                        services.AddXunitLoggingDefaults(OutputHelper);
+                        services.AddXunitLoggingDefaults(outputHelper);
                         services.AddSingleton<IAmazonS3>(new AmazonS3Client(new AnonymousAWSCredentials(), RegionEndpoint.USEast1));
                         services.AddImageflowHybridCache(new HybridCacheOptions(diskCacheDir));
                         services.AddImageflowS3Service(
@@ -336,10 +351,10 @@ namespace Imageflow.Server.Tests
         [Fact]
         public async void TestPresetsExclusive()
         {
-            using var contentRoot = new TempContentRoot()
+            using var contentRoot = new TempContentRoot(outputHelper)
                 .AddResource("images/fire.jpg", "TestFiles.fire-umbrella-small.jpg");
             await using var host = await new HostBuilder()
-                .ConfigureServices(services => { services.AddXunitLoggingDefaults(OutputHelper); })
+                .ConfigureServices(services => { services.AddXunitLoggingDefaults(outputHelper); })
                 .ConfigureWebHost(webHost =>
                 {
                     // Add TestServer
@@ -348,7 +363,7 @@ namespace Imageflow.Server.Tests
                     {
                         services.AddImageflowHybridCache(
                             new HybridCacheOptions(Path.Combine(contentRoot.PhysicalPath, "diskcache")));
-                        services.AddXunitLoggingDefaults(OutputHelper);
+                        services.AddXunitLoggingDefaults(outputHelper);
                     });
                     webHost.Configure(app =>
                     {
@@ -388,14 +403,14 @@ namespace Imageflow.Server.Tests
         [Fact]
         public async void TestPresets()
         {
-            using (var contentRoot = new TempContentRoot()
+            using (var contentRoot = new TempContentRoot(outputHelper)
                 .AddResource("images/fire.jpg", "TestFiles.fire-umbrella-small.jpg"))
             {
 
                 var hostBuilder = new HostBuilder()
                     .ConfigureServices(services =>
                     {
-                        services.AddXunitLoggingDefaults(OutputHelper);
+                        services.AddXunitLoggingDefaults(outputHelper);
                     })
                     .ConfigureWebHost(webHost =>
                     {
@@ -446,7 +461,7 @@ namespace Imageflow.Server.Tests
         public async void TestRequestSigning()
         {
             const string key = "test key";
-            using (var contentRoot = new TempContentRoot()
+            using (var contentRoot = new TempContentRoot(outputHelper)
                 .AddResource("images/fire umbrella.jpg", "TestFiles.fire-umbrella-small.jpg")
                 .AddResource("images/query/umbrella.jpg", "TestFiles.fire-umbrella-small.jpg")
                 .AddResource("images/never/umbrella.jpg", "TestFiles.fire-umbrella-small.jpg"))
@@ -455,7 +470,7 @@ namespace Imageflow.Server.Tests
                 var hostBuilder = new HostBuilder()
                     .ConfigureServices(services =>
                     {
-                        services.AddXunitLoggingDefaults(OutputHelper);
+                        services.AddXunitLoggingDefaults(outputHelper);
                     })
                     .ConfigureWebHost(webHost =>
                     {
@@ -525,14 +540,14 @@ namespace Imageflow.Server.Tests
             const string remoteReaderKey = "remoteReaderSigningKey_changeMe";
             // This is the key we use to ensure that the set of modifications to the remote file is permitted.
             const string requestSigningKey = "test key";
-            using (var contentRoot = new TempContentRoot()
+            using (var contentRoot = new TempContentRoot(outputHelper)
                 .AddResource("images/fire.jpg", "TestFiles.fire-umbrella-small.jpg"))
             {
 
                 var hostBuilder = new HostBuilder()
                     .ConfigureServices(services =>
                     {
-                        services.AddXunitLoggingDefaults(OutputHelper);
+                        services.AddXunitLoggingDefaults(outputHelper);
                     })
                     .ConfigureServices(services =>
                     {

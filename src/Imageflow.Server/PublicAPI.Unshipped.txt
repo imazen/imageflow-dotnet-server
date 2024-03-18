@@ -1,0 +1,2 @@
+Imageflow.Server.PathMapping.StringComparison.get -> System.StringComparison
+Imageflow.Server.PathMapping.StringToCompare.get -> string!

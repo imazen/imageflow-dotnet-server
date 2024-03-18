@@ -1,182 +1,85 @@
+using Microsoft.Extensions.Logging;
+
 namespace Imazen.Abstractions.Blobs
 {
     /// <summary>
-    /// Provides access to a blob stream that can only be used once,
-    /// and not shared. We should figure out ownership and disposal semantics.
-    /// </summary>
-    public interface IBlobWrapper : IDisposable //TODO:  Change to IAsyncDisposable if anyone needs that (network streams)?
-    {
-        IBlobAttributes Attributes { get; }
-
-        bool IsNativelyReusable { get; }
-        
-        bool CanTakeReusable { get; }
-        
-        ValueTask<IReusableBlob> TakeReusable(IReusableBlobFactory factory, CancellationToken cancellationToken = default);
-        
-        ValueTask EnsureReusable(IReusableBlobFactory factory, CancellationToken cancellationToken = default);
-        
-        bool CanTakeConsumable { get; }
-        
-        IConsumableBlob TakeConsumable();
-        
-        bool CanCreateConsumable { get; }
-        
-        long? EstimateAllocatedBytes { get; }
-        
-        ValueTask<IConsumableBlob> CreateConsumable(IReusableBlobFactory factory, CancellationToken cancellationToken = default);
-        IConsumableBlob MakeOrTakeConsumable();
-    }
-
-    /// <summary>
-    /// TODO: make this properly thread-safe
+    /// A reference to a blob (either consumable or reusable). 
     /// </summary>
     public class BlobWrapper : IBlobWrapper
     {
-        private IConsumableBlob? consumable;
-        private IReusableBlob? reusable;
-        internal DateTime CreatedAtUtc { get; }
-        internal LatencyTrackingZone? LatencyZone { get; set; }
+        public IBlobAttributes Attributes => core?.Attributes ?? throw new ObjectDisposedException("The BlobWrapper has been disposed");
+        public long? EstimateAllocatedBytes => core?.EstimateAllocatedBytes;
         
-        public BlobWrapper(LatencyTrackingZone? latencyZone, IConsumableBlob consumable)
-        {
-            this.consumable = consumable;
-            this.Attributes = consumable.Attributes;
-            CreatedAtUtc = DateTime.UtcNow;
-            LatencyZone = latencyZone;
-        }
-        public BlobWrapper(LatencyTrackingZone? latencyZone, IReusableBlob reusable)
-        {
-            this.reusable = reusable;
-            this.Attributes = reusable.Attributes;
-            CreatedAtUtc = DateTime.UtcNow;
-            LatencyZone = latencyZone;
-        }
-        [Obsolete("Use the constructor that takes a first parameter of LatencyTrackingZone, so that you " +
-                  "can allow Imageflow Server to apply intelligent caching logic to this blob.")]
-        public BlobWrapper(IConsumableBlob consumable)
-        {
-            this.consumable = consumable;
-            this.Attributes = consumable.Attributes;
-            CreatedAtUtc = DateTime.UtcNow;
-        }
-        
-        
-
-        public IBlobAttributes Attributes { get; }
-        public bool IsNativelyReusable => reusable != null;
-
-        public bool CanTakeReusable => reusable != null || consumable != null;
-
-        public long? EstimateAllocatedBytes => reusable?.EstimateAllocatedBytesRecursive;
-        
-        public async ValueTask<IReusableBlob> TakeReusable(IReusableBlobFactory factory, CancellationToken cancellationToken = default)
-        {
-            if (reusable != null)
-            {
-                var r = reusable;
-                reusable = null;
-                return r;
-            }
-
-            if (consumable != null)
-            {
-                IConsumableBlob c = consumable;
-                if (c != null)
-                {
-                    try
-                    {
-                        consumable = null;
-                        if (!c.StreamAvailable)
-                        {
-                            throw new InvalidOperationException("Cannot create a reusable blob from this wrapper, the consumable stream has already been taken");
-                        }
-                        return await factory.ConsumeAndCreateReusableCopy(c, cancellationToken);
-                    }
-                    finally
-                    {
-                        c.Dispose();
-                    }
-                }
-            }
-
-            throw new InvalidOperationException("Cannot take or create a reusable blob from this wrapper, it is empty");
-        }
-
-        public async ValueTask EnsureReusable(IReusableBlobFactory factory, CancellationToken cancellationToken = default)
-        {
-            if (reusable != null) return;
-            if (consumable != null)
-            {
-                IConsumableBlob c = consumable;
-                if (c != null)
-                {
-                    try
-                    {
-                        consumable = null;
-                        if (!c.StreamAvailable)
-                        {
-                            throw new InvalidOperationException("Cannot create a reusable blob from this wrapper, the consumable stream has already been taken");
-                        }
-
-                        reusable = await factory.ConsumeAndCreateReusableCopy(c, cancellationToken);
-                        return;
-                    }
-                    finally
-                    {
-                        c.Dispose();
-                    }
-                }
-            }
-
-            throw new InvalidOperationException("Cannot take or create a reusable blob from this wrapper, it is empty");
-        }
-
-        public bool CanTakeConsumable => consumable != null;
-        
-        public IConsumableBlob TakeConsumable()
-        {
-            if (consumable != null)
-            {
-                var c = consumable;
-                consumable = null;
-                return c;
-            }
-
-            if (reusable != null)
-            {
-                throw new InvalidOperationException("Try TakeOrCreateConsumable(), -cannot take a consumable blob from this wrapper, it only contains a reusable one");
-              
-            }
-            throw new InvalidOperationException("Cannot take a consumable blob from this wrapper, it is empty of both consumable and reusable");
-        }
-        
-        public bool CanCreateConsumable => consumable != null || reusable != null;
      
-        public async ValueTask<IConsumableBlob> CreateConsumable(IReusableBlobFactory factory, CancellationToken cancellationToken = default)
+        public bool IsReusable => core?.IsReusable ?? throw new ObjectDisposedException("The BlobWrapper has been disposed");
+
+        public ValueTask EnsureReusable(CancellationToken cancellationToken = default)
         {
-            reusable ??= await TakeReusable(factory, cancellationToken);
-            return reusable.GetConsumable();
-            
+            return core?.EnsureReusable(cancellationToken) ?? throw new ObjectDisposedException("The BlobWrapper has been disposed");
         }
 
-        public IConsumableBlob MakeOrTakeConsumable()
+        public void IndicateInterest()
         {
-            if (reusable != null)
-            {
-                var r = reusable;
-                reusable = null;
-                return r.GetConsumable();
-            }
+            core?.IndicateInterest();
+        }
 
-            return TakeConsumable();
+        public IConsumableBlobPromise GetConsumablePromise()
+        {
+            return core?.GetConsumablePromise(this) ?? throw new ObjectDisposedException("The BlobWrapper has been disposed");
+        }
+
+        public IConsumableMemoryBlobPromise GetConsumableMemoryPromise()
+        {
+            return core?.GetConsumableMemoryPromise(this) ?? throw new ObjectDisposedException("The BlobWrapper has been disposed");
+        }
+
+        public IBlobWrapper ForkReference()
+        {
+            if (core == null) throw new ObjectDisposedException("The BlobWrapper has been disposed");
+            return new BlobWrapper(core);
+        }
+
+
+        private BlobWrapperCore? core;
+        public BlobWrapper(LatencyTrackingZone? latencyZone, StreamBlob consumable)
+        {
+            core = new BlobWrapperCore(latencyZone, consumable);
+            core.AddWeakReference(this);
+        }
+        public BlobWrapper(LatencyTrackingZone? latencyZone, MemoryBlob reusable)
+        {
+            core = new BlobWrapperCore(latencyZone, reusable);
+            core.AddWeakReference(this);
+        }
+        private BlobWrapper(BlobWrapperCore core)
+        {
+            this.core = core;
+            core.AddWeakReference(this);
+        }
+        
+        // /// <summary>
+        // /// Sets the blob factory to be used to create a reusable blob from a consumable blob.
+        // /// </summary>
+        // /// <param name="borrowedFactory"></param>
+        // /// <returns>False if the factory is already set, or the blob is already reusable</returns>
+        // bool TrySetReusableBlobFactory(IReusableBlobFactory borrowedFactory);
+        //
+        /// <summary>
+        /// Sets the logger to be used by the blob.
+        /// </summary>
+        /// <param name="logger"></param>
+        /// <returns>False if the logger is already set</returns>
+        bool TrySetLogger(ILogger logger)
+        {
+            if (core == null) throw new ObjectDisposedException("The BlobWrapper has been disposed");
+            return core.TrySetLogger(logger);
         }
 
 
         public void Dispose()
         {
-            consumable?.Dispose();
-            reusable?.Dispose();
+            core?.RemoveReference(this);
+            core = null;
         }
     }
 

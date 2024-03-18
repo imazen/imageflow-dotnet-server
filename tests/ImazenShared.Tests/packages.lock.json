@@ -289,7 +289,9 @@
       "imazen.abstractions": {
         "type": "Project",
         "dependencies": {
+          "CommunityToolkit.HighPerformance": "[8.*, )",
           "Microsoft.Extensions.Hosting.Abstractions": "[2.*, )",
+          "System.Collections.Immutable": "[6.*, )",
           "System.Text.Encodings.Web": "[6.*, )"
         }
       },
@@ -600,7 +602,9 @@
       "imazen.abstractions": {
         "type": "Project",
         "dependencies": {
+          "CommunityToolkit.HighPerformance": "[8.*, )",
           "Microsoft.Extensions.Hosting.Abstractions": "[2.*, )",
+          "System.Collections.Immutable": "[6.*, )",
           "System.Text.Encodings.Web": "[6.*, )"
         }
       },

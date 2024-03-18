@@ -7,7 +7,7 @@ namespace Imazen.Abstractions.BlobCache
     public interface IBlobCache: IUniqueNamed
     {
 
-        
+        void Initialize(BlobCacheSupportData supportData);
         /// <summary>
         /// The cache should attempt to fetch the blob, and return a result indicating whether it was found or not.
         /// </summary>

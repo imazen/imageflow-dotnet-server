@@ -1,6 +1,6 @@
 namespace Imazen.Routing.Helpers;
 
-public static class EnumHelpers
+internal static class EnumHelpers
 {
     /// <summary>
     /// Maps a <see cref="StringComparison"/> to a short string representation

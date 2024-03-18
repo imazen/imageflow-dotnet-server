@@ -132,7 +132,7 @@ namespace Imageflow.Server.Example
     }
     internal static class CustomAzureBlobHelpers
     {
-        public static IConsumableBlob CreateAzureBlob(Response<BlobDownloadInfo> response)
+        public static StreamBlob CreateAzureBlob(Response<BlobDownloadInfo> response)
         {
             var a = new BlobAttributes()
             {
@@ -142,7 +142,7 @@ namespace Imageflow.Server.Example
                 
             };
             var stream = response.Value.Content;
-            return new ConsumableStreamBlob(a, stream);
+            return new StreamBlob(a, stream);
         }
     }
 }

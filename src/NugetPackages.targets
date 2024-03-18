@@ -4,6 +4,7 @@
         <IsPackable>true</IsPackable>
         <LangVersion>latest</LangVersion>
         <Nullable>enable</Nullable>
+        <NoWarn>RS0036;RS0016</NoWarn>
     </PropertyGroup>
     <ItemGroup>
         <AssemblyAttribute Include="Imazen.Abstractions.AssemblyAttributes.BuildDate">

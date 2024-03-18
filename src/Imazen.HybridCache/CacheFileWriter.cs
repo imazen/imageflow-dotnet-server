@@ -60,15 +60,7 @@ namespace Imazen.HybridCache
                         throw new OperationCanceledException(cancellationToken);
 
                     if (File.Exists(entry.PhysicalPath)) return;
-
-
-                    var subdirectoryPath = Path.GetDirectoryName(entry.PhysicalPath);
-                    //Create subdirectory if needed.
-                    if (subdirectoryPath != null && !Directory.Exists(subdirectoryPath))
-                    {
-                        Directory.CreateDirectory(subdirectoryPath);
-                    }
-
+                    
                     string writeToFile;
                     if (moveIntoPlace)
                     {
@@ -80,7 +72,20 @@ namespace Imazen.HybridCache
                     {
                         writeToFile = entry.PhysicalPath;
                     }
-
+                    
+                    var subdirectoryPath = Path.GetDirectoryName(entry.PhysicalPath);
+                    //Create subdirectory if needed.
+                    if (!string.IsNullOrEmpty(subdirectoryPath))
+                    {
+                        if (!Directory.Exists(subdirectoryPath))
+                        {
+                            Directory.CreateDirectory(subdirectoryPath);
+                        }
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException("CacheEntry.PhysicalPath must be a valid path; found " + entry.PhysicalPath);
+                    }
 
                     var fs = new FileStream(writeToFile, FileMode.Create, FileAccess.Write, FileShare.None, 4096,
                         FileOptions.Asynchronous);

@@ -18,7 +18,8 @@ namespace Imazen.HybridCache
         private CleanupManager CleanupManager { get; }
         private ICacheDatabase<ICacheDatabaseRecord> Database { get; }
         
-        
+        private BlobCacheSupportData SupportData { get; set; }
+
         public string UniqueName { get; }
         
         
@@ -117,17 +118,17 @@ namespace Imazen.HybridCache
         {
             logger?.LogInformation("HybridCache is shutting down...");
             var sw = Stopwatch.StartNew();
-            //await AsyncCache.AwaitEnqueuedTasks();
+            await SupportData.AwaitBeforeShutdown();
             await Database.StopAsync(cancellationToken);
             sw.Stop();
             logger?.LogInformation("HybridCache shut down in {ShutdownTime}", sw.Elapsed);
         }
-
-        public Task AwaitEnqueuedTasks()
-        {
-            return AsyncCache.AwaitEnqueuedTasks();
-        }
         
+
+        public void Initialize(BlobCacheSupportData supportData)
+        {
+            SupportData = supportData;
+        }
 
         public Task<IResult<IBlobWrapper, IBlobCacheFetchFailure>> CacheFetch(IBlobCacheRequest request, CancellationToken cancellationToken = default)
         {

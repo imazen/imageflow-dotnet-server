@@ -144,8 +144,8 @@ namespace Imageflow.Server.Storage.AzureBlob.Caching
             }
             try
             {
-                using var consumable = await e.Result.Unwrap().CreateConsumable(e.BlobFactory, cancellationToken);
-                using var data = consumable.BorrowStream(DisposalPromise.CallerDisposesBlobOnly);
+                using var consumable = await e.Result.Unwrap().GetConsumablePromise().IntoConsumableBlob();
+                using var data = consumable.BorrowStream(DisposalPromise.CallerDisposesStreamThenBlob);
                 await blob.UploadAsync(data, cancellationToken);
                 return CodeResult.Ok();
             }
@@ -158,7 +158,11 @@ namespace Imageflow.Server.Storage.AzureBlob.Caching
         }
 
 
-       
+        public void Initialize(BlobCacheSupportData supportData)
+        {
+            
+        }
+
         public async Task<IResult<IBlobWrapper, IBlobCacheFetchFailure>> CacheFetch(IBlobCacheRequest request, CancellationToken cancellationToken = default)
         {
             var group = request.BlobCategory;

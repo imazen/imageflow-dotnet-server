@@ -69,7 +69,7 @@ namespace Imageflow.Server.Tests
         [Fact]
         public async void TestNoLicense()
         {
-            using (var contentRoot = new TempContentRoot()
+            using (var contentRoot = new TempContentRoot(output)
                 .AddResource("images/fire.jpg", "TestFiles.fire-umbrella-small.jpg"))
             {
 
@@ -117,7 +117,7 @@ namespace Imageflow.Server.Tests
         [Fact]
         public async void TestAGPL()
         {
-            using (var contentRoot = new TempContentRoot()
+            using (var contentRoot = new TempContentRoot(output)
                 .AddResource("images/fire.jpg", "TestFiles.fire-umbrella-small.jpg"))
             {
 
@@ -156,7 +156,7 @@ namespace Imageflow.Server.Tests
             {
                 return; // Skip this test on CI, it's unpredictably permissive
             }
-            using (var contentRoot = new TempContentRoot()
+            using (var contentRoot = new TempContentRoot(output)
                 .AddResource("images/fire.jpg", "TestFiles.fire-umbrella-small.jpg"))
             {
 
@@ -225,7 +225,7 @@ namespace Imageflow.Server.Tests
         [Fact]
         public async void TestSiteLicense()
         {
-            using (var contentRoot = new TempContentRoot()
+            using (var contentRoot = new TempContentRoot(output)
                 .AddResource("images/fire.jpg", "TestFiles.fire-umbrella-small.jpg"))
             {
 
@@ -292,7 +292,7 @@ namespace Imageflow.Server.Tests
             var isCi = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("CI"));
             if (isCi) return;
             
-            using (var contentRoot = new TempContentRoot()
+            using (var contentRoot = new TempContentRoot(output)
                 .AddResource("images/fire.jpg", "TestFiles.fire-umbrella-small.jpg"))
             {
                 

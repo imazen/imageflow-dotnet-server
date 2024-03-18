@@ -38,7 +38,6 @@ Imageflow.Server.SignatureRequired.ForQuerystringRequests = 1 -> Imageflow.Serve
 Imageflow.Server.SignatureRequired.Never = 2 -> Imageflow.Server.SignatureRequired
 Imageflow.Server.UrlEventArgs
 Imageflow.Server.WatermarkingEventArgs
-~Imageflow.Server.ImageflowMiddleware.ImageflowMiddleware(Microsoft.AspNetCore.Http.RequestDelegate next, Microsoft.AspNetCore.Hosting.IWebHostEnvironment env, System.Collections.Generic.IEnumerable<Microsoft.Extensions.Logging.ILogger<Imageflow.Server.ImageflowMiddleware>> logger, System.Collections.Generic.IEnumerable<Imazen.Common.Extensibility.ClassicDiskCache.IClassicDiskCache> diskCaches, System.Collections.Generic.IEnumerable<Imazen.Common.Extensibility.StreamCache.IStreamCache> streamCaches, System.Collections.Generic.IEnumerable<Imazen.Common.Storage.IBlobProvider> blobProviders, Imageflow.Server.ImageflowMiddlewareOptions options) -> void
 ~Imageflow.Server.ImageflowMiddleware.Invoke(Microsoft.AspNetCore.Http.HttpContext context) -> System.Threading.Tasks.Task
 ~Imageflow.Server.ImageflowMiddlewareOptions.AddCommandDefault(string key, string value) -> Imageflow.Server.ImageflowMiddlewareOptions
 ~Imageflow.Server.ImageflowMiddlewareOptions.AddPostRewriteAuthorizationHandler(string pathPrefix, System.Func<Imageflow.Server.UrlEventArgs, bool> handler) -> Imageflow.Server.ImageflowMiddlewareOptions

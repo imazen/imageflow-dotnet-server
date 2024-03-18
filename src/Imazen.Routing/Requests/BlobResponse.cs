@@ -21,8 +21,11 @@ public record class BlobResponse(CodeResult<IBlobWrapper> BlobResult) : IAdaptab
         }
         else
         {
-            using var blob = BlobResult.Value!.MakeOrTakeConsumable();
-            await target.WriteBlobWrapperBody(blob, cancellationToken);
+            using (var wrapper = BlobResult.Value!)
+            {
+                using var consumable = await wrapper.GetConsumablePromise().IntoConsumableBlob();
+                await target.WriteBlobWrapperBody(consumable, cancellationToken);
+            }
         }
         
     }

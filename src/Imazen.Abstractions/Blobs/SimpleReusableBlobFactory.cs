@@ -11,8 +11,7 @@ namespace Imazen.Abstractions.Blobs;
 /// </summary>
 public interface IReusableBlobFactory : IDisposable
 {
-    ValueTask<IReusableBlob> ConsumeAndCreateReusableCopy(IConsumableBlob consumableBlob,
-        CancellationToken cancellationToken = default);
+ 
 }
 /// <summary>
 /// This could utilize different backing stores such as a memory pool, releasing blobs to the pool when they (and all their created streams)
@@ -37,7 +36,7 @@ public class SimpleReusableBlobFactory: IReusableBlobFactory
             var byteArray = ms.ToArray();
             var arraySegment = new ArraySegment<byte>(byteArray);
             sw.Stop();
-            var reusable = new ReusableArraySegmentBlob(arraySegment, consumableBlob.Attributes, sw.Elapsed);
+            var reusable = new MemoryBlob(arraySegment, consumableBlob.Attributes, sw.Elapsed);
             return reusable;
         }
     }

@@ -1,5 +1,8 @@
 using System.Reflection;
+using Imazen.Abstractions.Blobs;
+using Imazen.Abstractions.Logging;
 using Microsoft.Extensions.FileProviders;
+using Xunit.Abstractions;
 
 namespace Imageflow.Server.Tests
 {
@@ -7,11 +10,14 @@ namespace Imageflow.Server.Tests
     internal class TempContentRoot: IDisposable
     {
         public string PhysicalPath { get; }
+        
+        private ITestOutputHelper? outputHelper;
 
-        public TempContentRoot()
+        public TempContentRoot(ITestOutputHelper outputHelper)
         {
             PhysicalPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString().ToLowerInvariant());
             Directory.CreateDirectory(PhysicalPath);
+            this.outputHelper = outputHelper;
         }
 
         public byte[] GetResourceBytes(string resourceName)
@@ -35,7 +41,22 @@ namespace Imageflow.Server.Tests
 
         public void Dispose()
         {
-            Directory.Delete(PhysicalPath, true);
+            try
+            {
+                // Sleep 1s
+                Directory.Delete(PhysicalPath, true);
+            }
+            catch (IOException e)
+            {
+                outputHelper?.WriteLine("Non-disposed StreamBlob instances: ");
+                outputHelper?.WriteLine(StreamBlob.DebugInstances());
+                
+                
+                outputHelper?.WriteLine($"Failed to delete directory {PhysicalPath}");
+                outputHelper?.WriteLine(e.ToString());
+                // Add data about directory
+                throw new IOException($"Failed to delete directory {PhysicalPath} due to: {e.Message}", e);
+            }
         }
         
         public static byte[] ReadToEnd(System.IO.Stream stream)

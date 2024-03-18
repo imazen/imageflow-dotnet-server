@@ -221,9 +221,12 @@
       "imazen.abstractions": {
         "type": "Project",
         "dependencies": {
+          "CommunityToolkit.HighPerformance": "[8.*, )",
           "Microsoft.Bcl.AsyncInterfaces": "[6.*, )",
           "Microsoft.Extensions.Hosting.Abstractions": "[2.*, )",
           "System.Buffers": "[4.*, )",
+          "System.Collections.Immutable": "[6.*, )",
+          "System.IO.Pipelines": "[6.*, )",
           "System.Memory": "[4.*, )",
           "System.Text.Encodings.Web": "[6.*, )",
           "System.Threading.Tasks.Extensions": "[4.*, )"
@@ -382,7 +385,9 @@
       "imazen.abstractions": {
         "type": "Project",
         "dependencies": {
+          "CommunityToolkit.HighPerformance": "[8.*, )",
           "Microsoft.Extensions.Hosting.Abstractions": "[2.*, )",
+          "System.Collections.Immutable": "[6.*, )",
           "System.Text.Encodings.Web": "[6.*, )"
         }
       },
@@ -413,9 +418,9 @@
       },
       "Microsoft.NET.ILLink.Tasks": {
         "type": "Direct",
-        "requested": "[8.0.2, )",
-        "resolved": "8.0.2",
-        "contentHash": "hKTrehpfVzOhAz0mreaTAZgbz0DrMEbWq4n3hAo8Ks6WdxdqQhNPvzOqn9VygKuWf1bmxPdraqzTaXriO/sn0A=="
+        "requested": "[8.0.3, )",
+        "resolved": "8.0.3",
+        "contentHash": "0kwNg0LBIvVTx9A2mo9Mnw4wLGtaeQgjSz5P13bOOwdWPPLe9HzI+XTkwiMhS7iQCM6X4LAbFR76xScaMw0MrA=="
       },
       "Microsoft.SourceLink.GitHub": {
         "type": "Direct",
@@ -545,7 +550,9 @@
       "imazen.abstractions": {
         "type": "Project",
         "dependencies": {
+          "CommunityToolkit.HighPerformance": "[8.*, )",
           "Microsoft.Extensions.Hosting.Abstractions": "[2.*, )",
+          "System.Collections.Immutable": "[6.*, )",
           "System.Text.Encodings.Web": "[6.*, )"
         }
       },

@@ -8,7 +8,7 @@ namespace Imageflow.Server.Storage.S3
 {
     internal static class S3BlobHelpers
     {
-        public static ConsumableStreamBlob CreateS3Blob(GetObjectResponse r)
+        public static StreamBlob CreateS3Blob(GetObjectResponse r)
         {
             if (r.HttpStatusCode != System.Net.HttpStatusCode.OK)
             {
@@ -28,7 +28,7 @@ namespace Imageflow.Server.Storage.S3
                 EstimatedExpiry = r.Expiration?.ExpiryDateUtc,
                 BlobStorageReference = new S3BlobStorageReference(r.BucketName, r.Key)
             };
-            return new ConsumableStreamBlob(a, r.ResponseStream, r);
+            return new StreamBlob(a, r.ResponseStream, r);
         }
     }
 }

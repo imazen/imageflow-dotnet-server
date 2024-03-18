@@ -99,11 +99,6 @@ namespace Imazen.HybridCache
         // private BoundedTaskCollection<BlobTaskItem> CurrentWrites {get; }
 
 
-        public Task AwaitEnqueuedTasks()
-        {
-            //return CurrentWrites.AwaitAllCurrentTasks();
-            return Task.CompletedTask;
-        }
 
         private static bool IsFileLocked(IOException exception)
         {
@@ -492,6 +487,11 @@ namespace Imazen.HybridCache
         //
         //
 
+        private BlobCacheSupportData SupportData { get; set; }
+        public void Initialize(BlobCacheSupportData supportData)
+        {
+            SupportData = supportData;
+        }
 
         public async Task<IResult<IBlobWrapper, IBlobCacheFetchFailure>> CacheFetch(IBlobCacheRequest request,
             CancellationToken cancellationToken = default)
@@ -524,7 +524,7 @@ namespace Imazen.HybridCache
             if (cancellationToken.IsCancellationRequested)
                 throw new OperationCanceledException(cancellationToken);
             if (e.Result == null) throw new InvalidOperationException("Result is null");
-            using var blob = await e.Result.Unwrap().CreateConsumable(e.BlobFactory, cancellationToken);
+            using var blob = await e.Result.Unwrap().GetConsumablePromise().IntoConsumableBlob();
             if (blob == null) throw new InvalidOperationException("Blob is null");
             var record = new CacheDatabaseRecord
             {
@@ -752,7 +752,7 @@ namespace Imazen.HybridCache
                 string entryRelativePath, HashBasedPathBuilder interpreter,
                 FileStream stream, LatencyTrackingZone latencyZone, IBlobCache notifyOfResult, IBlobCache notifyOfExternalHit)
             {
-                var blob = new ConsumableStreamBlob(new BlobAttributes()
+                var blob = new StreamBlob(new BlobAttributes()
                 {
                     ContentType = record?.ContentType,
                     Etag = record?.RelativePath,

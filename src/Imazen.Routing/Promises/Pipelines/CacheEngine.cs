@@ -122,7 +122,8 @@ public class CacheEngine: IBlobPromisePipeline
                     continue;
                 }
                 // If there's another group, it might be relevant
-                EnqueueSaveToCaches(cacheRequest, ref blobWrapper,false, parallelGroup[0], allFetchAttempts);
+                await BufferAndEnqueueSaveToCaches(cacheRequest, blobWrapper, false, parallelGroup[0],
+                    allFetchAttempts, default);
                 return CodeResult<IBlobWrapper>.Ok(blobWrapper);
             }
             else
@@ -161,7 +162,7 @@ public class CacheEngine: IBlobPromisePipeline
                 // if we have a success, return it
                 if (firstSuccess != null && firstSuccess.TryUnwrap(out var blobWrapper))
                 {
-                    EnqueueSaveToCaches(cacheRequest, ref blobWrapper, false, null, allFetchAttempts);
+                    await BufferAndEnqueueSaveToCaches(cacheRequest, blobWrapper, false, null, allFetchAttempts, default);
                     return CodeResult<IBlobWrapper>.Ok(blobWrapper);
                 }
             }
@@ -170,7 +171,7 @@ public class CacheEngine: IBlobPromisePipeline
         var freshResult = await promise.TryGetBlobAsync(promise.FinalRequest, router, this, cancellationToken);
         if (freshResult.IsError) return freshResult;
         var blob = freshResult.Unwrap();
-        EnqueueSaveToCaches(cacheRequest, ref blob,true, null, allFetchAttempts);
+        await BufferAndEnqueueSaveToCaches(cacheRequest, blob,true, null, allFetchAttempts,default);
         return CodeResult<IBlobWrapper>.Ok(blob);
     }
     
@@ -257,14 +258,19 @@ public class CacheEngine: IBlobPromisePipeline
     /// <param name="cacheHit"></param>
     /// <param name="fetchTasks"></param>
     /// <returns></returns>
-    protected List<IBlobCache>? GetUploadCacheCandidates(bool isFresh,
+    private List<IBlobCache>? GetUploadCacheCandidates(bool isFresh,
         ref IBlobCache? cacheHit, List<KeyValuePair<IBlobCache, Task<CacheFetchResult>>>? fetchTasks)
     {
         if (Log.IsEnabled(LogLevel.Trace))
         {
             LogFetchTaskStatus(isFresh, cacheHit, fetchTasks);
         }
-        
+
+        if (Options.UploadQueue == null)
+        {
+            Log.LogWarning("No upload queue configured");
+            return null;
+        }
         
         // Create the list of caches to save to. If cancelled before completion, we default to notifying it. Otherwise, we only upload to caches that resulted with a fetch failure.
         List<IBlobCache>? cachesToSaveTo = null; 
@@ -296,34 +302,49 @@ public class CacheEngine: IBlobPromisePipeline
             }
         }
 
-        if (Options.Logger.IsEnabled(LogLevel.Debug))
+    
+        // list the unique names of all caches we're saving to
+        if (cachesToSaveTo == null)
         {
-            // list the unique names of all caches we're saving to
-            if (cachesToSaveTo == null)
+            if (Options.SaveToCaches.Count == 0)
             {
-                Log.LogDebug("Uploading to 0 caches");
+                Log.LogWarning("No caches configured for saving to");
             }
             else
             {
-                Log.LogDebug("Uploading to {Count} caches: {CacheNames}", cachesToSaveTo.Count, cachesToSaveTo.Select(x => x.UniqueName));
+                Log.LogTrace("None of the caches are candidates for saving to");
             }
         }
-        
+
         return cachesToSaveTo;
     }
     
     private IReLogger Log => Options.Logger;
     
-    private void EnqueueSaveToCaches(IBlobCacheRequest cacheRequest, ref IBlobWrapper blob, bool isFresh,
+        
+
+    private async Task BufferAndEnqueueSaveToCaches(IBlobCacheRequest cacheRequest, IBlobWrapper blob, bool isFresh,
+        IBlobCache? cacheHit, List<KeyValuePair<IBlobCache, Task<CacheFetchResult>>>? fetchTasks, CancellationToken bufferCancellationToken = default)
+    {
+        if (EnqueueSaveToCaches(cacheRequest, blob, isFresh, cacheHit, fetchTasks))
+        {
+            await blob.EnsureReusable(bufferCancellationToken);
+            Log.LogTrace("Called EnsureReusable on {CacheKeyHashString}", cacheRequest.CacheKeyHashString);
+        }
+    }
+    
+    private bool EnqueueSaveToCaches(IBlobCacheRequest cacheRequest, IBlobWrapper mainBlob, bool isFresh,
             IBlobCache? cacheHit, List<KeyValuePair<IBlobCache,Task<CacheFetchResult>>>? fetchTasks)
     {
-        // if (Options.UploadQueue == null) return;
         
         var cachesToSaveTo = GetUploadCacheCandidates(isFresh, ref cacheHit, fetchTasks);
         
-        if (cachesToSaveTo == null || Options.UploadQueue == null) return; // Nothing to do
-        if (!blob.IsNativelyReusable) throw new InvalidOperationException("Blob must be natively reusable");
-
+        if (cachesToSaveTo == null || Options.UploadQueue == null) return false; // Nothing to do
+        
+        var blob = mainBlob.ForkReference();
+        mainBlob.IndicateInterest();
+        //if (!blob.IsReusable) throw new InvalidOperationException("Blob must be natively reusable");
+        
         CacheEventDetails? eventDetails = null;
         if (isFresh)
         {
@@ -339,34 +360,80 @@ public class CacheEngine: IBlobPromisePipeline
             throw new InvalidOperationException();
         }
         
-        Options.UploadQueue.Queue(new BlobTaskItem(cacheRequest.CacheKeyHashString,blob), async (taskItem, cancellationToken) =>
+ 
+        var enqueueResult = Options.UploadQueue.Queue(new BlobTaskItem(cacheRequest.CacheKeyHashString,blob), async (taskItem, cancellationToken) =>
         {
-            var tasks = cachesToSaveTo.Select(async cache => {
-                    var sw = Stopwatch.StartNew();
-                    try
+            // We need to dispose of the blob wrapper after all uploads are complete.
+            using (taskItem.Blob)
+            {
+                var tasks = cachesToSaveTo.Select(async cache =>
                     {
+                        var waitingInQueue = DateTime.UtcNow - taskItem.JobCreatedAt;
 
-                        var result = await cache.CachePut(eventDetails, cancellationToken);
-                        sw.Stop();
-                        return new PutResult(cache, eventDetails, result, null, sw.ElapsedMilliseconds);
+                        var sw = Stopwatch.StartNew();
+                        try
+                        {
+                            Log.LogTrace("[put started] CachePut {key} to {CacheName}", taskItem.UniqueKey,
+                                cache.UniqueName);
+                            var result = await cache.CachePut(eventDetails, cancellationToken);
+                            sw.Stop();
+                            var r = new PutResult(cache, eventDetails, result, null, sw.Elapsed, waitingInQueue);
+                            LogPutResult(r);
+                            return r;
+                        }
+                        catch (Exception e)
+                        {
+                            sw.Stop();
+                            var r = new PutResult(cache, eventDetails, null, e, sw.Elapsed, waitingInQueue);
+                            LogPutResult(r);
+                            return r;
+                        }
                     }
-                    catch (Exception e)
-                    {
-                        sw.Stop();
-                        return new PutResult(cache, eventDetails, null, e, sw.ElapsedMilliseconds);
-                    }
-                }
-            ).ToArray();
-            HandleUploadAnswers(await Task.WhenAll(tasks));
+                ).ToArray();
+                HandleUploadAnswers(await Task.WhenAll(tasks));
+            }
         });
+        if (enqueueResult == TaskEnqueueResult.QueueFull)
+        {
+            Log.LogWarning("[CACHE PUT ERROR] Upload queue is full, not enqueuing {CacheKeyHashString} for upload to {Caches}", cacheRequest.CacheKeyHashString, string.Join(", ", cachesToSaveTo.Select(x => x.UniqueName)));
+        }
+        if (enqueueResult == TaskEnqueueResult.AlreadyPresent)
+        {
+            Log.LogWarning("Upload queue already contains {CacheKeyHashString}", cacheRequest.CacheKeyHashString);
+        }
+        if (enqueueResult == TaskEnqueueResult.Stopped)
+        {
+            Log.LogWarning("Upload queue is stopped, not enqueuing {CacheKeyHashString} for upload to {Caches}", cacheRequest.CacheKeyHashString, string.Join(", ", cachesToSaveTo.Select(x => x.UniqueName)));
+        }
+        if (enqueueResult == TaskEnqueueResult.Enqueued && Log.IsEnabled(LogLevel.Trace))
+        {
+            Log.LogTrace("Enqueued {CacheKeyHashString} for upload to {Caches}", cacheRequest.CacheKeyHashString, string.Join(", ", cachesToSaveTo.Select(x => x.UniqueName)));
+        }
+        return enqueueResult == TaskEnqueueResult.Enqueued;
     }
-    record struct PutResult(IBlobCache Cache, CacheEventDetails EventDetails, CodeResult? Result, Exception? Exception, long DurationMs);
+    record struct PutResult(IBlobCache Cache, CacheEventDetails EventDetails, CodeResult? Result, Exception? Exception, TimeSpan Executing, TimeSpan Waiting);
 
+    private void LogPutResult(PutResult result)
+    {
+        var key = result.EventDetails.OriginalRequest.CacheKeyHashString;
+        if (result.Result == null)
+        {
+            Log.LogError(result.Exception, "[PUT EXCEPTION] Error CachePut {key} to {CacheName} (ran for {DurationMs}ms, waited in queue for {WaitMs}ms)", key, result.Cache.UniqueName, result.Executing.TotalMilliseconds, result.Waiting.TotalMilliseconds); 
+        }
+        else if (result.Result.IsError)
+        {
+            Log.LogError("[PUT ERROR] Error CachePut {key} to {CacheName} (ran for {DurationMs}ms, waited in queue for {WaitMs}ms): {Error}", key, result.Cache.UniqueName, result.Executing.TotalMilliseconds, result.Waiting.TotalMilliseconds, result.Result);
+        }
+        else
+        {
+            Log.LogDebug("[PUT] Uploaded {key} to {CacheName} (ran for {DurationMs}ms, waited in queue for {WaitMs}ms)", key, result.Cache.UniqueName, result.Executing.TotalMilliseconds, result.Waiting.TotalMilliseconds);
+        }
+    }
+    
     private void HandleUploadAnswers(PutResult[] results)
     {
         //TODO? 
-// 1. If any cache failed, log it
-
+        
     }
 
 

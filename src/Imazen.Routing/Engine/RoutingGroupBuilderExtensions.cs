@@ -1,6 +1,6 @@
 namespace Imazen.Routing.Engine;
 
-public static class RoutingGroupBuilderExtensions
+internal static class RoutingGroupBuilderExtensions
 {
   
 }

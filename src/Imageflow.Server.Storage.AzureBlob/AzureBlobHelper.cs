@@ -8,7 +8,7 @@ namespace Imageflow.Server.Storage.AzureBlob
 {
     internal static class AzureBlobHelper
     {
-        internal static IConsumableBlob CreateConsumableBlob(AzureBlobStorageReference reference, BlobDownloadStreamingResult r)
+        internal static StreamBlob CreateConsumableBlob(AzureBlobStorageReference reference, BlobDownloadStreamingResult r)
         {
             // metadata starting with t_ is a tag
 
@@ -22,7 +22,7 @@ namespace Imageflow.Server.Storage.AzureBlob
                 StorageTags = r.Details.Metadata.Where(kvp => kvp.Key.StartsWith("t_"))
                     .Select(kvp => SearchableBlobTag.CreateUnvalidated(kvp.Key.Substring(2), kvp.Value)).ToList()
             };
-            return new ConsumableStreamBlob(attributes, r.Content, r);
+            return new StreamBlob(attributes, r.Content, r);
         }
     }
 }

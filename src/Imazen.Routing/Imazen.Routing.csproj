@@ -18,12 +18,17 @@
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="CommunityToolkit.HighPerformance" Version="8.*" />
+
         <PackageReference Include="Imageflow.Net" Version="0.13.0" />
         <PackageReference Include="System.Collections.Immutable" Version="6.*" />
-        
+        <PackageReference Include="CommunityToolkit.HighPerformance" Version="8.*" />
         <PackageReference Include="System.IO.Pipelines" Version="6.*" />
 
         <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.*" Condition="'$(TargetFramework)' == 'netstandard2.0'" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Compile Remove="Unused\LegacyStreamCacheAdapter.cs" />
+      <Compile Remove="Unused\ExistenceProbableMap.cs" />
     </ItemGroup>
 </Project>

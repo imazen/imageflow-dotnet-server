@@ -171,7 +171,7 @@ internal record BlobProviderPromise(IRequestSnapshot FinalRequest, String Virtua
             LastModifiedDateUtc = blobData.LastModifiedDateUtc,
         };
         var stream = blobData.OpenRead();
-        return CodeResult<IBlobWrapper>.Ok(new BlobWrapper(LatencyZone, new ConsumableStreamBlob(attrs, stream, blobData)));
+        return CodeResult<IBlobWrapper>.Ok(new BlobWrapper(LatencyZone, new StreamBlob(attrs, stream, blobData)));
     }
 }
 

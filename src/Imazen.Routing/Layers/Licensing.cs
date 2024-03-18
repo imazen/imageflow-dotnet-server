@@ -60,7 +60,7 @@ internal class Licensing : ILicenseConfig, ILicenseChecker, IHasDiagnosticPageSe
 
     public IEnumerable<string> GetLicenses()
     {
-        return !string.IsNullOrEmpty(options?.LicenseKey) ? Enumerable.Repeat(options!.LicenseKey, 1) : Enumerable.Empty<string>();
+        return !string.IsNullOrEmpty(options?.LicenseKey) ? Enumerable.Repeat(options!.LicenseKey!, 1) : Enumerable.Empty<string>();
     }
 
     public LicenseAccess LicenseScope => LicenseAccess.Local;

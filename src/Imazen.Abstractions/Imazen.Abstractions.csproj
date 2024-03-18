@@ -10,6 +10,9 @@
 
         <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="2.*" />
         <PackageReference Include="System.Text.Encodings.Web" Version="6.*" />
+        <PackageReference Include="System.Collections.Immutable" Version="6.*" />
+        <PackageReference Include="CommunityToolkit.HighPerformance" Version="8.*" />
+        <PackageReference Include="System.IO.Pipelines" Version="6.*" Condition="'$(TargetFramework)' == 'netstandard2.0'"  />
         
         <PackageReference Include="PolySharp" Version="1.*">
             <PrivateAssets>all</PrivateAssets>

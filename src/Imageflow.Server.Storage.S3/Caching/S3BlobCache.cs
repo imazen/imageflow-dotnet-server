@@ -90,7 +90,7 @@ namespace Imageflow.Server.Storage.S3.Caching
         {
             if (e.Result == null) throw new ArgumentNullException(nameof(e), "CachePut requires a non-null eventDetails.Result");
             // Create a consumable copy (we assume all puts require usability)
-            using var input = await e.Result.Unwrap().CreateConsumable(e.BlobFactory, cancellationToken);
+            using var input = await e.Result.Unwrap().GetConsumablePromise().IntoConsumableBlob();
             // First make sure everything is in order, bucket exists, lifecycle is set, etc.
             await lifecycleUpdater.UpdateIfIncompleteAsync();
             
@@ -157,6 +157,11 @@ namespace Imageflow.Server.Storage.S3.Caching
                 return normalizedCode.WithAddFrom($"S3 {action} {bucket}/{key} error code {se.ErrorCode} exception {se.Message}");
             }
             return null;
+        }
+
+        public void Initialize(BlobCacheSupportData supportData)
+        {
+            
         }
 
         public async Task<BlobFetchResult> CacheFetch(IBlobCacheRequest request, CancellationToken cancellationToken = default)

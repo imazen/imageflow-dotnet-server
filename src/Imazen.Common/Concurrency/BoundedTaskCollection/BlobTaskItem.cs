@@ -16,16 +16,18 @@ namespace Imazen.Common.Concurrency.BoundedTaskCollection {
         /// <param name="data"></param>
         /// <exception cref="ArgumentException"></exception>
         public BlobTaskItem(string key, IBlobWrapper data) {
-            if (!data.IsNativelyReusable) throw new System.ArgumentException("Blob must be natively reusable", nameof(data));
+            //if (!data.IsReusable) throw new System.ArgumentException("Blob must be natively reusable", nameof(data));
+            data.IndicateInterest();
             this.data = data;
             UniqueKey = key;
             JobCreatedAt = DateTime.UtcNow;
+            estimateAllocatedBytes = data.EstimateAllocatedBytes ?? 0;
         }
         private readonly IBlobWrapper data;
         
         public IBlobWrapper Blob => data;
         
-
+        private readonly long estimateAllocatedBytes;
         private Task? RunningTask { get; set; }
         public void StoreStartedTask(Task task)
         {
@@ -51,7 +53,7 @@ namespace Imazen.Common.Concurrency.BoundedTaskCollection {
         /// <returns></returns>
         public long GetTaskSizeInMemory()
         {
-            return (data.EstimateAllocatedBytes ?? 0) + 100;
+            return estimateAllocatedBytes + 100;
         }
         
     }

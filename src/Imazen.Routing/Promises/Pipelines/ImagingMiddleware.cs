@@ -180,13 +180,20 @@ internal record ImagingPromise : ICacheableBlobPromise
         if (Dependencies == null) throw new InvalidOperationException("Dependencies must be routed first");
         
         var toDispose = new List<IDisposable>(Dependencies.Count);
+        
         try{
             // fetch all dependencies in parallel, but avoid allocating if there's only one.
-            List<CodeResult<IBlobWrapper>> dependencyResults = new List<CodeResult<IBlobWrapper>>(Dependencies.Count);
+            List<CodeResult<IConsumableMemoryBlob>> dependencyResults = new List<CodeResult<IConsumableMemoryBlob>>(Dependencies.Count);
             if (Dependencies.Count == 1)
             {
-                var fetch1 = await Dependencies[0]
-                    .TryGetBlobAsync(Dependencies[0].FinalRequest, router, pipeline, cancellationToken)
+                var fetch1 = await (await Dependencies[0]
+                    .TryGetBlobAsync(Dependencies[0].FinalRequest, router, pipeline, cancellationToken))
+                    .MapOkAsync(async wrapper =>
+                    {
+                        var mem = await wrapper.GetConsumableMemoryPromise().IntoConsumableMemoryBlob();
+                        wrapper.Dispose();
+                        return mem;
+                    })
                     .ConfigureAwait(false);
                 dependencyResults.Add(fetch1);
                 if (fetch1.TryUnwrap(out var unwrapped))
@@ -197,11 +204,22 @@ internal record ImagingPromise : ICacheableBlobPromise
             else
             {
                 // TODO: work on exception bubbling
-                var fetchTasks = new Task<CodeResult<IBlobWrapper>>[Dependencies.Count];
+                var fetchTasks = new Task<CodeResult<IConsumableMemoryBlob>>[Dependencies.Count];
                 for (var i = 0; i < Dependencies.Count; i++)
                 {
-                    fetchTasks[i] = Dependencies[i]
-                        .TryGetBlobAsync(Dependencies[i].FinalRequest, router, pipeline, cancellationToken).AsTask();
+                    var dep = Dependencies[i];
+                    // TODO: fix
+                    fetchTasks[i] = Task.Run(async () =>
+                    {
+                        var result = await dep.TryGetBlobAsync(dep.FinalRequest, router, pipeline, cancellationToken);
+                        var finalResult = await result.MapOkAsync(async wrapper =>
+                        {
+                            var mem = await wrapper.GetConsumableMemoryPromise().IntoConsumableMemoryBlob();
+                            wrapper.Dispose();
+                            return mem;
+                        });
+                        return finalResult;
+                    });
                 }
 
                 try
@@ -232,23 +250,12 @@ internal record ImagingPromise : ICacheableBlobPromise
             var byteSources = new List<IAsyncMemorySource>(dependencyResults.Count);
             foreach (var result in dependencyResults)
             {
+      
                 // TODO: aggregate them!
                 // and maybe specify it was a watermark or a source image
                 if (result.TryUnwrap(out var unwrapped))
                 {
-                    var consumable = unwrapped.MakeOrTakeConsumable();
-                    toDispose.Add(consumable); // Dispose the consumable
-                    if (consumable is IConsumableMemoryBlob memoryBlob)
-                    {
-                        byteSources.Add(MemorySource.Borrow(memoryBlob.BorrowMemory, MemoryLifetimePromise.MemoryValidUntilAfterJobDisposed));
-                    }
-                    else
-                    {
-                        var bufferedSource =
-                            BufferedStreamSource.BorrowEntireStream(
-                                consumable.BorrowStream(DisposalPromise.CallerDisposesBlobOnly));
-                        byteSources.Add(bufferedSource);
-                    }
+                    byteSources.Add(MemorySource.Borrow(unwrapped.BorrowMemory, MemoryLifetimePromise.MemoryValidUntilAfterJobDisposed));
                 }
                 else
                 {
@@ -280,7 +287,8 @@ internal record ImagingPromise : ICacheableBlobPromise
                 .Finish()
                 .SetSecurityOptions(Options.JobSecurityOptions)
                 .InProcessAsync();
-
+            
+            // remove all 
 
             // TODO: restore instrumentation
             // GlobalPerf.Singleton.JobComplete(new ImageJobInstrumentation(jobResult)
@@ -305,8 +313,11 @@ internal record ImagingPromise : ICacheableBlobPromise
                 BlobByteCount = resultBytes.Value.Count
             };
             sw.Stop();
-            var reusable = new ReusableArraySegmentBlob(resultBytes.Value, attrs, sw.Elapsed);
-            return CodeResult<IBlobWrapper>.Ok(new BlobWrapper(LatencyZone, reusable));
+            var reusable = new MemoryBlob(resultBytes.Value, attrs, sw.Elapsed);
+            
+            
+            var processedResult =  CodeResult<IBlobWrapper>.Ok(new BlobWrapper(LatencyZone, reusable));
+            return processedResult;
         }
         finally
         {
