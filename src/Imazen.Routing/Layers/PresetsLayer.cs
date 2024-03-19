@@ -58,7 +58,7 @@ public record PresetsLayerOptions
 public class PresetsLayer(PresetsLayerOptions options) : IRoutingLayer
 {
     public string Name => "Presets";
-    public IFastCond? FastPreconditions { get; } = Conditions.HasQueryStringKey("preset");
+    public IFastCond? FastPreconditions { get; } = null; // So UsePresetsExclusively can be enforced, no precondition. Conditions.HasQueryStringKey("preset");
 
     public ValueTask<CodeResult<IRoutingEndpoint>?> ApplyRouting(MutableRequest request, CancellationToken cancellationToken = default)
     {
