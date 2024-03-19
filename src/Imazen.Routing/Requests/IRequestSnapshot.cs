@@ -77,8 +77,25 @@ public record RequestSnapshot(bool MutationsComplete) : IRequestSnapshot{
     public void WriteCacheKeyBasisPairsTo(IBufferWriter<byte> writer)
     {
         if (!MutationsComplete) throw new InvalidOperationException("Mutations must be complete before writing cache key basis pairs");
+
+        // We must trust the layers to extract any vary-by data from OriginatingRequest (such as host, headers, etc) and put it in ExtractedData.
         
-        // TODO: write all pairs using memcasting and wtf16
+        //Storage tags aren't currently hashed.
+        
+        if (ParentRequest != null)
+        {
+            writer.WriteWtf16String("[CHILD REQUEST]"); // watermark images are subject to different authorization rules, and must be cached separately
+        }
+        
+        writer.WriteWtf16String("method=");
+        writer.WriteWtf16String(HttpMethod);
+        writer.WriteWtf16String("\npath=");
+        writer.WriteWtf16String(Path);
+        writer.WriteWtf16String("\nExtractedData=");
+        writer.WriteWtf16Dictionary(ExtractedData);
+        writer.WriteWtf16String("\nQueryString=");
+        writer.WriteWtf16Dictionary(QueryString);
+
     }
     
     public override string ToString()

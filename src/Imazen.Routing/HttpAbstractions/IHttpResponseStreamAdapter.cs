@@ -1,5 +1,6 @@
 using System.Buffers;
 using System.IO.Pipelines;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using Imazen.Abstractions.Blobs;
 using Imazen.Routing.Requests;
@@ -32,14 +33,42 @@ public interface IHttpResponseStreamAdapter
 
 public static class BufferWriterExtensions
 {
-    
 
-    
-    
-    
-    
-    public static void WriteWtf16String(this IBufferWriter<byte> writer, string str)
+
+
+    public static void WriteWtf16String(this IBufferWriter<byte> writer, StringValues stringValues, char delimiter = ',')
     {
+        switch (stringValues.Count)
+        {
+            case 0:
+                writer.WriteWtf16String("");
+                return;
+            case 1:
+                writer.WriteWtf16String(stringValues.ToString());
+                return;
+            case > 1:
+            {
+                var arr = stringValues.ToArray();
+                foreach (var str in arr)
+                {
+                    writer.WriteWtf16String(str);
+                    if (arr[^1] != str)
+                        writer.WriteWtf16Char(delimiter);
+                }
+
+                break;
+            }
+        }
+    }
+    
+    
+    public static void WriteWtf16String(this IBufferWriter<byte> writer, string? str)
+    {
+        if (str == null)
+        {
+            writer.WriteWtf16String("(null)");
+            return;
+        }
         var byteCount = str.Length * 2;
         var buffer = writer.GetSpan(byteCount);
         // marshal
@@ -117,27 +146,51 @@ public static class BufferWriterExtensions
         writer.Advance(4);
     }
     
+    public static void WriteWtf16Dictionary(this IBufferWriter<byte> writer, IDictionary<string, string>? dict)
+    {
+        if (dict == null)
+        {
+            writer.WriteWtf16String("(null)");
+            return;
+        }
+        //serialize into {key=value,key2=value2,} syntax
+        writer.WriteWtf16Char('{');
+        foreach (var pair in dict)
+        {
+            writer.WriteWtf16String(pair.Key);
+            writer.WriteWtf16Char('=');
+            writer.WriteWtf16String(pair.Value);
+            writer.WriteWtf16Char(',');
+        }
+    }
+    public static void WriteWtf16Dictionary(this IBufferWriter<byte> writer, IDictionary<string, StringValues>? dict)
+    {
+        if (dict == null)
+        {
+            writer.WriteWtf16String("(null)");
+            return;
+        }
+        //serialize into {key=value,key2=value2,} syntax
+        writer.WriteWtf16Char('{');
+        foreach (var pair in dict)
+        {
+            writer.WriteWtf16String(pair.Key);
+            writer.WriteWtf16Char('=');
+            writer.WriteWtf16String(pair.Value);
+            writer.WriteWtf16Char(',');
+        }
+    }
+    
     // Write IGetRequestSnapshot
     public static void WriteWtf16PathAndRouteValuesCacheKeyBasis(this IBufferWriter<byte> writer, IGetResourceSnapshot request)
     {
         //path = request.Path
         //route values = request.RouteValues
 
-        writer.WriteWtf16String("|path=");
+        writer.WriteWtf16String("\npath=");
         writer.WriteWtf16String(request.Path);
-        writer.WriteWtf16String("|\n|routeValues(");
-        writer.WriteWtf16Char((char)(request.ExtractedData?.Count ?? 0));
-        writer.WriteWtf16String(")|");
-        if (request.ExtractedData != null)
-        {
-            foreach (var pair in request.ExtractedData)
-            {
-                writer.WriteWtf16String(pair.Key);
-                writer.WriteWtf16String("=");
-                writer.WriteWtf16String(pair.Value);
-                writer.WriteWtf16String("|");
-            }
-        }
+        writer.WriteWtf16String("\nrouteValues=");
+        writer.WriteWtf16Dictionary(request.ExtractedData);
         
     }
     
@@ -207,7 +260,7 @@ public static class BufferWriterExtensions
     {
         if (b == null)
         {
-            WriteWtf16String(writer, "null");
+            WriteWtf16String(writer, "(null)");
             return;
         }
         WriteAsInMemory(writer, b.Value);
