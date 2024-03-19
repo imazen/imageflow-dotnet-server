@@ -4,9 +4,15 @@ using Imazen.Routing.Layers;
 
 namespace Imazen.Routing.Serving;
 
+public enum EnforceLicenseWith
+{
+    RedDotWatermark = 0,
+    Http422Error = 1,
+    Http402Error = 2
+}
 public interface ILicenseChecker
 {
-    bool RequestNeedsEnforcementAction(IHttpRequestStreamAdapter request);
+    EnforceLicenseWith? RequestNeedsEnforcementAction(IHttpRequestStreamAdapter request);
     
     string InvalidLicenseMessage { get; }
     string GetLicensePageContents();

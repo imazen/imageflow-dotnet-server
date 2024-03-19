@@ -4,9 +4,9 @@ using Imazen.Routing.Serving;
 
 namespace Imazen.Tests.Routing.Serving;
 
-public class MockLicenseChecker(Func<IHttpRequestStreamAdapter, bool> NeedsEnforcement, string LicenseMessage):ILicenseChecker
+public class MockLicenseChecker(Func<IHttpRequestStreamAdapter, EnforceLicenseWith?> NeedsEnforcement, string LicenseMessage):ILicenseChecker
 {
-    public bool RequestNeedsEnforcementAction(IHttpRequestStreamAdapter request)
+    public EnforceLicenseWith? RequestNeedsEnforcementAction(IHttpRequestStreamAdapter request)
     {
         return NeedsEnforcement(request);
     }
@@ -29,6 +29,6 @@ public class MockLicenseChecker(Func<IHttpRequestStreamAdapter, bool> NeedsEnfor
 
     public static MockLicenseChecker AlwaysOK()
     {
-        return new MockLicenseChecker(request => false, "OK");
+        return new MockLicenseChecker(request => null, "OK");
     }
 }

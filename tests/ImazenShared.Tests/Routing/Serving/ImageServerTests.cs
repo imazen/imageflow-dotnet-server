@@ -36,7 +36,7 @@ public class ImageServerTests
         container.Register<LicenseOptions>(() => new LicenseOptions
         {
             
-            CandidateCacheFolders = new string[]
+            ProcessWideCandidateCacheFoldersDefault = new string[]
             {
                 Path.GetTempPath() // Typical env.ContentRootPath as well
             }
@@ -52,6 +52,7 @@ public class ImageServerTests
     {
         return new ImageServer<MockRequestAdapter, MockResponseAdapter, TContext>(
             container,
+            container.GetRequiredService<ILicenseChecker>(),
             container.GetRequiredService<LicenseOptions>(),
             routingEngine,
             container.GetService<IPerformanceTracker>() ?? new NullPerformanceTracker(),

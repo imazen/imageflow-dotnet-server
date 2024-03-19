@@ -8,14 +8,17 @@ public class LicenseOptions{
     internal string? LicenseKey { get; set; } = "";
     internal string? MyOpenSourceProjectUrl { get; set; } = "";
         
-    internal string KeyPrefix { get; set; } = "imageflow_";
-    public required string[] CandidateCacheFolders { get; set; }
+    internal string ProcessWideKeyPrefixDefault { get; set; } = "imageflow_";
+    internal string[] ProcessWideCandidateCacheFoldersDefault { get; set; } = new[] { Path.GetTempPath() };
     internal EnforceLicenseWith EnforcementMethod { get; set; } = EnforceLicenseWith.RedDotWatermark;
         
 }
 internal class Licensing : ILicenseConfig, ILicenseChecker, IHasDiagnosticPageSection
 {
-        
+    private static LicenseManagerSingleton GetOrCreateLicenseManagerProcessSingleton(string keyPrefix, string[] candidateCacheFolders) 
+        => LicenseManagerSingleton.GetOrCreateSingleton(keyPrefix, candidateCacheFolders);
+    internal static Licensing CreateAndEnsureManagerSingletonCreated(LicenseOptions options)
+     => new Licensing(GetOrCreateLicenseManagerProcessSingleton(options.ProcessWideKeyPrefixDefault, options.ProcessWideCandidateCacheFoldersDefault));
     private readonly Func<Uri?>? getCurrentRequestUrl;
 
     private readonly LicenseManagerSingleton mgr;
@@ -140,10 +143,10 @@ internal class Licensing : ILicenseConfig, ILicenseChecker, IHasDiagnosticPageSe
     public string InvalidLicenseMessage =>
         "Imageflow cannot validate your license; visit /imageflow.debug or /imageflow.license to troubleshoot.";
 
-    public bool RequestNeedsEnforcementAction(IHttpRequestStreamAdapter request)
+    public EnforceLicenseWith? RequestNeedsEnforcementAction(IHttpRequestStreamAdapter request)
     {
         if (!EnforcementEnabled()) {
-            return false;
+            return null;
         }
             
         var requestUrl = getCurrentRequestUrl != null ? getCurrentRequestUrl() : 
@@ -151,14 +154,14 @@ internal class Licensing : ILicenseConfig, ILicenseChecker, IHasDiagnosticPageSe
 
         var isLicensed = Result.LicensedForRequestUrl(requestUrl);
         if (isLicensed) {
-            return false;
+            return null;
         }
 
         if (requestUrl == null && Result.LicensedForSomething()) {
-            return false;
+            return null;
         }
 
-        return true;
+        return options?.EnforcementMethod;
     }
 
 

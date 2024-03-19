@@ -242,7 +242,7 @@ namespace Imazen.Common.Tests.Licensing
             }
             var clock = new OffsetClock("2017-04-25", "2017-04-25");
             var mgr = new LicenseManagerSingleton(ImazenPublicKeys.Test, clock, new StringCacheMem());
-            Uri invokedUri = null;
+            Uri? invokedUri = null;
             var httpHandler = MockHttpHelpers.MockRemoteLicense(mgr, HttpStatusCode.OK, LicenseStrings.EliteSubscriptionRemote,
                 (r, c) => { invokedUri = r.RequestUri; });
             var conf = new MockConfig(mgr, clock, new []{"R_Elite"}, new List<KeyValuePair<string, string>>());
@@ -260,7 +260,7 @@ namespace Imazen.Common.Tests.Licensing
                 Mock.Verify(httpHandler);
                 Assert.StartsWith(
                     "https://s3.us-west-2.amazonaws.com/licenses.imazen.net/v1/licenses/latest/",
-                    invokedUri.ToString());
+                    invokedUri!.ToString());
 
 
                 Assert.NotNull(mgr.GetAllLicenses().First().FetchedLicense());

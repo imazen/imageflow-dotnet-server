@@ -61,13 +61,13 @@ internal class MiddlewareOptionsServerBuilder(
         {
             LicenseKey = options.LicenseKey,
             MyOpenSourceProjectUrl = options.MyOpenSourceProjectUrl,
-            KeyPrefix = "imageflow_",
-            CandidateCacheFolders = new[]
+            ProcessWideKeyPrefixDefault = "imageflow_",
+            ProcessWideCandidateCacheFoldersDefault = new[]
             {
                 env.ContentRootPath,
                 Path.GetTempPath()
             },
-            EnforcementMethod = (Imazen.Routing.Layers.EnforceLicenseWith)options.EnforcementMethod
+            EnforcementMethod = (Imazen.Routing.Serving.EnforceLicenseWith)options.EnforcementMethod
 
         };
         serverContainer.Register(licensingOptions);
@@ -113,9 +113,13 @@ internal class MiddlewareOptionsServerBuilder(
                 return list;
             });
         serverContainer.Register(watermarkingLogicOptions);
+        
+        
+        var licenseChecker = serverContainer.GetService<ILicenseChecker>() ??
+                             Licensing.CreateAndEnsureManagerSingletonCreated(licensingOptions);
 
         var routingBuilder = new RoutingBuilder();
-        var router = CreateRoutes(routingBuilder,mappedPaths, options.ExtensionlessPaths);
+        var router = CreateRoutes(routingBuilder,mappedPaths, options.ExtensionlessPaths, licenseChecker);
         
         var routingEngine = router.Build(logger);
         
@@ -125,6 +129,7 @@ internal class MiddlewareOptionsServerBuilder(
         //TODO: Add a way to get the current ILicenseChecker
         var imageServer = new ImageServer<RequestStreamAdapter,ResponseStreamAdapter, HttpContext>(
             serverContainer,
+            licenseChecker,
             licensingOptions,  
             routingEngine, perfTracker, logger);
         
@@ -154,7 +159,7 @@ internal class MiddlewareOptionsServerBuilder(
         });
     }
     private RoutingBuilder CreateRoutes(RoutingBuilder builder, IReadOnlyCollection<IPathMapping> mappedPaths,
-        IEnumerable<ImageflowMiddlewareOptions.ExtensionlessPath> optionsExtensionlessPaths)
+        IEnumerable<ImageflowMiddlewareOptions.ExtensionlessPath> optionsExtensionlessPaths, ILicenseChecker licenseChecker)
     {
         builder.ConfigureMedia((media) =>
         {
@@ -226,7 +231,7 @@ internal class MiddlewareOptionsServerBuilder(
         }
         
         //TODO: Add a layer that can be used to set the cache key basis
-        //builder.AddLayer(new LicensingLayer(options.Licensing, options.EnforcementMethod));
+        builder.AddMediaLayer(new LicensingLayer(licenseChecker));
         
 
         if (mappedPaths.Count > 0)

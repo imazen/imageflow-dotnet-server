@@ -38,6 +38,7 @@ internal class ImageServer<TRequest, TResponse, TContext> : IImageServer<TReques
     private readonly bool shutdownRegisteredServices;
     private readonly IImageServerContainer container;
     public ImageServer(IImageServerContainer container,  
+        ILicenseChecker licenseChecker,
         LicenseOptions licenseOptions,
         RoutingEngine routingEngine, 
         IPerformanceTracker perfTracker,
@@ -49,10 +50,9 @@ internal class ImageServer<TRequest, TResponse, TContext> : IImageServer<TReques
         this.container = container;
         this.logger = logger.WithSubcategory("ImageServer");
         this.routingEngine = routingEngine;
+        this.licenseChecker = licenseChecker;
 
-        licenseChecker = container.GetService<ILicenseChecker>() ??
-                         new Licensing(LicenseManagerSingleton.GetOrCreateSingleton(
-                             licenseOptions.KeyPrefix, licenseOptions.CandidateCacheFolders), null);
+
         licenseChecker.Initialize(licenseOptions);
                      
         licenseChecker.FireHeartbeat();
