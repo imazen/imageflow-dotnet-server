@@ -29,10 +29,11 @@ public class MemoryLogger(string categoryName, Func<string, LogLevel, bool>? fil
 
     private static readonly AsyncLocal<Stack<object>> Scopes = new AsyncLocal<Stack<object>>();
 
-    public IDisposable BeginScope<TState>(TState state)  where TState : notnull
+    public IDisposable BeginScope<TState>(TState state)  
     {
-        if (Scopes.Value == null)
-            Scopes.Value = new Stack<object>();
+        if (state == null)
+            throw new ArgumentNullException(nameof(state));
+        Scopes.Value ??= new Stack<object>();
 
         Scopes.Value.Push(state);
         return new DisposableScope();
@@ -51,11 +52,12 @@ public class MemoryLogger(string categoryName, Func<string, LogLevel, bool>? fil
             return;
         }
 
+        var scopesCopy = Scopes.Value?.ToArray();
         lock (@lock)
         {
             logs.Add(new MemoryLogEntry
             {
-                Scopes = Scopes.Value?.ToArray(),
+                Scopes = scopesCopy,
                 Message = formatter(state, exception),
                 Category = categoryName,
                 EventId = eventId,

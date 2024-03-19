@@ -18,7 +18,7 @@ namespace Imazen.Common.Tests.Licensing
             return StringCachePutResult.WriteComplete;
         }
 
-        public string Get(string key)
+        public string? Get(string key)
         {
             if (cache.TryGetValue(key, out var current)) {
                 return current;
