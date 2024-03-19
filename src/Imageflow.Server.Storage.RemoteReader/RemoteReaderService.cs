@@ -120,7 +120,7 @@ namespace Imageflow.Server.Storage.RemoteReader
                 options.IgnorePrefixCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal));
         }
         
-        private static string SanitizeImageExtension(string extension)
+        private static string? SanitizeImageExtension(string extension)
         {
             //TODO: Deduplicate this function when making Imazen.ImageAPI.Client
             extension = extension.ToLowerInvariant().TrimStart('.');

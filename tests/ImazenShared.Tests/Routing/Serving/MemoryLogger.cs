@@ -29,7 +29,11 @@ public class MemoryLogger(string categoryName, Func<string, LogLevel, bool>? fil
 
     private static readonly AsyncLocal<Stack<object>> Scopes = new AsyncLocal<Stack<object>>();
 
-    public IDisposable BeginScope<TState>(TState state)  
+    public IDisposable BeginScope<TState>(TState state)
+#if DOTNET8_0_OR_GREATER
+        where TState : notnull
+#endif 
+    where TState : notnull
     {
         if (state == null)
             throw new ArgumentNullException(nameof(state));

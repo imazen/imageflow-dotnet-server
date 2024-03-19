@@ -487,7 +487,7 @@ namespace Imazen.HybridCache
         //
         //
 
-        private BlobCacheSupportData SupportData { get; set; }
+        private BlobCacheSupportData? SupportData { get; set; }
         public void Initialize(BlobCacheSupportData supportData)
         {
             SupportData = supportData;

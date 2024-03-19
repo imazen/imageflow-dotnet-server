@@ -18,7 +18,7 @@ namespace Imazen.HybridCache
         private CleanupManager CleanupManager { get; }
         private ICacheDatabase<ICacheDatabaseRecord> Database { get; }
         
-        private BlobCacheSupportData SupportData { get; set; }
+        private BlobCacheSupportData? SupportData { get; set; }
 
         public string UniqueName { get; }
         
