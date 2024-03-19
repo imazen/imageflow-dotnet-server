@@ -8,6 +8,7 @@ using Imazen.Common.Storage;
 using Imazen.Routing.Helpers;
 using Imazen.Routing.Promises;
 using Imazen.Routing.Requests;
+using BlobMissingException = Imazen.Abstractions.Blobs.LegacyProviders.BlobMissingException;
 
 #pragma warning disable CS0618 // Type or member is obsolete
 
@@ -162,8 +163,15 @@ internal record BlobProviderPromise(IRequestSnapshot FinalRequest, String Virtua
     public override async ValueTask<CodeResult<IBlobWrapper>> TryGetBlobAsync(IRequestSnapshot request, IBlobRequestRouter router, IBlobPromisePipeline pipeline,
         CancellationToken cancellationToken = default)
     {
-        var blobData = await Provider.Fetch(VirtualPath);
-        // TODO: handle exceptions -> CodeResults
+        IBlobData blobData;
+        try
+        {
+            blobData = await Provider.Fetch(VirtualPath);
+        }
+        catch (BlobMissingException e)
+        {
+            return CodeResult<IBlobWrapper>.Err((404, e.Message));
+        }
         if (blobData.Exists == false) return CodeResult<IBlobWrapper>.Err((404, "Blob not found"));
             
         var attrs = new BlobAttributes()
