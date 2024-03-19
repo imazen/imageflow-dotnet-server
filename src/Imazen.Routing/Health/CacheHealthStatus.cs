@@ -20,6 +20,7 @@ internal class CacheHealthStatus : IHostedService, IDisposable
     private CacheHealthMetrics Metrics { get; init;  }
     private static TimeSpan Timeout => TimeSpan.FromMinutes(3);
 
+    // TODO: NonOverlappingAsyncRunner is unreliable, remove or fix.
     private readonly NonOverlappingAsyncRunner<IBlobCacheHealthDetails>? healthCheckTask;
     
     private IReLogger Logger { get;  }

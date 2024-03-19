@@ -1,15 +1,13 @@
 using System.Reflection;
 using Imazen.Abstractions.DependencyInjection;
 using Imazen.Common.Helpers;
-using Imazen.Common.Instrumentation.Support;
 using Imazen.Common.Instrumentation.Support.InfoAccumulators;
 using Imazen.Routing.Helpers;
 using Imazen.Routing.HttpAbstractions;
-using Imazen.Routing.Serving;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Imageflow.Server
+namespace Imageflow.Server.Internal
 {
     internal class GlobalInfoProvider(IImageServerContainer serviceProvider): IInfoProvider
     {

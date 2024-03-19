@@ -9,7 +9,6 @@ using Imazen.Common.Licensing;
 using Imazen.Common.Storage;
 using Imazen.Abstractions.BlobCache;
 using Imageflow.Server.Internal;
-using Imageflow.Server.LegacyOptions;
 using Imazen.Abstractions.Blobs.LegacyProviders;
 using Imazen.Abstractions.DependencyInjection;
 using Imazen.Abstractions.Logging;

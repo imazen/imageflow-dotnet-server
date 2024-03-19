@@ -1,8 +1,6 @@
-using System.ComponentModel;
 using System.Globalization;
 using System.Text;
 using Imageflow.Bindings;
-using Imageflow.Server.Internal;
 using Imazen.Abstractions.BlobCache;
 using Imazen.Abstractions.Blobs.LegacyProviders;
 using Imazen.Abstractions.DependencyInjection;
@@ -12,7 +10,6 @@ using Imazen.Routing.Engine;
 using Imazen.Routing.Health;
 using Imazen.Routing.HttpAbstractions;
 using Imazen.Routing.Layers;
-using Imazen.Routing.Promises.Pipelines;
 using Imazen.Routing.Promises.Pipelines.Watermarking;
 using Imazen.Routing.Requests;
 using Imazen.Routing.Serving;
@@ -20,7 +17,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Imageflow.Server.LegacyOptions;
+namespace Imageflow.Server.Internal;
 
 internal class MiddlewareOptionsServerBuilder(
     ImageServerContainer serverContainer,
