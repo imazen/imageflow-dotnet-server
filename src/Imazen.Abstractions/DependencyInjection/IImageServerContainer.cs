@@ -93,7 +93,7 @@ public class ImageServerContainer(IServiceProvider? outerProvider) : IImageServe
         }
         else if (services.TryGetValue(serviceType, out var instances))
         {
-            return instances.First();
+            return instances.FirstOrDefault();
         }
 
         return null;

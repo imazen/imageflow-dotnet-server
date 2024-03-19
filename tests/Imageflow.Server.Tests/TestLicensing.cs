@@ -3,6 +3,7 @@ using System.Text;
 using Imazen.Common.Licensing;
 using Imazen.Common.Tests.Licensing;
 using Imazen.Routing.Layers;
+using Imazen.Routing.Serving;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
@@ -50,7 +51,7 @@ namespace Imageflow.Server.Tests
             var hostBuilder = new HostBuilder()
                 .ConfigureServices(services =>
                 {
-                    services.AddSingleton(l);
+                    services.AddSingleton((ILicenseChecker)l);
                 })
                 .ConfigureWebHost(webHost =>
                 {

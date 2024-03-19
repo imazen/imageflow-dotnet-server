@@ -48,6 +48,7 @@ internal class MiddlewareOptionsServerBuilder(
         serverContainer.Register<ImageflowMiddlewareOptions>(options);
         serverContainer.CopyFromOuter<IBlobCache>();
         serverContainer.CopyFromOuter<IBlobCacheProvider>();
+        serverContainer.CopyFromOuter<ILicenseChecker>();
 #pragma warning disable CS0618 // Type or member is obsolete
         serverContainer.CopyFromOuter<IBlobProvider>();
 #pragma warning restore CS0618 // Type or member is obsolete
@@ -66,7 +67,7 @@ internal class MiddlewareOptionsServerBuilder(
                 env.ContentRootPath,
                 Path.GetTempPath()
             },
-            EnforcementMethod = Imazen.Routing.Layers.EnforceLicenseWith.RedDotWatermark,
+            EnforcementMethod = (Imazen.Routing.Layers.EnforceLicenseWith)options.EnforcementMethod
 
         };
         serverContainer.Register(licensingOptions);
