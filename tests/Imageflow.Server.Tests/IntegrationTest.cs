@@ -342,7 +342,7 @@ namespace Imageflow.Server.Tests
                 
                 await host.StopAsync(CancellationToken.None);
                 
-                var cacheFiles = Directory.GetFiles(diskCacheDir, "*.png", SearchOption.AllDirectories);
+                var cacheFiles = Directory.GetFiles(diskCacheDir, "*.jpg", SearchOption.AllDirectories);
                 Assert.Single(cacheFiles);
             }
         }
