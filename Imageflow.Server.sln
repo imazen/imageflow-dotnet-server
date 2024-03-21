@@ -1,4 +1,4 @@
-﻿ 
+﻿	
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29503.13
@@ -63,6 +63,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imazen.Routing", "src\Imazen.Routing\Imazen.Routing.csproj", "{5EF0F9EA-D6DE-4E34-9141-4C44DA08A726}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imazen.Abstractions", "src\Imazen.Abstractions\Imazen.Abstractions.csproj", "{A04B9BE0-4931-4305-B9AB-B79737130F20}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imageflow.Server.ExampleModernAPI", "examples\Imageflow.Server.ExampleModernAPI\Imageflow.Server.ExampleModernAPI.csproj", "{4AF9EFF8-5456-4711-B847-6DD31F949B02}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -158,6 +160,10 @@ Global
 		{A04B9BE0-4931-4305-B9AB-B79737130F20}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A04B9BE0-4931-4305-B9AB-B79737130F20}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A04B9BE0-4931-4305-B9AB-B79737130F20}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4AF9EFF8-5456-4711-B847-6DD31F949B02}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4AF9EFF8-5456-4711-B847-6DD31F949B02}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4AF9EFF8-5456-4711-B847-6DD31F949B02}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4AF9EFF8-5456-4711-B847-6DD31F949B02}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,0 +1,6 @@
+@Imageflow.Server.ExampleModernAPI_HostAddress = http://localhost:5025
+
+GET {{Imageflow.Server.ExampleModernAPI_HostAddress}}/img/test.json.custom
+
+
+###
