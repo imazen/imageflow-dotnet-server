@@ -117,7 +117,7 @@ internal class ImageServer<TRequest, TResponse, TContext> : IImageServer<TReques
         };
 
         pipeline = new CacheEngine(null, sourceCacheOptions);
-        pipeline = new ImagingMiddleware(null, imagingOptions);
+        pipeline = new ImagingMiddleware(pipeline, imagingOptions);
         pipeline = new CacheEngine(pipeline, sourceCacheOptions);
     }
 
