@@ -190,7 +190,12 @@ public class CodeResult<T> : Result<T, HttpStatus>
     }
     
     public new static CodeResult<T> Err(HttpStatus errorValue) => new CodeResult<T>(false, errorValue);
-    
+    public static CodeResult<T> ErrFrom(HttpStatusCode errorValue, string sourceAction) => 
+        new CodeResult<T>(false, new HttpStatus((int)errorValue).WithAddFrom(sourceAction));
+
+    public static CodeResult<T> ErrFrom(HttpStatus status, string sourceAction) => 
+        new CodeResult<T>(false, status.WithAddFrom(sourceAction));
+
     public new static CodeResult<T> Ok(T okValue) => new CodeResult<T>(okValue);
 
     public static CodeResult<T> Ok<TA>(TA okValue) where TA : T => new CodeResult<T>(okValue);
