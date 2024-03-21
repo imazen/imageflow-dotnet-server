@@ -1,5 +1,6 @@
 using Imageflow.Fluent;
 using Imazen.Common.Instrumentation.Support.InfoAccumulators;
+using Imazen.Routing.Engine;
 using Imazen.Routing.Layers;
 
 namespace Imageflow.Server
@@ -47,6 +48,10 @@ namespace Imageflow.Server
         
         public RequestSignatureOptions RequestSignatureOptions { get; set; } = RequestSignatureOptions.Empty;
         public SecurityOptions JobSecurityOptions { get; set; } = new();
+
+        internal List<string>? ExtraMediaFileExtensions;
+
+        internal List<Action<RoutingBuilder>>? RoutingConfigurationActions;
         
         internal readonly List<PathPrefixHandler<Action<UrlEventArgs>>> Rewrite = [];
 
@@ -88,6 +93,27 @@ namespace Imageflow.Server
         public ImageflowMiddlewareOptions HandleExtensionlessRequestsUnder(string prefix, StringComparison prefixComparison = StringComparison.Ordinal)
         {
             ExtensionlessPaths.Add(new ExtensionlessPath() { StringToCompare = prefix, StringComparison = prefixComparison});
+            return this;
+        }
+        
+        [Obsolete("This API is unstable and will be removed in a future release")]
+        public ImageflowMiddlewareOptions AddRoutingConfiguration(Action<RoutingBuilder> configure)
+        {
+            RoutingConfigurationActions ??= new();
+            RoutingConfigurationActions.Add(configure);
+            return this;
+        }
+        
+        /// <summary>
+        /// Add a file extension to the list of extensions that Imageflow will process and/or cache. Must start with a period.
+        /// </summary>
+        /// <param name="extension"></param>
+        /// <returns></returns>
+        public ImageflowMiddlewareOptions AddMediaFileExtension(string extension)
+        {
+            if (!extension.StartsWith(".")) throw new ArgumentOutOfRangeException(nameof(extension), "Extension must start with a period");
+            ExtraMediaFileExtensions ??= new();
+            ExtraMediaFileExtensions.Add(extension);
             return this;
         }
 

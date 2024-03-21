@@ -118,6 +118,25 @@ internal class MiddlewareOptionsServerBuilder(
         var routingBuilder = new RoutingBuilder();
         var router = CreateRoutes(routingBuilder,mappedPaths, options.ExtensionlessPaths, licenseChecker);
         
+
+        if (options.ExtraMediaFileExtensions != null)
+        {
+            routingBuilder.ConfigureMedia((media) =>
+            {
+                media.ConfigurePreconditions((preconditions) =>
+                {
+                    preconditions.IncludeFileExtensions(options.ExtraMediaFileExtensions.ToArray());
+                });
+            });
+        }
+        if (options.RoutingConfigurationActions != null)
+        {
+            foreach (var action in options.RoutingConfigurationActions)
+            {
+                action(router);
+            }
+        }
+
         var routingEngine = router.Build(logger);
         
         serverContainer.Register(routingEngine);
