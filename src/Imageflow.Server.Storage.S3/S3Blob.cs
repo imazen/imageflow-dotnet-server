@@ -20,7 +20,7 @@ namespace Imageflow.Server.Storage.S3
                 .Select(key => SearchableBlobTag.CreateUnvalidated(key.Substring(2), r.Metadata[key])).ToList();
             var a = new BlobAttributes()
             {
-                BlobByteCount = r.ContentLength,
+                EstimatedBlobByteCount = r.ContentLength,
                 ContentType = r.Headers?.ContentType,
                 Etag = r.ETag,
                 LastModifiedDateUtc = r.LastModified.ToUniversalTime(),

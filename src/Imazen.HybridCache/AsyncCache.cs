@@ -757,7 +757,7 @@ namespace Imazen.HybridCache
                     ContentType = record?.ContentType,
                     Etag = record?.RelativePath,
                     LastModifiedDateUtc = record?.CreatedAt,
-                    BlobByteCount = stream.CanSeek ? stream.Length : null,
+                    EstimatedBlobByteCount = stream.CanSeek ? stream.Length : null,
                     StorageTags = record?.Tags,
                     BlobStorageReference = new FileBlobStorageReference(entryRelativePath, interpreter, record)
 

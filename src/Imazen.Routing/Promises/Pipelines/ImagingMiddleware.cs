@@ -310,7 +310,7 @@ internal record ImagingPromise : ICacheableBlobPromise
             {
                 LastModifiedDateUtc = DateTime.UtcNow,
                 ContentType = encodeResult.PreferredMimeType,
-                BlobByteCount = resultBytes.Value.Count
+                EstimatedBlobByteCount = resultBytes.Value.Count
             };
             sw.Stop();
             var reusable = new MemoryBlob(resultBytes.Value, attrs, sw.Elapsed);

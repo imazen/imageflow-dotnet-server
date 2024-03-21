@@ -16,7 +16,7 @@ using Microsoft.Extensions.Logging;
 namespace Imazen.Routing.Promises.Pipelines;
 
 /// <summary>
-/// Optimized for quick startup, such as for serverless scenarios. No optimizations for multiple requests
+/// Configurable for optimizing for quick-startup, or for high throughput.
 /// </summary>
 public class CacheEngine: IBlobPromisePipeline
 {
@@ -233,7 +233,7 @@ public class CacheEngine: IBlobPromisePipeline
                         {
                             var attrs = task.Result.Unwrap().Attributes;
 #pragma warning disable CS0618 // Type or member is obsolete
-                            Log.LogTrace("[HIT] {CacheName} - returned {ContentType}, {ByteEstimate} bytes", cache.NameAndClass(), attrs.ContentType, attrs.BlobByteCount);
+                            Log.LogTrace("[HIT] {CacheName} - returned {ContentType}, {ByteEstimate} bytes", cache.NameAndClass(), attrs.ContentType, attrs.EstimatedBlobByteCount);
 #pragma warning restore CS0618 // Type or member is obsolete
                         }
                     }

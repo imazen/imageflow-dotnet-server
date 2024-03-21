@@ -8,10 +8,8 @@ public interface IBlobAttributes : IEstimateAllocatedBytesRecursive
 {
     string? Etag { get; }
     string? ContentType { get; }
-
-    [Obsolete("Can be inaccurate, not based on actual stream length")]
-
-    long? BlobByteCount { get; }
+    
+    long? EstimatedBlobByteCount { get; }
 
     public DateTimeOffset? LastModifiedDateUtc { get; }
 
@@ -40,7 +38,7 @@ public record class BlobAttributes : IBlobAttributes
     public string? Etag { get; init; }
     public string? ContentType { get; init; }
     
-    public long? BlobByteCount { get; init; }
+    public long? EstimatedBlobByteCount { get; init; }
     public DateTimeOffset? LastModifiedDateUtc { get; init; }
     public IReadOnlyList<SearchableBlobTag>? StorageTags { get; init; }
     public DateTimeOffset? EstimatedExpiry { get; init; }
@@ -50,7 +48,7 @@ public record class BlobAttributes : IBlobAttributes
     public int EstimateAllocatedBytesRecursive =>
         Etag.EstimateMemorySize(true) 
         + ContentType.EstimateMemorySize(true) 
-        + BlobByteCount.EstimateMemorySize(true)
+        + EstimatedBlobByteCount.EstimateMemorySize(true)
         + LastModifiedDateUtc.EstimateMemorySize(true)
         + EstimatedExpiry.EstimateMemorySize(true)
         + 8 + BlobStorageReference?.EstimateAllocatedBytesRecursive ?? 0

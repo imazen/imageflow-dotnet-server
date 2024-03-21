@@ -14,7 +14,7 @@ namespace Imageflow.Server.Storage.AzureBlob
 
             var attributes = new BlobAttributes()
             {
-                BlobByteCount = r.Content.CanSeek ? r.Content.Length : null,
+                EstimatedBlobByteCount = r.Content.CanSeek ? r.Content.Length : null,
                 ContentType = r.Details.ContentType,
                 Etag = r.Details.ETag.ToString(),
                 LastModifiedDateUtc = r.Details.LastModified.UtcDateTime,
