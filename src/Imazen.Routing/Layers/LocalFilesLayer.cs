@@ -1,4 +1,5 @@
 using System.Buffers;
+using System.Collections.Immutable;
 using Imazen.Abstractions.Blobs;
 using Imazen.Abstractions.Resulting;
 using Imazen.Routing.Helpers;
@@ -24,13 +25,19 @@ public record PathMapping(string VirtualPath, string PhysicalPath, bool IgnorePr
     public string StringToCompare => VirtualPath;
     public StringComparison StringComparison => IgnorePrefixCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
 }
-public class LocalFilesLayer : IRoutingLayer
+
+public class PathMapper
 {
-    public LocalFilesLayer(List<IPathMapping> pathMappings)
+    public record struct PathMapperResult(string MappedPhysicalPath, IPathMapping MappingUsed);
+    public IReadOnlyList<IPathMapping> PathMappings { get; }
+    public IFastCond? FastPreconditions { get; }
+
+    public PathMapper(IEnumerable<IPathMapping> pathMappings)
     {
-        PathMappings = pathMappings; // TODO, should we clone it?
+        var list = pathMappings.ToList(); 
         // We want to compare the longest prefixes first so they match in case of collisions
-        PathMappings.Sort((a, b) => b.VirtualPath.Length.CompareTo(a.VirtualPath.Length));
+        list.Sort((a, b) => b.VirtualPath.Length.CompareTo(a.VirtualPath.Length));
+        PathMappings = list;
         
         // ReSharper disable twice ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
         if (PathMappings.Any(m => m.PhysicalPath == null || m.VirtualPath == null))
@@ -40,61 +47,55 @@ public class LocalFilesLayer : IRoutingLayer
         // if any is simply '/', replace the condition with Tru
         FastPreconditions = PathMappings.Any(m => m.VirtualPath == "/") ? Conditions.True : Conditions.HasPathPrefix(PathMappings);
     }
-    protected readonly List<IPathMapping> PathMappings;
-    
-    public string Name => "LocalFiles";
-    public IFastCond? FastPreconditions { get; }
 
-
-    public ValueTask<CodeResult<IRoutingEndpoint>?> ApplyRouting(MutableRequest request, CancellationToken cancellationToken = default)
+    public PathMapperResult? TryMapVirtualPath(string path)
     {
-        var path = request.Path;
         foreach (var mapping in PathMappings)
         {
-            if (path.StartsWith(mapping.VirtualPath, mapping.StringComparison))
+            if (!path.StartsWith(mapping.VirtualPath, mapping.StringComparison)) continue;
+            
+            var relativePath = path
+                .Substring(mapping.VirtualPath.Length)
+                .Replace('/', Path.DirectorySeparatorChar)
+                .TrimStart(Path.DirectorySeparatorChar);
+
+            var physicalDir = Path.GetFullPath(mapping.PhysicalPath.TrimEnd(Path.DirectorySeparatorChar));
+
+            var physicalPath = Path.GetFullPath(Path.Combine(
+                physicalDir,
+                relativePath));
+            if (!physicalPath.StartsWith(physicalDir, StringComparison.Ordinal))
             {
-                
-                // bool isRoot = mapping.VirtualPath is "/" or "";
-                // if (isRoot && !Conditions.HasSupportedImageExtension.Matches(request))
-                // {
-                //     // If it's a / mapping, we only take image extensions.
-                //     // This breaks extensionless paths configuration if the root is mapped to a directory or blob provider, however.
-                //     // Which is in our unit test. With the new layer groups, we don't need to worry about this.
-                //     return Tasks.ValueResult<CodeResult<IRoutingEndpoint>?>(null);
-                // }
-                    
-                var relativePath = path
-                    .Substring(mapping.VirtualPath.Length)
-                    .Replace('/', Path.DirectorySeparatorChar)
-                    .TrimStart(Path.DirectorySeparatorChar);
-                
-                var physicalDir = Path.GetFullPath(mapping.PhysicalPath.TrimEnd(Path.DirectorySeparatorChar));
-
-                var physicalPath = Path.GetFullPath(Path.Combine(
-                    physicalDir,
-                    relativePath));
-                if (!physicalPath.StartsWith(physicalDir, StringComparison.Ordinal))
-                {
-                    return Tasks.ValueResult<CodeResult<IRoutingEndpoint>?>(null); //We stopped a directory traversal attack (most likely)
-                }
-                var lastWriteTimeUtc = File.GetLastWriteTimeUtc(physicalPath);
-                if (lastWriteTimeUtc.Year == 1601) // file doesn't exist, pass to next middleware
-                {
-                    return Tasks.ValueResult<CodeResult<IRoutingEndpoint>?>(null);
-                }
-                else
-                {
-                    
-                    var latencyZone = new LatencyTrackingZone(mapping.PhysicalPath, 10);
-                    return Tasks.ValueResult<CodeResult<IRoutingEndpoint>?>(CodeResult<IRoutingEndpoint>.Ok(new PromiseWrappingEndpoint(
-                        new FilePromise(request.ToSnapshot(true), physicalPath, latencyZone, lastWriteTimeUtc))));
-                }
+                return null; //We stopped a directory traversal attack (most likely)
             }
+            return new PathMapperResult(physicalPath, mapping);
         }
-
-        return Tasks.ValueResult<CodeResult<IRoutingEndpoint>?>(null);
+        return null;
     }
+}
+public class LocalFilesLayer(IEnumerable<IPathMapping> pathMappings) : PathMapper(pathMappings), IRoutingLayer
+{
+    public string Name => "LocalFiles";
+
+    public ValueTask<CodeResult<IRoutingEndpoint>?> ApplyRouting(MutableRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var result = TryMapVirtualPath(request.Path);
+        if (result == null) return new ValueTask<CodeResult<IRoutingEndpoint>?>((CodeResult<IRoutingEndpoint>?)null);
+        var (mappedPhysicalPath, mappingUsed) = result.Value;
+
+        var lastWriteTimeUtc = File.GetLastWriteTimeUtc(mappedPhysicalPath);
+        if (lastWriteTimeUtc.Year == 1601) // file doesn't exist, pass to next middleware
+        {
+            return new ValueTask<CodeResult<IRoutingEndpoint>?>((CodeResult<IRoutingEndpoint>?)null);
+        }
+        var latencyZone = new LatencyTrackingZone(mappingUsed.PhysicalPath, 10);
+        return Tasks.ValueResult<CodeResult<IRoutingEndpoint>?>(CodeResult<IRoutingEndpoint>.Ok(
+            new PromiseWrappingEndpoint(
+                new FilePromise(request.ToSnapshot(true), mappedPhysicalPath, latencyZone, lastWriteTimeUtc))));
     
+    }
+
     /// ToString includes all data in the layer, for full diagnostic transparency, and lists the preconditions and data count
     public override string ToString()
     {
