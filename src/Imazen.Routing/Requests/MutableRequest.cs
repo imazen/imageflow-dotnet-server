@@ -100,7 +100,8 @@ public class MutableRequest : IRequestSnapshot
             StorageTags = StorageTags,
             ParentRequest = ParentRequest,
             HttpMethod = HttpMethod,
-            MutationsComplete = mutationsComplete
+            MutationsComplete = mutationsComplete,
+            OriginatingRequest = OriginatingRequest
         };
     }
 
